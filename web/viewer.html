@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PushBox DSL - Web Map Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/viewer/viewer.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">📦</div>
+        <div class="brand-title">PushBox <span class="badge">DSL Map Viewer</span></div>
+      </div>
+      
+      <nav class="nav-tabs">
+        <a href="/" class="tab-btn">
+          <span class="tab-icon">🎮</span> Game
+        </a>
+        <button class="tab-btn active" data-tab="maps">
+          <span class="tab-icon">🗺️</span> Maps
+        </button>
+        <button class="tab-btn disabled" data-tab="scenes" title="Coming Soon">
+          <span class="tab-icon">🎬</span> Scenes <span class="tag-soon">Soon</span>
+        </button>
+      </nav>
+    </header>
+
+    <main class="main-body">
+      <aside class="sidebar">
+        <section class="panel">
+          <h3 class="panel-header">Select Level Map</h3>
+          <div class="map-list" id="mapList"></div>
+        </section>
+
+        <section class="panel">
+          <h3 class="panel-header">Layer & Collision Toggles</h3>
+          <div class="toggle-group">
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleVisual" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">👁️ Visual ASCII Tiles</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleWalls" checked>
+              <span class="toggle-slider wall"></span>
+              <span class="toggle-label">🧱 Walls Layer (<span id="wallCount">0</span>)</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleHoles" checked>
+              <span class="toggle-slider hole"></span>
+              <span class="toggle-label">🕳️ Pits / Holes (<span id="holeCount">0</span>)</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleBoxes" checked>
+              <span class="toggle-slider box"></span>
+              <span class="toggle-label">📦 Box Spawns (<span id="boxCount">0</span>)</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleGrid" checked>
+              <span class="toggle-slider grid"></span>
+              <span class="toggle-label">📐 Grid Lines</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel inspector-panel">
+          <h3 class="panel-header">Hover Inspector</h3>
+          <div class="inspector-details" id="inspectorDetails">
+            <div class="inspector-row"><span class="lbl">Cell Coords:</span> <span class="val" id="inspCoords">X: --, Y: --</span></div>
+            <div class="inspector-row"><span class="lbl">Visual Tile ID:</span> <span class="val" id="inspTile">--</span></div>
+            <div class="inspector-row"><span class="lbl">Collision Type:</span> <span class="val" id="inspCollision">None</span></div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="viewport">
+        <div class="viewport-header">
+          <h2 id="currentMapTitle">Mapa 01 (60 × 80)</h2>
+          <div class="viewport-controls">
+            <span class="zoom-level" id="zoomText">100%</span>
+            <button class="btn-icon" id="btnZoomOut" title="Zoom Out">➖</button>
+            <button class="btn-icon" id="btnZoomReset" title="Reset Zoom">🔄</button>
+            <button class="btn-icon" id="btnZoomIn" title="Zoom In">➕</button>
+          </div>
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+          <canvas id="mapCanvas" width="1280" height="960"></canvas>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/src/viewer/viewer.js"></script>
+</body>
+</html>

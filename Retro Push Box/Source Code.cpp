@@ -1,4 +1,4 @@
-﻿#include<iostream>
+#include<iostream>
 #include<conio.h>
 #include<Windows.h>
 #include <MMSystem.h>
@@ -86,7 +86,7 @@ void SonidoSpiderman()
 	PlaySound(TEXT("Thwip.wav"), NULL, SND_ASYNC);
 };
 void MusicaMenu(){
-	PlaySound(TEXT("Intro.wav"), NULL, SND_LOOP | SND_ASYNC);
+	PlaySound(TEXT("intro.wav"), NULL, SND_LOOP | SND_ASYNC);
 }
 void MusicaCreditos(){
 	PlaySound(TEXT("outro.wav"), NULL, SND_LOOP | SND_ASYNC);
@@ -205,6 +205,7 @@ void esperartecla(char teclapasa = 'E')
 		char tecla = _getch();
 		tecla = toupper(tecla);
 		if (tecla == teclapasa)break;
+		Sleep(16); 
 	}
 
 }
@@ -2823,10 +2824,10 @@ void MenuPrincipal(int &nivel, int **matriz, int empezarconmusica = 1){
 		case 'E': {sigue = 0; continue; break; }
 		case 'W': {if (modo != 1){ modo--; cap = 25; }break; }//↑
 		case 'S': {if (modo != 3){ modo++; cap = 85; }break; }//↓
-		default: continue;
+		default: Sleep(16); continue;
 		}
 		OpcionesMenu(modo, 21, 13);
-
+		Sleep(16);
 
 	}
 	if (modo == 1){ nivel = 1; desvanecimiento(9); InterfazInstructions(); }
@@ -2862,12 +2863,12 @@ void InterfazPausa(int **matriz, int &opcion, bool &sonido){
 		case 'E': {sigue = 0; continue; break; }
 		case 'W': {if (opcion != 1){ opcion--; modo = 2; }break; }//↑
 		case 'S': {if (opcion != 3){ opcion++; modo = 1; }break; }//↓
-		default: continue;
+		default: Sleep(16); continue;
 		}//switch
 		if (opcion == 1)AsciiFuncion(matriz, 16, 11, 16, 16, 223, modo);
 		if (opcion == 2)AsciiFuncion(matriz, 16, 16, 15, 16, 223, modo);
 		if (opcion == 3)AsciiFuncion(matriz, 16, 16, 16, 10, 223, modo);
-
+		Sleep(16);
 
 	}
 	MusicaPausa(); Sleep(200);
@@ -4069,7 +4070,7 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 		//se activa la animación Pintarmuerte, Y se activala IntefazyouLose si es que tiene mas de 1 vida. En el caso de que solo le hubiera quedado una(Antes de que le quiten esa) se activa
 		//defrente la Interfaz GameOver
 
-
+		Sleep(16);
 	}//fin while
 }
 void ControlDeNiveles(int **matriz, int &nivel, int***Cajas, int***Paredes, int***Vacios, int ***Huecos, int **Cantidades, int **Posiciones)
@@ -4167,7 +4168,7 @@ void main(){
 	Sleep(1000);
 	Console::SetWindowSize(80, 40);
 	desvanecimiento(9, 40);
-	Warning(2, 0, 4, 0, 31, 23, 1); Warning(1, 5, 26, 6, 26, 29, 7);
+	Warning(2, 0, 4, 0, 31, 23, 1); Warning(1, 5, 20, 6, 26, 29, 7);
 	ir(0, 26); colorletra(1); colorfondo(9);
 	Escribir("   Para poder jugar PushBox configura la consola de Windows a 8x8.\n", 1);
 	Escribir("   Si no sabes hacerlo, sigue los siguientes pasos: \n", 1);

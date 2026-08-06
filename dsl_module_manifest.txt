@@ -1,0 +1,211 @@
+# math.cpp
+
+nrandom
+
+# sounds.cpp
+
+RisaDuckHunt
+RisaJocker
+SonidoGameCoin
+SonidoPixelmen
+SonidoPacman
+SonidoTroll
+SonidoMovilSeMueve
+SonidoMovilNoSeMueve
+SonidoMaquinaEscribir
+SonidoCajaHueco
+SonidoCajaVacio
+SonidoEndurecimiento
+SonidoTeletransporte
+Musicatiempo
+SonidoAlarma
+SonidoHurryUp
+SonidoSpiderman
+MusicaMenu
+MusicaCreditos
+MusicaAparecePortal
+MusicaDesaparecePortal
+MusicaMuerte
+MusicaLore
+MusicaYouWin
+MusicaCongratulations
+MusicaGameOver
+MusicaPausa
+MusicaDeOutro
+SonidoStop
+
+# base.cpp
+
+ir
+colorfondo
+colorletra
+SetColor
+guardarpos
+limpiartecla
+esperartecla
+Escribir
+
+# gifs.cpp
+
+GIF
+GIFL
+
+# base.cpp
+CuadroDeTexto
+movi
+mod
+movinv
+
+# scenes.cpp
+
+Pixelmen
+UPC
+Cartelpausa
+YouWinYouLose
+Abecedario
+
+# math.cpp
+
+BuscarLetra
+
+# gifs.cpp
+
+ni1
+ni2
+ni3
+ni4
+ni5
+ni6
+ni7
+ni8
+ni9
+ni10
+ni11
+ni12
+ni13
+dh1
+dh2
+joker01
+joker02
+joker03
+joker04
+
+# world_objects.cpp
+
+PintarCaja
+PonerCaja
+PintarHueco
+PintarMovil
+PintarMuerte
+PintarPortal
+PintarPuente
+PBorrar
+desvanecimiento
+Endurecimiento
+Teletransporte
+ArmarPuente
+Retroceder
+PortalInteractivo
+TeclasOcultas
+
+# gifs.cpp
+
+jokerGif
+DuckHuntGif
+NientiendoGif
+
+# interfaces.cpp
+
+PushBox
+Cplusplus
+Warning
+Pacmansprites
+LinkSprite
+GameOver
+OpcionesMenu
+
+# gui.cpp
+
+AsciiFuncion
+
+# interfaces.cpp
+
+InterfazCreditos
+InterfazYouLose
+InterfazYouWin
+InterfazCargando
+InterfazCongratulations
+InterfazGameOver
+InterfazInstructions
+MenuPrincipal
+InterfazPausa
+
+# world_data.cpp
+
+ap
+av
+ac
+DataCantidades
+DataICajas
+DataParedes
+DataVacios
+DataHuecos
+
+# world_logic.cpp
+
+RestaurarTodo
+QueCaja
+QueHueco
+QuitarunaCaja
+QuitarunVacio
+AgregarParedes
+DestruirPuente
+CrearPuente
+MovilDentroDeMapa
+MovilyCaja
+MovilyHueco
+CajayVacio
+CajaLugarPermitido
+MovilPuedeMoverse
+muerte
+ZonaEstable
+PortalVisible
+CajayHueco
+PonerCajas
+PonerHuecos
+PonerPuentes
+GuardarPosicion
+Regresar
+
+# gui.cpp
+
+CuadroDeVidas
+Lore
+
+# backgrounds.cpp
+
+Fondo01
+Fondo02
+Fondo03
+Fondo04
+Fondo05
+
+# maps.cpp
+
+mapa01
+mapa02
+mapa03
+mapa04
+mapa05
+
+# game_logic.cpp
+
+dibuja_mapa
+ColocarEscenario
+ControlDeMovimiento
+ControlDeNiveles
+DescripcionDelPrograma
+
+# main.cpp
+
+main

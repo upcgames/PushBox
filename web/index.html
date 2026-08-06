@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PushBox - Retro Console Web Port</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'Px437';
+      src: url('/fonts/Px437_IBM_CGA.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(22, 30, 46, 0.8);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --font: 'Outfit', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    header {
+      width: 100%;
+      max-width: 1150px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .nav-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 8px 16px;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-link:hover { background: rgba(56, 189, 248, 0.15); }
+    .console-frame {
+      background: #000;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.1);
+      border: 1px solid var(--border);
+    }
+    canvas {
+      display: block;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">🕹️ PushBox <span style="font-size:0.9rem; color:var(--accent); font-weight:600;">DSL JavaScript Runtime</span></div>
+    <a href="/viewer.html" class="nav-link">🗺️ Open Map Viewer</a>
+  </header>
+
+  <div class="console-frame">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <script type="module" src="/src/game.js"></script>
+</body>
+</html>
