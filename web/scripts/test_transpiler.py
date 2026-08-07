@@ -1,5 +1,6 @@
 import sys
-from transpiler_core import transform_cpp_reference_params, transpile_cpp_to_js, resolve_async_functions
+from ast_transpiler import CppToJsAST
+from transpile_dsl_to_js import resolve_async_functions
 
 TEST_CASES = [
     {
@@ -31,8 +32,15 @@ TEST_CASES = [
         "name": "cout Stream I/O",
         "cpp": "cout << char(219); cout << \"Score: \";",
         "expected_contains": [
-            "Console.Write(String.fromCharCode(219));",
-            'Console.Write("Score: ");'
+            'Console.Write( String.fromCharCode(219));',
+            'Console.Write( "Score: ");'
+        ]
+    },
+    {
+        "name": "String Length Conversion",
+        "cpp": "if (i < letras.length()) { letras.length(); }",
+        "expected_contains": [
+            "if (i < letras.length) { letras.length; }"
         ]
     },
     {
@@ -43,7 +51,16 @@ TEST_CASES = [
     {
         "name": "Parameter Type Cleaning",
         "cpp": "void Escribir(char *Cadena, int retraso = 0, int sonido = 0) {}",
-        "expected_contains": ["Escribir(Cadena, retraso = 0, sonido = 0)"]
+        "expected_contains": [
+            'export function Escribir( Cadena,  retraso = 0,  sonido = 0)'
+        ]
+    },
+    {
+        "name": "Nested Pointer Parameter Cleaning",
+        "cpp": "void dibuja_mapa(int **matriz, char *Cadena) {}",
+        "expected_contains": [
+            'export function dibuja_mapa( matriz,  Cadena)'
+        ]
     },
     {
         "name": "Pass-by-Reference (& -> Ref.v)",
@@ -62,6 +79,13 @@ TEST_CASES = [
     }
 }""",
         "expected_contains": ["if (nivel.v == 0)", "MenuPrincipal(nivel, matriz)"]
+    },
+    {
+        "name": "Value-Result Wrapper for Primitive to Reference",
+        "cpp": """void MovilyCaja(int mx, int my, int mov) {
+    movi(mx, my, mov);
+}""",
+        "expected_contains": ["(() => { let _r0 = new Ref(mx); let _r1 = new Ref(my); movi(_r0, _r1, mov); mx = _r0.v; my = _r1.v; })()"]
     },
     {
         "name": "Matrix Annotation Unpacking",
@@ -116,7 +140,15 @@ def run_tests():
         
         print(f"\n▶ Testing: {name}")
         try:
-            js_output = transpile_cpp_to_js(cpp, asset_replacements=asset_replacements)
+            # Apply asset replacements before AST parsing (orchestrator behavior)
+            cpp_input = cpp
+            for k, v in asset_replacements.items():
+                cpp_input = cpp_input.replace(k, v)
+                
+            all_async_funcs = resolve_async_functions(cpp_input)
+            ast_engine = CppToJsAST()
+            js_output = ast_engine.parse(cpp_input, all_async_funcs=all_async_funcs)
+            
             all_found = True
             for exp in expected:
                 if exp not in js_output:

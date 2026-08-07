@@ -3,7 +3,7 @@ import re
 import shutil
 import sys
 import subprocess
-from transpiler_core import transpile_cpp_to_js, resolve_async_functions
+from ast_transpiler import CppToJsAST
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 web_dir = os.path.dirname(script_dir)
@@ -39,6 +39,41 @@ with open(rules_file, 'r', encoding='utf-8') as f:
         elif current_mod:
             func_to_module[line_str] = current_mod
             module_to_funcs[current_mod].add(line_str)
+
+def resolve_async_functions(cpp_code, base_async=None):
+    if base_async is None:
+        base_async = {"Sleep", "_getch", "esperartecla", "scanf"}
+
+    func_bodies = {}
+    func_matches = re.finditer(r'(?:void|int|bool|char)\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*\{', cpp_code)
+    for m in func_matches:
+        func_name = m.group(1)
+        start = m.end()
+        depth = 1
+        end = start
+        while end < len(cpp_code) and depth > 0:
+            if cpp_code[end] == '{': depth += 1
+            elif cpp_code[end] == '}': depth -= 1
+            end += 1
+        func_bodies[func_name] = cpp_code[start:end]
+
+    async_set = set(base_async)
+    for fn, body in func_bodies.items():
+        if any(trig in body for trig in base_async):
+            async_set.add(fn)
+
+    changed = True
+    while changed:
+        changed = False
+        for fn, body in func_bodies.items():
+            if fn not in async_set:
+                for async_fn in list(async_set):
+                    pattern = re.compile(rf'(?<![A-Za-z0-9_]){re.escape(async_fn)}\s*\(')
+                    if pattern.search(body):
+                        async_set.add(fn)
+                        changed = True
+                        break
+    return async_set
 
 def detect_called_functions(cpp_code, current_mod_name):
     called_funcs_by_mod = {}
@@ -144,7 +179,11 @@ def transpile_cpp_file(cpp_path, all_async_funcs):
         sorted_funcs = ", ".join(sorted(list(funcs)))
         top_imports.append(f"import {{ {sorted_funcs} }} from './{target_mod}';")
 
-    js_code = transpile_cpp_to_js(code, asset_replacements=asset_replacements, all_async_funcs=all_async_funcs)
+    # Apply asset replacements before AST parsing
+    for k, v in asset_replacements.items():
+        code = code.replace(k, v)
+        
+    js_code = CppToJsAST().parse(code, all_async_funcs=all_async_funcs)
 
     if top_imports:
         header_imports = "\n".join(top_imports) + "\n\n"
