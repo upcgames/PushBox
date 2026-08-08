@@ -18,3 +18,4 @@ web/public/audio/
 /source-clean.cpp
 /maps_json/
 *.json.tmp
+/web/src/dsl_gen/

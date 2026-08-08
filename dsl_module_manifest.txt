@@ -47,8 +47,8 @@ Escribir
 
 # gifs.cpp
 
-GIF
-GIFL
+GIF #animation
+GIFL #animation
 
 # base.cpp
 CuadroDeTexto
@@ -100,7 +100,7 @@ PintarMuerte
 PintarPortal
 PintarPuente
 PBorrar
-desvanecimiento
+desvanecimiento #animation
 Endurecimiento
 Teletransporte
 ArmarPuente
@@ -113,7 +113,7 @@ TeclasOcultas
 jokerGif #gallery
 DuckHuntGif #gallery
 NientiendoGif #gallery
-PixelmenGif #gallery
+PixelmenGif #animation #gallery
 
 # interfaces.cpp
 

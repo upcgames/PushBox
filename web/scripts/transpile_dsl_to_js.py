@@ -26,7 +26,9 @@ for asset_dir in ["maps_json", "backgrounds_json"]:
 func_to_module = {}
 module_to_funcs = {}
 current_mod = None
+current_mod = None
 gallery_registry = {}
+animation_registry = set()
 
 with open(rules_file, 'r', encoding='utf-8') as f:
     for line in f:
@@ -45,8 +47,12 @@ with open(rules_file, 'r', encoding='utf-8') as f:
             func_to_module[func_name] = current_mod
             module_to_funcs[current_mod].add(func_name)
             
-            if len(parts) > 1 and 'gallery' in parts[1].lower():
-                gallery_registry[func_name] = current_mod
+            if len(parts) > 1:
+                for tag in parts[1:]:
+                    if 'gallery' in tag.lower():
+                        gallery_registry[func_name] = current_mod
+                    if 'animation' in tag.lower():
+                        animation_registry.add(func_name)
 
 def resolve_async_functions(cpp_code, base_async=None):
     if base_async is None:
@@ -138,9 +144,9 @@ def check_circular_dependencies(dep_map, details_map):
                 sys.exit(1)
     print("  ✓ Dependency DAG check passed (0 circular dependencies detected)")
 
-def transpile_cpp_file(cpp_path, all_async_funcs):
+def transpile_cpp_file(cpp_path, all_async_funcs, output_dir, generator_funcs=None):
     current_mod_name = os.path.basename(cpp_path).replace('.cpp', '.js')
-    js_path = os.path.join(js_dir, current_mod_name)
+    js_path = os.path.join(output_dir, current_mod_name)
 
     with open(cpp_path, 'r', encoding='utf-8') as f:
         code = f.read()
@@ -191,7 +197,7 @@ def transpile_cpp_file(cpp_path, all_async_funcs):
     for k, v in asset_replacements.items():
         code = code.replace(k, v)
         
-    js_code = CppToJsAST().parse(code, all_async_funcs=all_async_funcs)
+    js_code = CppToJsAST().parse(code, all_async_funcs=all_async_funcs, generator_funcs=generator_funcs)
 
     if top_imports:
         header_imports = "\n".join(top_imports) + "\n\n"
@@ -200,7 +206,7 @@ def transpile_cpp_file(cpp_path, all_async_funcs):
     with open(js_path, 'w', encoding='utf-8') as out_f:
         out_f.write(js_code + "\n")
 
-    print(f"✅ Transpiled {os.path.basename(cpp_path)} ➔ web/src/dsl/{os.path.basename(js_path)}")
+    print(f"✅ Transpiled {os.path.basename(cpp_path)} ➔ web/src/{os.path.basename(output_dir)}/{os.path.basename(js_path)}")
     validate_js_syntax(js_path)
     return called_mods
 
@@ -225,11 +231,26 @@ def main():
     for f in target_files:
         cpp_path = os.path.join(dsl_dir, f)
         mod_name = f.replace('.cpp', '.js')
-        called_mods = transpile_cpp_file(cpp_path, all_async_funcs)
+        called_mods = transpile_cpp_file(cpp_path, all_async_funcs, js_dir, generator_funcs=None)
         dep_map[mod_name] = list(called_mods.keys())
         details_map[mod_name] = called_mods
 
     check_circular_dependencies(dep_map, details_map)
+
+    # 3. Second pass: Transpile all to src/dsl_gen/ with generators
+    js_gen_dir = os.path.join(web_dir, "src", "dsl_gen")
+    os.makedirs(js_gen_dir, exist_ok=True)
+    
+    for asset_dir in ["maps_json", "backgrounds_json"]:
+        src_json = os.path.join(dsl_dir, asset_dir)
+        dst_json = os.path.join(js_gen_dir, asset_dir)
+        if os.path.exists(src_json):
+            shutil.copytree(src_json, dst_json, dirs_exist_ok=True)
+
+    print("\n🚀 Transpiling Generator sandbox ➔ web/src/dsl_gen/")
+    for f in target_files:
+        cpp_path = os.path.join(dsl_dir, f)
+        transpile_cpp_file(cpp_path, all_async_funcs, js_gen_dir, generator_funcs=animation_registry)
 
     # Output gallery registry with static imports for bundlers
     gallery_path = os.path.join(js_dir, "gallery_registry.js")

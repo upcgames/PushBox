@@ -190,7 +190,18 @@ if (typeof window !== 'undefined') {
 
   window.Sleep = async (ms) => {
     if (ms <= 0) return;
+
+    const now = performance.now();
+    if (ms <= 16) {
+      if (now - lastFrameTime >= 16) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        lastFrameTime = performance.now();
+      }
+      return;
+    }
+
     await new Promise(resolve => setTimeout(resolve, ms));
+    lastFrameTime = performance.now();
   };
 
   window.GetConsoleScreenBufferInfo = (handle, csbi) => {
