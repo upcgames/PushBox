@@ -7,59 +7,85 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared.css">
   <style>
-    @font-face {
-      font-family: 'Px437';
-      src: url('/fonts/Px437_IBM_CGA.ttf') format('truetype');
-      font-weight: normal;
-      font-style: normal;
+    .console-frame {
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.1);
     }
-    :root {
-      --bg: #090d16;
-      --card-bg: rgba(22, 30, 46, 0.8);
-      --border: rgba(255, 255, 255, 0.1);
-      --accent: #38bdf8;
-      --text: #f8fafc;
-      --font: 'Outfit', sans-serif;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
+    .launcher-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(8px);
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
-      padding: 24px;
+      justify-content: center;
+      border-radius: 12px;
+      z-index: 10;
+      gap: 20px;
     }
-    header {
-      width: 100%;
-      max-width: 1150px;
+    .launcher-title {
+      font-family: 'Px437', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--text);
+      text-shadow: 0 0 20px var(--accent);
+      margin-bottom: 10px;
+    }
+    .dev-options {
+      background: rgba(22, 30, 46, 0.9);
+      border: 1px solid var(--accent);
+      padding: 20px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      min-width: 300px;
+    }
+    .dev-options h3 {
+      color: var(--accent);
+      margin-bottom: 5px;
+      font-size: 1.1rem;
+    }
+    .dev-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
     }
-    .brand { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    .nav-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 600;
-      padding: 8px 16px;
-      border: 1px solid var(--accent);
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-    .nav-link:hover { background: rgba(56, 189, 248, 0.15); }
-    .console-frame {
-      background: #000;
-      padding: 12px;
-      border-radius: 12px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.1);
+    select, input[type="checkbox"] {
+      background: var(--bg);
+      color: var(--text);
       border: 1px solid var(--border);
+      padding: 8px;
+      border-radius: 4px;
+      font-family: var(--font);
+      outline: none;
+    }
+    select:focus { border-color: var(--accent); }
+    
+    .start-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .start-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+    }
+    .start-btn:disabled {
+      background: var(--border);
+      color: rgba(255, 255, 255, 0.5);
+      cursor: not-allowed;
     }
     canvas {
       display: block;
@@ -73,7 +99,32 @@
     <a href="/viewer.html" class="nav-link">🗺️ Open Map Viewer</a>
   </header>
 
-  <div class="console-frame">
+  <div class="console-frame" style="position: relative;">
+    <div id="launcherOverlay" class="launcher-overlay">
+      <div class="launcher-title">PUSHBOX</div>
+      
+      <div class="dev-options">
+        <h3>🛠️ Dev Configuration</h3>
+        <div class="dev-row">
+          <label for="startLevel">Start Point:</label>
+          <select id="startLevel">
+            <option value="0">Standard Intro</option>
+            <option value="-1">Skip Intro (Pixelmen)</option>
+            <option value="1">Straight to Level 1</option>
+            <option value="2">Straight to Level 2</option>
+            <option value="3">Straight to Level 3</option>
+            <option value="4">Straight to Level 4</option>
+            <option value="5">Straight to Level 5</option>
+          </select>
+        </div>
+        <div class="dev-row">
+          <label for="skipLore">Skip Lore Screens:</label>
+          <input type="checkbox" id="skipLore">
+        </div>
+      </div>
+
+      <button id="startBtn" class="start-btn" disabled>Loading Fonts...</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
   </div>
 

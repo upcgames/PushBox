@@ -90,8 +90,21 @@ if (typeof window !== 'undefined') {
   window.CONSOLE_SCREEN_BUFFER_INFO = CONSOLE_SCREEN_BUFFER_INFO;
   
   // Win32 & C stdio Low-Level Shims
-  // No-op: Win32 console text color attribute macro; color changes are handled by VirtualConsole.SetForegroundColor/SetBackgroundColor
-  window.SetConsoleTextAttribute = () => {};
+  // Win32 console text color attribute parser; unpacks foreground/background bits and applies them to VirtualConsole
+  window.SetConsoleTextAttribute = (handle, wColor) => {
+    if (window.Console) {
+      const fgWin32 = wColor & 0x0F;
+      const bgWin32 = (wColor >> 4) & 0x0F;
+      
+      // Map Win32 indices (0-15) to our DOS_PALETTE 1-16 indices
+      const WIN32_TO_CONSOLE_COLOR = [
+        9, 12, 11, 13, 10, 14, 15, 8, 16, 4, 3, 5, 2, 6, 7, 1
+      ];
+      
+      window.Console.SetForegroundColor(WIN32_TO_CONSOLE_COLOR[fgWin32]);
+      window.Console.SetBackgroundColor(WIN32_TO_CONSOLE_COLOR[bgWin32]);
+    }
+  };
   // No-op: Win32 console handle getter; returns nominal handle index for shim compatibility
   window.GetStdHandle = (handle) => handle;
   // No-op: C stdlib OS terminal command runner; screen clear/pause commands are handled natively by VirtualConsole and DOM listeners
@@ -177,18 +190,7 @@ if (typeof window !== 'undefined') {
 
   window.Sleep = async (ms) => {
     if (ms <= 0) return;
-
-    const now = performance.now();
-    if (ms <= 16) {
-      if (now - lastFrameTime >= 16) {
-        await new Promise(resolve => requestAnimationFrame(resolve));
-        lastFrameTime = performance.now();
-      }
-      return;
-    }
-
     await new Promise(resolve => setTimeout(resolve, ms));
-    lastFrameTime = performance.now();
   };
 
   window.GetConsoleScreenBufferInfo = (handle, csbi) => {
@@ -200,6 +202,23 @@ if (typeof window !== 'undefined') {
   window.ConsoleColor = {
     White: 1, Red: 2, Green: 3, Blue: 4, Cyan: 5, Magenta: 6, Yellow: 7, Gray: 8, Black: 9,
     DarkRed: 10, DarkGreen: 11, DarkBlue: 12, DarkCyan: 13, DarkMagenta: 14, DarkYellow: 15, DarkGray: 16
+  };
+
+  /* global URLSearchParams */
+  window.getDevConfig = (key) => {
+    // If the web launcher UI passed overrides, use them first
+    if (window.DEV_CONFIG_OVERRIDES) {
+      if (key === 1) return window.DEV_CONFIG_OVERRIDES.skipIntro ? 1 : 0;
+      if (key === 2) return window.DEV_CONFIG_OVERRIDES.startLevel;
+      if (key === 3) return window.DEV_CONFIG_OVERRIDES.skipLore ? 1 : 0;
+    }
+
+    // Fallback to URL parameters
+    const params = new URLSearchParams(window.location.search);
+    if (key === 1) return params.get('skipIntro') === '1' ? 1 : 0;
+    if (key === 2) return parseInt(params.get('startLevel') || params.get('startLevel1') || '0', 10);
+    if (key === 3) return params.get('skipLore') === '1' ? 1 : 0;
+    return 0;
   };
 }
 
@@ -250,7 +269,7 @@ export class VirtualConsole {
   set ForegroundColor(colorIndex) { this.SetForegroundColor(colorIndex); }
 
   Write(str) {
-    const textStr = (typeof str === 'number') ? String.fromCharCode(str) : String(str);
+    const textStr = String(str);
 
     for (let i = 0; i < textStr.length; i++) {
       const rawChar = textStr[i];
@@ -292,6 +311,7 @@ export class VirtualConsole {
         this.cursorY++;
       }
     }
+    return this;
   }
 
   Clear() {

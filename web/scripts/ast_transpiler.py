@@ -162,6 +162,9 @@ class CppToJsAST:
             
             # Recurse into the function body with the known references
             for child in node.children:
+                if func_name == "getDevConfig" and child.type == 'compound_statement':
+                    edits.append((child.start_byte, child.end_byte, "{ return window.getDevConfig(key); }"))
+                    continue
                 self._walk_for_edits(child, code_bytes, edits, my_refs, skip_node_ids, all_async_funcs)
             return # skip normal recursion since we handled it
 
@@ -240,19 +243,25 @@ class CppToJsAST:
             pass
 
         elif node.type == 'binary_expression':
-            # Handle cout << x
-            # Check if left side is cout
             left = node.children[0]
             op = node.children[1]
             right = node.children[2]
             if op.type == '<<':
-                # Reconstruct left string to see if it's cout
-                left_str = code_bytes[left.start_byte:left.end_byte].decode('utf-8')
-                if left_str.strip() == 'cout':
-                    # Replace `cout << x` with `Console.Write(x)`
-                    edits.append((left.start_byte, op.end_byte, "Console.Write("))
-                    edits.append((right.end_byte, right.end_byte, ")"))
-                    # Need to walk the right side recursively in case there are nested expressions
+                def is_cout_chain(n):
+                    if n.type == 'identifier':
+                        return code_bytes[n.start_byte:n.end_byte].decode('utf-8').strip() == 'cout'
+                    elif n.type == 'binary_expression' and len(n.children) >= 3 and n.children[1].type == '<<':
+                        return is_cout_chain(n.children[0])
+                    return False
+                
+                if is_cout_chain(left):
+                    if left.type == 'identifier':
+                        edits.append((left.start_byte, op.end_byte, "Console.Write("))
+                        edits.append((right.end_byte, right.end_byte, ")"))
+                    else:
+                        edits.append((op.start_byte, op.end_byte, ".Write("))
+                        edits.append((right.end_byte, right.end_byte, ")"))
+                    self._walk_for_edits(left, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs)
                     self._walk_for_edits(right, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs)
                     return
 

@@ -26,6 +26,7 @@ for asset_dir in ["maps_json", "backgrounds_json"]:
 func_to_module = {}
 module_to_funcs = {}
 current_mod = None
+gallery_registry = {}
 
 with open(rules_file, 'r', encoding='utf-8') as f:
     for line in f:
@@ -37,8 +38,15 @@ with open(rules_file, 'r', encoding='utf-8') as f:
             if current_mod not in module_to_funcs:
                 module_to_funcs[current_mod] = set()
         elif current_mod:
-            func_to_module[line_str] = current_mod
-            module_to_funcs[current_mod].add(line_str)
+            # Check for #gallery tag
+            parts = line_str.split('#')
+            func_name = parts[0].strip()
+            
+            func_to_module[func_name] = current_mod
+            module_to_funcs[current_mod].add(func_name)
+            
+            if len(parts) > 1 and 'gallery' in parts[1].lower():
+                gallery_registry[func_name] = current_mod
 
 def resolve_async_functions(cpp_code, base_async=None):
     if base_async is None:
@@ -222,6 +230,27 @@ def main():
         details_map[mod_name] = called_mods
 
     check_circular_dependencies(dep_map, details_map)
+
+    # Output gallery registry with static imports for bundlers
+    gallery_path = os.path.join(js_dir, "gallery_registry.js")
+    with open(gallery_path, 'w', encoding='utf-8') as f:
+        # Group by module to generate clean imports
+        mod_to_funcs = {}
+        for func_name, mod_name in gallery_registry.items():
+            if mod_name not in mod_to_funcs:
+                mod_to_funcs[mod_name] = []
+            mod_to_funcs[mod_name].append(func_name)
+        
+        # Write imports
+        for mod_name, funcs in mod_to_funcs.items():
+            f.write(f"import {{ {', '.join(funcs)} }} from './{mod_name}';\n")
+            
+        f.write("\nexport const GALLERY_FUNCTIONS = {\n")
+        for func_name in gallery_registry.keys():
+            f.write(f"  {func_name},\n")
+        f.write("};\n")
+        
+    print(f"✅ Generated static gallery registry with {len(gallery_registry)} items.")
 
 if __name__ == "__main__":
     main()

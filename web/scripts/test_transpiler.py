@@ -37,6 +37,13 @@ TEST_CASES = [
         ]
     },
     {
+        "name": "cout Chained Stream I/O",
+        "cpp": "cout << \"NIVEl: \" << nivel << \"       MOVIMIENTOS: \";",
+        "expected_contains": [
+            'Console.Write( "NIVEl: ") .Write( nivel) .Write( "       MOVIMIENTOS: ");'
+        ]
+    },
+    {
         "name": "String Length Conversion",
         "cpp": "if (i < letras.length()) { letras.length(); }",
         "expected_contains": [
@@ -121,6 +128,11 @@ void bar() {
             "ir(10, 20);",                 # 👈 Sync function: NO await!
             "await foo();"                 # 👈 Transitive async: HAS await!
         ]
+    },
+    {
+        "name": "getDevConfig Override",
+        "cpp": "int getDevConfig(int key) { return 0; }",
+        "expected_contains": ["export function getDevConfig( key) { return window.getDevConfig(key); }"]
     }
 ]
 

@@ -119,7 +119,8 @@ def main():
             if line_str.startswith("#"):
                 current_target_file = line_str[1:].strip()
             elif current_target_file:
-                rules[line_str] = current_target_file
+                func_name = line_str.split('#')[0].strip()
+                rules[func_name] = current_target_file
 
     print(f"▶ Loaded {len(rules)} function mapping rules for {len(set(rules.values()))} DSL files.")
 

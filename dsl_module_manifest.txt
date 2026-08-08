@@ -110,9 +110,10 @@ TeclasOcultas
 
 # gifs.cpp
 
-jokerGif
-DuckHuntGif
-NientiendoGif
+jokerGif #gallery
+DuckHuntGif #gallery
+NientiendoGif #gallery
+PixelmenGif #gallery
 
 # interfaces.cpp
 
@@ -133,7 +134,7 @@ AsciiFuncion
 InterfazCreditos
 InterfazYouLose
 InterfazYouWin
-InterfazCargando
+InterfazCargando #gallery
 InterfazCongratulations
 InterfazGameOver
 InterfazInstructions
@@ -205,6 +206,10 @@ ColocarEscenario
 ControlDeMovimiento
 ControlDeNiveles
 DescripcionDelPrograma
+
+# dev.cpp
+
+getDevConfig
 
 # main.cpp
 

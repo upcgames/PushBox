@@ -2022,6 +2022,16 @@ void NientiendoGif(int **matriz)
 	}
 
 }
+void PixelmenGif (int **matriz)
+{
+		desvanecimiento(1);
+		Pixelmen(matriz);
+		GIF(matriz, 0, 59, 0, 41, 19, 1, 0, 0, 1, 78);
+		ir(33, 62);
+		SonidoPixelmen();
+		colorfondo(1); colorletra(9); cout << "ENTERTAINMENT";
+
+}
 void PushBox(int **matriz){
 	int matrizint[63][80] =
 	{ { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 },
@@ -3411,7 +3421,7 @@ void Lore(int nivel){
 		ir(12, 25); Escribir("  -Empuja todos los bloques hacia sus lugares correctos,", 1);
 		ir(12, 27); Escribir("	para que se active el portal.", 1);
 		ir(12, 29); Escribir("  -ALGUNAS PAREDES SON EN REALIDAD BLOQUES", 1);
-		ir(12, 31); Escribir("  -DESC\351BRELAS Y AL FINAL D\220JALAS EN SU SITIO.", 1);
+		ir(12, 31); Escribir("  -DESCUBRELAS Y AL FINAL D\220JALAS EN SU SITIO.", 1);
 		ir(12, 33); Escribir("  -Ten cuidado con la cantidad de movimientos.", 1);
 		ir(12, 35); Escribir(" Zonas Permitidas: ", 1);
 		CuadroDeTexto(15, 37, 29, 43, 2, 0, 0); CuadroDeTexto(30, 37, 44, 43, 7, 0, 0); colorfondo(2);
@@ -4073,9 +4083,11 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 		Sleep(16);
 	}//fin while
 }
+int getDevConfig(int key) { return 0; }
+
 void ControlDeNiveles(int **matriz, int &nivel, int***Cajas, int***Paredes, int***Vacios, int ***Huecos, int **Cantidades, int **Posiciones)
 {
-	int vidas; int empezarconmusica = 0;
+	int vidas = 5; int empezarconmusica = 0;
 
 	bool sonido = 1;//Decide si el juego tendra sonido de movimientos o no
 
@@ -4090,7 +4102,9 @@ void ControlDeNiveles(int **matriz, int &nivel, int***Cajas, int***Paredes, int*
 			if (nivel == 4){ xinicio = 38; yinicio = 12; }
 			if (nivel == 5){ xinicio = 40; yinicio = 40; }
 
-			Lore(nivel);//Se muetra el Lore del nivel
+			if (getDevConfig(3) == 0) {
+				Lore(nivel);//Se muetra el Lore del nivel
+			}
 
 			ColocarEscenario(nivel, matriz);//Pone el escenario del nivel
 			RestaurarTodo(nivel, Cajas, Paredes, Vacios, Huecos, Cantidades);//Regresa las coordenadas de todo a sus valores iniciales
@@ -4164,25 +4178,29 @@ void main(){
 	int **matriz, f; matriz = new int *[136]; for (f = 0; f <= 135; f++)matriz[f] = new int[80];
 	//---------------------------------Mesaje Incial------------------------------------------------------------------------//
 	Console::CursorVisible = FALSE;
-	InterfazCargando(matriz);
-	Sleep(1000);
-	Console::SetWindowSize(80, 40);
-	desvanecimiento(9, 40);
-	Warning(2, 0, 4, 0, 31, 23, 1); Warning(1, 5, 20, 6, 26, 29, 7);
-	ir(0, 26); colorletra(1); colorfondo(9);
-	Escribir("   Para poder jugar PushBox configura la consola de Windows a 8x8.\n", 1);
-	Escribir("   Si no sabes hacerlo, sigue los siguientes pasos: \n", 1);
-	Escribir("      1. Click derecho en la parte superior de la consola.\n", 1);
-	Escribir("      2. Entra a 'Propiedades' o 'Properties'.\n", 1);
-	Escribir("      3. Entra a la pesta\244a 'Font' o 'Fuente'.\n", 1);
-	Escribir("      4. Aseg\243rate de que la fuente sea 'Raster Fonts' o 'Mapa de bits'\n", 1);
-	Escribir("     	   de tama\244o 8x8.\n", 1);
-	Escribir("   Presiona siempre 'E' para aceptar(funciona como enter).\n \n", 1);
-	Escribir("              Juego creado en la UPC, 2014 por Diego Jara y Jeremy Tornero.", 1);
-	ir(0, 0);
-	SonidoAlarma();
-	limpiartecla(2);
-	while (1){ Warning(9, 0, 4, 0, 31, 23, 1); Sleep(500); Warning(2, 0, 4, 0, 31, 23, 1); Sleep(500); if (_kbhit()){ int t = _getch(); if (t == 'e' || t == 'E')break; } }Warning(10, 0, 4, 0, 31, 23, 1);
+	if (getDevConfig(1) == 0 && getDevConfig(2) == 0) {
+		InterfazCargando(matriz);
+		Sleep(1000);
+	}
+	if (getDevConfig(1) == 0 && getDevConfig(2) == 0) {
+		Console::SetWindowSize(80, 40);
+		desvanecimiento(9, 40);
+		Warning(2, 0, 4, 0, 31, 23, 1); Warning(1, 5, 20, 6, 26, 29, 7);
+		ir(0, 26); colorletra(1); colorfondo(9);
+		Escribir("   Para poder jugar PushBox configura la consola de Windows a 8x8.\n", 1);
+		Escribir("   Si no sabes hacerlo, sigue los siguientes pasos: \n", 1);
+		Escribir("      1. Click derecho en la parte superior de la consola.\n", 1);
+		Escribir("      2. Entra a 'Propiedades' o 'Properties'.\n", 1);
+		Escribir("      3. Entra a la pesta\244a 'Font' o 'Fuente'.\n", 1);
+		Escribir("      4. Aseg\243rate de que la fuente sea 'Raster Fonts' o 'Mapa de bits'\n", 1);
+		Escribir("     	   de tama\244o 8x8.\n", 1);
+		Escribir("   Presiona siempre 'E' para aceptar(funciona como enter).\n \n", 1);
+		Escribir("              Juego creado en la UPC, 2014 por Diego Jara y Jeremy Tornero.", 1);
+		ir(0, 0);
+		SonidoAlarma();
+		limpiartecla(2);
+		while (1){ Warning(9, 0, 4, 0, 31, 23, 1); Sleep(500); Warning(2, 0, 4, 0, 31, 23, 1); Sleep(500); if (_kbhit()){ int t = _getch(); if (t == 'e' || t == 'E')break; } }Warning(10, 0, 4, 0, 31, 23, 1);
+	}
 
 	//-------------------------------------------------CONFIGURACION DE LA CONSOLA----------------------------------------------//
 	for (int i = 40; i <= 63; i++){ Console::SetWindowSize(80, i); Sleep(15); }
@@ -4191,51 +4209,58 @@ void main(){
 	char *n2; n2 = new char[8];
 	char *c; c = new char[1];
 	bool error = false;
-	desvanecimiento(9, 21, 79, 46, 0, 41);
-	colorletra(1); colorfondo(9);
-	Console::CursorVisible = TRUE;
-	ir(30, 46); Escribir("NOMBRE DEL JUGADOR", 100, 2);
-	ir(0, 48); Escribir("* Cada nombre puede tener 8 car\240cteres incluido n\243meros, e\244es y tildes.", 100, 2);
-	do{
-		ir(0, 49); for (int i = 0; i <= 79; i++)cout << " ";
-		ir(0, 49); Escribir("  Quieres usar un nombre o dos(1 o 2)? : ", 100, 2); scanf("%1s", c); limpiartecla(1);
-	} while (c[0] != '1'&&c[0] != '2');
+	if (getDevConfig(1) == 0 && getDevConfig(2) == 0) {
+		desvanecimiento(9, 21, 79, 46, 0, 41);
+		colorletra(1); colorfondo(9);
+		Console::CursorVisible = TRUE;
+		ir(30, 46); Escribir("NOMBRE DEL JUGADOR", 100, 2);
+		ir(0, 48); Escribir("* Cada nombre puede tener 8 car\240cteres incluido n\243meros, e\244es y tildes.", 100, 2);
+		do{
+			ir(0, 49); for (int i = 0; i <= 79; i++)cout << " ";
+			ir(0, 49); Escribir("  Quieres usar un nombre o dos(1 o 2)? : ", 100, 2); scanf("%1s", c); limpiartecla(1);
+		} while (c[0] != '1'&&c[0] != '2');
 
-	do{
-		ir(0, 50); for (int i = 0; i <= 79; i++)cout << " ";
-		ir(0, 50); if (c[0] == '2')Escribir("  C\243al es tu primer nombre? : ", 100, 2); else Escribir("  C\243al es tu nombre? : ", 100, 2);
-		scanf("%8s", n1); limpiartecla(1);
-		for (int i = 0; i <= strlen(n1) - 1; i++)
-		{
-			if ((n1[i] != 32) && (n1[i] <= 47 || n1[i] >= 58) && (n1[i] <= 64 || n1[i] >= 91) && (n1[i] <= 96 || n1[i] >= 123) && (n1[i] <= -97 || n1[i] >= -90) && n1[i] != -126 && n1[i] != -75 && n1[i] != -112 && n1[i] != -42 && n1[i] != -32 && n1[i] != -23)
+		do{
+			ir(0, 50); for (int i = 0; i <= 79; i++)cout << " ";
+			ir(0, 50); if (c[0] == '2')Escribir("  C\243al es tu primer nombre? : ", 100, 2); else Escribir("  C\243al es tu nombre? : ", 100, 2);
+			scanf("%8s", n1); limpiartecla(1);
+			for (int i = 0; i <= strlen(n1) - 1; i++)
 			{
-				error = true; break;
-			}error = false;
-		}
-	} while (error);
+				if ((n1[i] != 32) && (n1[i] <= 47 || n1[i] >= 58) && (n1[i] <= 64 || n1[i] >= 91) && (n1[i] <= 96 || n1[i] >= 123) && (n1[i] <= -97 || n1[i] >= -90) && n1[i] != -126 && n1[i] != -75 && n1[i] != -112 && n1[i] != -42 && n1[i] != -32 && n1[i] != -23)
+				{
+					error = true; break;
+				}error = false;
+			}
+		} while (error);
 
 
-	if (c[0] == '2')do{
-		ir(0, 51); for (int i = 0; i <= 79; i++)cout << " ";
-		ir(0, 51); Escribir("  C\243al es tu segundo nombre?: ", 100, 2); scanf("%8s", n2); limpiartecla(1);
-		for (int i = 0; i <= strlen(n2) - 1; i++)
-		{
-			if ((n2[i] != 32) && (n2[i] <= 47 || n2[i] >= 58) && (n2[i] <= 64 || n2[i] >= 91) && (n2[i] <= 96 || n2[i] >= 123) && (n2[i] <= -97 || n2[i] >= -90) && n2[i] != -126 && n2[i] != -75 && n2[i] != -112 && n2[i] != -42 && n2[i] != -32 && n2[i] != -23)
+		if (c[0] == '2')do{
+			ir(0, 51); for (int i = 0; i <= 79; i++)cout << " ";
+			ir(0, 51); Escribir("  C\243al es tu segundo nombre?: ", 100, 2); scanf("%8s", n2); limpiartecla(1);
+			for (int i = 0; i <= strlen(n2) - 1; i++)
 			{
-				error = true; break;
-			}error = false;
-		}
-	} while (error);
-	ir(34, 53); Escribir("LISTO!!!!!!!", 100, 4);
-	Cantidades[8][0] = c[0]; Cantidades[8][1] = strlen(n1); if (c[0] == '2')Cantidades[8][2] = strlen(n2);
-	for (int i = 0; i <= Cantidades[8][1] - 1; i++)Cantidades[6][i] = int(n1[i]);
-	if (c[0] == '2')for (int i = 0; i <= Cantidades[8][2] - 1; i++)Cantidades[7][i] = int(n2[i]);
+				if ((n2[i] != 32) && (n2[i] <= 47 || n2[i] >= 58) && (n2[i] <= 64 || n2[i] >= 91) && (n2[i] <= 96 || n2[i] >= 123) && (n2[i] <= -97 || n2[i] >= -90) && n2[i] != -126 && n2[i] != -75 && n2[i] != -112 && n2[i] != -42 && n2[i] != -32 && n2[i] != -23)
+				{
+					error = true; break;
+				}error = false;
+			}
+		} while (error);
+		ir(34, 53); Escribir("LISTO!!!!!!!", 100, 4);
+		Cantidades[8][0] = c[0]; Cantidades[8][1] = strlen(n1); if (c[0] == '2')Cantidades[8][2] = strlen(n2);
+		for (int i = 0; i <= Cantidades[8][1] - 1; i++)Cantidades[6][i] = int(n1[i]);
+		if (c[0] == '2')for (int i = 0; i <= Cantidades[8][2] - 1; i++)Cantidades[7][i] = int(n2[i]);
 
-	Sleep(1000);
-	//63 caracteres de altura como minimo para que la consola no de un "salto", al llegar a una esquina
-	Console::Clear();
-	system("color 80");//color de fondo por defecto: plomo, color de letra por defecto: negro
-	Console::CursorVisible = FALSE;//Oculta el cursor
+		Sleep(1000);
+		//63 caracteres de altura como minimo para que la consola no de un "salto", al llegar a una esquina
+		Console::Clear();
+		system("color 80");//color de fondo por defecto: plomo, color de letra por defecto: negro
+		Console::CursorVisible = FALSE;//Oculta el cursor
+	} else {
+		Cantidades[8][0] = '1';
+		Cantidades[8][1] = 6;
+		Cantidades[6][0] = 'P'; Cantidades[6][1] = 'L'; Cantidades[6][2] = 'A';
+		Cantidades[6][3] = 'Y'; Cantidades[6][4] = 'E'; Cantidades[6][5] = 'R';
+	}
 	//-------------------------------------------------------------------------------------------------------------------------//
 
 
@@ -4251,13 +4276,14 @@ void main(){
 	//Cantidades[nivel][1]----->Paredes,
 	//Cantidades[nivel][2]----->Huecos,
 	//Cantidades[nivel][3]----->Vacios,
-	NientiendoGif(matriz);//Se muesrta la animacion de Nientiendo y la portada
-	desvanecimiento(1);
-	Pixelmen(matriz); GIF(matriz, 0, 59, 0, 41, 19, 1, 0, 0, 1, 78); ir(33, 62); SonidoPixelmen(); colorfondo(1); colorletra(9); cout << "ENTERTAINMENT";
-	Sleep(3000);
-	desvanecimiento(9); ir(34, 30); colorletra(1); colorfondo(9); cout << "Presents..."; Sleep(1500);
+	if (getDevConfig(2) == 0) {
+		NientiendoGif(matriz);//Se muestra la animacion de Nientiendo y la portada
+		PixelmenGif(matriz);
+		Sleep(3000);
+		desvanecimiento(9); ir(34, 30); colorletra(1); colorfondo(9); cout << "Presents..."; Sleep(1500);
+	}
 	int nivel;//Sera el nivel activo en el que se encuentre el juego(Dentro del main esta en desuso)
-	nivel = 0;//solo con la excepcion de que en main se le inicia en 0
+	nivel = getDevConfig(2);//solo con la excepcion de que en main se le inicia en 0
 
 
 	//======================================================CAJAS DE TODOS LOS NIVELES======================================//
