@@ -4,6 +4,7 @@ import eslint from 'vite-plugin-eslint';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 
 export default defineConfig({
+  base: process.env.GITHUB_ACTIONS ? '/PushBox/' : '/',
   root: '.',
   publicDir: 'public',
   plugins: [
