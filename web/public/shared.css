@@ -52,6 +52,6 @@ header {
 }
 canvas {
   image-rendering: pixelated;
-  background: #000;
   display: block;
+  background: #000;
 }

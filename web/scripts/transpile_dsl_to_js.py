@@ -29,6 +29,7 @@ current_mod = None
 current_mod = None
 gallery_registry = {}
 animation_registry = set()
+animation_dep_registry = set()
 
 with open(rules_file, 'r', encoding='utf-8') as f:
     for line in f:
@@ -40,7 +41,7 @@ with open(rules_file, 'r', encoding='utf-8') as f:
             if current_mod not in module_to_funcs:
                 module_to_funcs[current_mod] = set()
         elif current_mod:
-            # Check for #gallery tag
+            # Check for #gallery / #animation / #animation-dep tags
             parts = line_str.split('#')
             func_name = parts[0].strip()
             
@@ -49,10 +50,13 @@ with open(rules_file, 'r', encoding='utf-8') as f:
             
             if len(parts) > 1:
                 for tag in parts[1:]:
-                    if 'gallery' in tag.lower():
+                    tag_clean = tag.strip().lower()
+                    if 'gallery' in tag_clean:
                         gallery_registry[func_name] = current_mod
-                    if 'animation' in tag.lower():
+                    if tag_clean == 'animation':
                         animation_registry.add(func_name)
+                    elif tag_clean == 'animation-dep':
+                        animation_dep_registry.add(func_name)
 
 def resolve_async_functions(cpp_code, base_async=None):
     if base_async is None:
@@ -193,11 +197,29 @@ def transpile_cpp_file(cpp_path, all_async_funcs, output_dir, generator_funcs=No
         sorted_funcs = ", ".join(sorted(list(funcs)))
         top_imports.append(f"import {{ {sorted_funcs} }} from './{target_mod}';")
 
+    # Isolated consoles: dsl -> gameConsole, dsl_gen -> animConsole (gallery overlay)
+    if output_dir.endswith('dsl_gen'):
+        console_import = "import { Console, ConsoleColor } from '../shims/animConsole.js';"
+    else:
+        console_import = "import { Console, ConsoleColor } from '../shims/gameConsole.js';"
+    if console_import not in seen_imports:
+        top_imports.append(console_import)
+        seen_imports.add(console_import)
+
     # Apply asset replacements before AST parsing
     for k, v in asset_replacements.items():
         code = code.replace(k, v)
         
     js_code = CppToJsAST().parse(code, all_async_funcs=all_async_funcs, generator_funcs=generator_funcs)
+
+    # For dsl/main, keep it as async (await runAnim) not async function* (yield*) for two-driver model
+    if output_dir.endswith('/dsl') and current_mod_name == 'main.js' and 'export async function* main' in js_code:
+        js_code = js_code.replace('export async function* main', 'export async function main')
+
+    # If this file now needs runAnim (async caller calling generator), add import
+    if "runAnim" in js_code and not any("runAnim" in imp for imp in top_imports):
+        # Both src/dsl and src/dsl_gen are one level under src/, animationDriver is at src/animationDriver.js
+        top_imports.append("import { runAnim } from '../animationDriver.js';")
 
     if top_imports:
         header_imports = "\n".join(top_imports) + "\n\n"
@@ -231,14 +253,23 @@ def main():
     for f in target_files:
         cpp_path = os.path.join(dsl_dir, f)
         mod_name = f.replace('.cpp', '.js')
-        called_mods = transpile_cpp_file(cpp_path, all_async_funcs, js_dir, generator_funcs=None)
+        # dsl/main should stay async (await runAnim), not async function* (yield*), so exclude main from generator defs for dsl
+        # Keep callees as generators for runAnim detection
+        dsl_gen_for_calls = animation_registry
+        dsl_gen_for_defs = set(x for x in animation_registry if x != "main")
+        # For dsl, pass full set for call detection, but definitions for main stay async
+        # Achieve by passing full set but handling main specially in transpiler via output_dir check
+        called_mods = transpile_cpp_file(cpp_path, all_async_funcs, js_dir, generator_funcs=animation_registry)
         dep_map[mod_name] = list(called_mods.keys())
         details_map[mod_name] = called_mods
 
     check_circular_dependencies(dep_map, details_map)
 
-    # 3. Second pass: Transpile all to src/dsl_gen/ with generators
+    # 3. Second pass: Transpile only tagged modules to src/dsl_gen/ with generators
     js_gen_dir = os.path.join(web_dir, "src", "dsl_gen")
+    # Wipe old _gen to remove previously generated unused modules
+    if os.path.exists(js_gen_dir):
+        shutil.rmtree(js_gen_dir)
     os.makedirs(js_gen_dir, exist_ok=True)
     
     for asset_dir in ["maps_json", "backgrounds_json"]:
@@ -247,8 +278,32 @@ def main():
         if os.path.exists(src_json):
             shutil.copytree(src_json, dst_json, dirs_exist_ok=True)
 
-    print("\n🚀 Transpiling Generator sandbox ➔ web/src/dsl_gen/")
+    # Only emit modules that have ≥1 #animation or #animation-dep (+ transitive deps)
+    tagged_modules = set()
+    for func in animation_registry.union(animation_dep_registry):
+        mod = func_to_module.get(func)
+        if mod:
+            tagged_modules.add(mod)
+    for mod in gallery_registry.values():
+        if mod in tagged_modules or any(f in animation_registry for f in module_to_funcs.get(mod, [])):
+            tagged_modules.add(mod)
+    # Expand to include transitive dependencies of tagged modules
+    # Use dep_map built for dsl (same imports)
+    expanded = set(tagged_modules)
+    queue = list(tagged_modules)
+    while queue:
+        cur = queue.pop()
+        for dep in dep_map.get(cur, []):
+            if dep not in expanded:
+                expanded.add(dep)
+                queue.append(dep)
+    tagged_modules = expanded
+
+    print(f"\n🚀 Transpiling Generator sandbox ➔ web/src/dsl_gen/ ({len(tagged_modules)} tagged+deps modules)")
     for f in target_files:
+        mod_name = f.replace('.cpp', '.js')
+        if mod_name not in tagged_modules:
+            continue
         cpp_path = os.path.join(dsl_dir, f)
         transpile_cpp_file(cpp_path, all_async_funcs, js_gen_dir, generator_funcs=animation_registry)
 
@@ -272,6 +327,23 @@ def main():
         f.write("};\n")
         
     print(f"✅ Generated static gallery registry with {len(gallery_registry)} items.")
+
+    # Output generator gallery registry for gallery-2 (only #animation #gallery)
+    gen_gallery = {k: v for k, v in gallery_registry.items() if k in animation_registry}
+    gen_gallery_path = os.path.join(js_gen_dir, "gallery_registry.js")
+    with open(gen_gallery_path, 'w', encoding='utf-8') as f:
+        mod_to_funcs = {}
+        for func_name, mod_name in gen_gallery.items():
+            if mod_name not in mod_to_funcs:
+                mod_to_funcs[mod_name] = []
+            mod_to_funcs[mod_name].append(func_name)
+        for mod_name, funcs in mod_to_funcs.items():
+            f.write(f"import {{ {', '.join(funcs)} }} from './{mod_name}';\n")
+        f.write("\nexport const GALLERY_GEN_FUNCTIONS = {\n")
+        for func_name in gen_gallery.keys():
+            f.write(f"  {func_name},\n")
+        f.write("};\n")
+    print(f"✅ Generated generator gallery registry with {len(gen_gallery)} items (gallery-2).")
 
 if __name__ == "__main__":
     main()

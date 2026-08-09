@@ -1,9 +1,9 @@
-import { VirtualConsole } from './shims/virtual_console.js';
 import './shims/audio_shim.js';
+import { gameConsole } from './shims/gameConsole.js';
 import { main } from './dsl/main.js';
 
-// Platform Virtual Console Instance (80x60 DOS Grid)
-window.Console = new VirtualConsole('gameCanvas', 80, 60, 14);
+// Platform Virtual Console Instance (80x63 DOS Grid - canonical) - single base instance shared with DSL
+window.Console = gameConsole;
 
 window.DEV_CONFIG_OVERRIDES = null;
 

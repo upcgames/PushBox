@@ -2517,7 +2517,6 @@ void InterfazCreditos(int **matriz){
 	GIF(matriz, 0, 62, 39, 79, 39, 0, 0, 0, 2, 96);
 	colorletra(9); colorfondo(5);
 	ir(65, 11); cout << " Jeremy"; ir(65, 12); cout << " Tornero";
-	esperartecla();
 }
 void InterfazYouLose(int **matriz)
 {
@@ -4117,7 +4116,7 @@ void ControlDeNiveles(int **matriz, int &nivel, int***Cajas, int***Paredes, int*
 
 		if (nivel == 6){ InterfazCongratulations(matriz, Cantidades); nivel = 8; }// Muesta la interfaz de congratulation
 		if (nivel == 7){ InterfazGameOver(matriz); nivel = 0; empezarconmusica = 1; }//Muesta la interfaz de GAME OVER
-		if (nivel == 8){ InterfazCreditos(matriz); nivel = 0; }//Muestra la interfaz de los creditos
+		if (nivel == 8){ InterfazCreditos(matriz);  esperartecla(); nivel = 0; }//Muestra la interfaz de los creditos
 		if (nivel == 9)break;//Se sale del control de niveles, con lo cual del juego	
 
 	}//fin while

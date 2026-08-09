@@ -1,3 +1,5 @@
+import { ConsoleColor } from './consoleColor.js';
+
 // DOS Console 16-Color Palette
 const DOS_PALETTE = {
   0: '#000000',  // Pitch Black
@@ -88,19 +90,19 @@ if (typeof window !== 'undefined') {
   window.Ref = Ref;
   window.Random = Random;
   window.CONSOLE_SCREEN_BUFFER_INFO = CONSOLE_SCREEN_BUFFER_INFO;
-  
+
   // Win32 & C stdio Low-Level Shims
   // Win32 console text color attribute parser; unpacks foreground/background bits and applies them to VirtualConsole
   window.SetConsoleTextAttribute = (handle, wColor) => {
     if (window.Console) {
       const fgWin32 = wColor & 0x0F;
       const bgWin32 = (wColor >> 4) & 0x0F;
-      
+
       // Map Win32 indices (0-15) to our DOS_PALETTE 1-16 indices
       const WIN32_TO_CONSOLE_COLOR = [
         9, 12, 11, 13, 10, 14, 15, 8, 16, 4, 3, 5, 2, 6, 7, 1
       ];
-      
+
       window.Console.SetForegroundColor(WIN32_TO_CONSOLE_COLOR[fgWin32]);
       window.Console.SetBackgroundColor(WIN32_TO_CONSOLE_COLOR[bgWin32]);
     }
@@ -108,11 +110,11 @@ if (typeof window !== 'undefined') {
   // No-op: Win32 console handle getter; returns nominal handle index for shim compatibility
   window.GetStdHandle = (handle) => handle;
   // No-op: C stdlib OS terminal command runner; screen clear/pause commands are handled natively by VirtualConsole and DOM listeners
-  window.system = () => {};
+  window.system = () => { };
 
   // No-op: Win32 input buffer flush; DOM keydown listeners queue keypresses asynchronously
-  window.FlushConsoleInputBuffer = () => {};
-  window.fflush = () => {};
+  window.FlushConsoleInputBuffer = () => { };
+  window.fflush = () => { };
 
   window.STD_OUTPUT_HANDLE = 1;
   window.STD_INPUT_HANDLE = 0;
@@ -210,10 +212,7 @@ if (typeof window !== 'undefined') {
     }
   };
 
-  window.ConsoleColor = {
-    White: 1, Red: 2, Green: 3, Blue: 4, Cyan: 5, Magenta: 6, Yellow: 7, Gray: 8, Black: 9,
-    DarkRed: 10, DarkGreen: 11, DarkBlue: 12, DarkCyan: 13, DarkMagenta: 14, DarkYellow: 15, DarkGray: 16
-  };
+  window.ConsoleColor = ConsoleColor;
 
   /* global URLSearchParams */
   window.getDevConfig = (key) => {
@@ -234,12 +233,18 @@ if (typeof window !== 'undefined') {
 }
 
 export class VirtualConsole {
-  constructor(canvasId, cols = 80, rows = 60, tileSize = 14) {
+  constructor(canvasId, cols = 80, rows = 60, tileSize = 14, transparent = false) {
     this.canvas = document.getElementById(canvasId);
+    if (!this.canvas) {
+      console.warn(`[VirtualConsole] canvas #${canvasId} not found at ctor - creating offscreen dummy to avoid crash (gallery vs main)`);
+      this.canvas = document.createElement('canvas');
+      this.canvas.id = canvasId;
+    }
     this.ctx = this.canvas.getContext('2d');
     this.cols = cols;
     this.rows = rows;
     this.tileSize = tileSize;
+    this.transparent = transparent;
 
     this.cursorX = 0;
     this.cursorY = 0;
@@ -308,8 +313,16 @@ export class VirtualConsole {
       const px = this.cursorX * this.tileSize;
       const py = this.cursorY * this.tileSize;
 
-      this.ctx.fillStyle = this.bgColor;
-      this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+      if (this.transparent) {
+        this.ctx.clearRect(px, py, this.tileSize, this.tileSize);
+        if (this.bgColor !== DOS_PALETTE[9]) {
+          this.ctx.fillStyle = this.bgColor;
+          this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+        }
+      } else {
+        this.ctx.fillStyle = this.bgColor;
+        this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+      }
 
       this.ctx.fillStyle = this.fgColor;
       this.ctx.font = `${this.tileSize}px "Px437", monospace`;
@@ -326,8 +339,12 @@ export class VirtualConsole {
   }
 
   Clear() {
-    this.ctx.fillStyle = DOS_PALETTE[9]; // Pitch Black
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    if (this.transparent) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    } else {
+      this.ctx.fillStyle = DOS_PALETTE[9]; // Pitch Black
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
     this.cursorX = 0;
     this.cursorY = 0;
   }

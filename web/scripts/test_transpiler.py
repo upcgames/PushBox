@@ -133,6 +133,24 @@ void bar() {
         "name": "getDevConfig Override",
         "cpp": "int getDevConfig(int key) { return 0; }",
         "expected_contains": ["export function getDevConfig( key) { return window.getDevConfig(key); }"]
+    },
+    {
+        "name": "Generator function* with yield (Sleep inside generator)",
+        "cpp": "void foo() { Sleep(10); }",
+        "generator_funcs": ["foo"],
+        "expected_contains": ["export async function* foo", "yield(10)"]
+    },
+    {
+        "name": "Generator yield* delegation",
+        "cpp": "void foo() { Sleep(10); } void bar() { foo(); }",
+        "generator_funcs": ["foo", "bar"],
+        "expected_contains": ["export async function* foo", "export async function* bar", "yield* foo()"]
+    },
+    {
+        "name": "Generator paint cost not in transpiler (kept in gallery-2)",
+        "cpp": "void foo() { Sleep(0); }",
+        "generator_funcs": ["foo"],
+        "expected_contains": ["export async function* foo", "yield(0)"]
     }
 ]
 
@@ -158,8 +176,9 @@ def run_tests():
                 cpp_input = cpp_input.replace(k, v)
                 
             all_async_funcs = resolve_async_functions(cpp_input)
+            generator_funcs = set(test.get("generator_funcs", []))
             ast_engine = CppToJsAST()
-            js_output = ast_engine.parse(cpp_input, all_async_funcs=all_async_funcs)
+            js_output = ast_engine.parse(cpp_input, all_async_funcs=all_async_funcs, generator_funcs=generator_funcs)
             
             all_found = True
             for exp in expected:

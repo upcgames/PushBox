@@ -93,7 +93,7 @@ class CppToJsAST:
         
         return final_str
 
-    def _walk_for_edits(self, node, code_bytes, edits, current_func_refs, skip_node_ids=None, all_async_funcs=None, generator_funcs=None, is_inside_generator=False):
+    def _walk_for_edits(self, node, code_bytes, edits, current_func_refs, skip_node_ids=None, all_async_funcs=None, generator_funcs=None, is_inside_generator=False, is_current_async=False):
         if skip_node_ids is None:
             skip_node_ids = set()
         if all_async_funcs is None:
@@ -142,7 +142,9 @@ class CppToJsAST:
                     if child.type == 'identifier':
                         is_async = func_name in all_async_funcs
                         is_gen = func_name in generator_funcs
-                        if is_gen:
+                        if is_gen and is_async:
+                            export_kw = "export async function*"
+                        elif is_gen:
                             export_kw = "export function*"
                         else:
                             export_kw = "export async function" if is_async else "export function"
@@ -171,7 +173,7 @@ class CppToJsAST:
                 if func_name == "getDevConfig" and child.type == 'compound_statement':
                     edits.append((child.start_byte, child.end_byte, "{ return window.getDevConfig(key); }"))
                     continue
-                self._walk_for_edits(child, code_bytes, edits, my_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator=(func_name in generator_funcs))
+                self._walk_for_edits(child, code_bytes, edits, my_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator=(func_name in generator_funcs), is_current_async=(func_name in all_async_funcs))
             return # skip normal recursion since we handled it
 
         elif node.type == 'call_expression':
@@ -214,8 +216,12 @@ class CppToJsAST:
                             
                             is_async = func_name in all_async_funcs
                             is_gen_target = func_name in generator_funcs
-                            if is_gen_target:
+                            if is_gen_target and is_inside_generator:
                                 edits.append((node.start_byte, node.start_byte, f"yield* (function* () {{ {setup_str} yield* "))
+                                edits.append((node.end_byte, node.end_byte, f"; {teardown_str} }})()"))
+                            elif is_gen_target and not is_inside_generator:
+                                # Caller is not a generator - emit plain call (no yield*) to keep file parsable
+                                edits.append((node.start_byte, node.start_byte, f"(() => {{ {setup_str} "))
                                 edits.append((node.end_byte, node.end_byte, f"; {teardown_str} }})()"))
                             elif is_async:
                                 # Wrap the entire call_expression with async/await
@@ -226,16 +232,40 @@ class CppToJsAST:
                                 edits.append((node.end_byte, node.end_byte, f"; {teardown_str} }})()"))
                         else:
                             # Not wrapped, but might still need await or yield!
-                            if func_name in generator_funcs:
+                            if func_name in generator_funcs and is_inside_generator:
                                 edits.append((node.start_byte, node.start_byte, "yield* "))
+                            elif func_name in generator_funcs and not is_inside_generator:
+                                if is_current_async:
+                                    # Caller async, callee generator -> await runAnim(func, args) e.g. PixelmenGif(matriz) -> await runAnim(PixelmenGif, matriz)
+                                    args_node = node.children[1] if len(node.children) > 1 and node.children[1].type == 'argument_list' else None
+                                    if args_node:
+                                        args_text = code_bytes[args_node.start_byte+1:args_node.end_byte-1].decode('utf-8').strip()
+                                        if args_text:
+                                            edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name}, {args_text})"))
+                                        else:
+                                            edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name})"))
+                                    else:
+                                        edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name})"))
+                                else:
+                                    pass # plain call - keep parsable when caller is not a generator
                             elif func_name in all_async_funcs:
                                 if func_name == "Sleep" and is_inside_generator:
                                     edits.append((node.start_byte, func_name_node.end_byte, "yield"))
                                 else:
                                     edits.append((node.start_byte, node.start_byte, "await "))
                     else:
-                        if func_name in generator_funcs:
+                        if func_name in generator_funcs and is_inside_generator:
                             edits.append((node.start_byte, node.start_byte, "yield* "))
+                        elif func_name in generator_funcs and not is_inside_generator and is_current_async:
+                            args_node2 = node.children[1] if len(node.children) > 1 and node.children[1].type == 'argument_list' else None
+                            if args_node2:
+                                args_text2 = code_bytes[args_node2.start_byte+1:args_node2.end_byte-1].decode('utf-8').strip()
+                                if args_text2:
+                                    edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name}, {args_text2})"))
+                                else:
+                                    edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name})"))
+                            else:
+                                edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name})"))
                         elif func_name in all_async_funcs:
                             if func_name == "Sleep" and is_inside_generator:
                                 edits.append((node.start_byte, func_name_node.end_byte, "yield"))
@@ -248,8 +278,18 @@ class CppToJsAST:
                     edits.append((func_name_node.start_byte, func_name_node.end_byte, "String.fromCharCode"))
                 else:
                     # Normal function call, just check if it needs await or yield
-                    if func_name in generator_funcs:
+                    if func_name in generator_funcs and is_inside_generator:
                         edits.append((node.start_byte, node.start_byte, "yield* "))
+                    elif func_name in generator_funcs and not is_inside_generator and is_current_async:
+                        args_node3 = node.children[1] if len(node.children) > 1 and node.children[1].type == 'argument_list' else None
+                        if args_node3:
+                            args_text3 = code_bytes[args_node3.start_byte+1:args_node3.end_byte-1].decode('utf-8').strip()
+                            if args_text3:
+                                edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name}, {args_text3})"))
+                            else:
+                                edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name})"))
+                        else:
+                            edits.append((node.start_byte, node.end_byte, f"await runAnim({func_name})"))
                     elif func_name in all_async_funcs:
                         if func_name == "Sleep" and is_inside_generator:
                             edits.append((node.start_byte, func_name_node.end_byte, "yield"))
@@ -286,8 +326,8 @@ class CppToJsAST:
                     else:
                         edits.append((op.start_byte, op.end_byte, ".Write("))
                         edits.append((right.end_byte, right.end_byte, ")"))
-                    self._walk_for_edits(left, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs)
-                    self._walk_for_edits(right, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs)
+                    self._walk_for_edits(left, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator, is_current_async)
+                    self._walk_for_edits(right, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator, is_current_async)
                     return
 
         elif node.type == 'new_expression':
@@ -381,4 +421,4 @@ class CppToJsAST:
                 if var_name in current_func_refs:
                     edits.append((child.start_byte, child.end_byte, f"{var_name}.v"))
             else:
-                self._walk_for_edits(child, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator)
+                self._walk_for_edits(child, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator, is_current_async)
