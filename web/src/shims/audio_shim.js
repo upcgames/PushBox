@@ -23,7 +23,7 @@ export function PlaySound(soundFile, reserved, flags) {
     const filename = (typeof soundFile === 'string') ? soundFile.split('/').pop() : '';
     if (!filename) return;
 
-    const audioPath = `/audio/${filename}`;
+    const audioPath = `${import.meta.env.BASE_URL}audio/${filename}`;
     const audio = new Audio(audioPath);
     
     if ((flags & window.SND_LOOP) !== 0) {
