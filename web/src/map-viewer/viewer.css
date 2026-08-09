@@ -101,6 +101,20 @@ body {
   margin-bottom: 12px;
 }
 
+.hidden { display: none !important; }
+.tab-switch { display: flex; gap: 8px; }
+.tab-switch-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--bg-panel-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+.tab-switch-btn.active { background: rgba(56,189,248,0.15); color: var(--accent-cyan); border-color: var(--accent-cyan); }
+
 .map-list { display: flex; flex-direction: column; gap: 8px; }
 
 .map-btn {
@@ -181,8 +195,8 @@ body {
 .canvas-container {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: safe center;
+  justify-content: safe center;
   overflow: auto;
   padding: 24px;
 }

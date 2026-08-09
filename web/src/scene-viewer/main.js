@@ -1,11 +1,11 @@
 import { GALLERY_GEN_FUNCTIONS as GALLERY_GEN } from '../generated_anim/gallery_registry.js';
-import { VirtualConsole } from '../shims/virtual_console.js';
 import { ConsoleColor } from '../shims/consoleColor.js';
 import '../shims/audio_shim.js';
 import { runAnim } from '../animationDriver.js';
+import { gameConsole } from '../shims/gameConsole.js';
 
-// Canonical gallery - lazy consoles after DOM
-let baseConsole, animConsole;
+// Single canonical console (like src/game.js) — no dual overlay
+let gameConsoleRef = null;
 window.ConsoleColor = ConsoleColor;
 
 // Driver state
@@ -14,7 +14,6 @@ let isPlaying = false;
 async function playGenerator(generatorFn) {
   if (isPlaying) return;
   isPlaying = true;
-
   const btn = document.getElementById('playBtn');
   const sel = document.getElementById('animSelect');
   const status = document.getElementById('status');
@@ -22,11 +21,10 @@ async function playGenerator(generatorFn) {
   if (sel) { sel.disabled = true; }
   if (status) status.textContent = 'Playing...';
 
-  if (!baseConsole) baseConsole = new VirtualConsole('baseCanvas', 80, 63, 14);
-  if (!animConsole) animConsole = new VirtualConsole('animCanvas', 80, 63, 14, true);
-  baseConsole.Clear();
-  animConsole.Clear();
-  window.Console = animConsole;
+  if (!gameConsoleRef) gameConsoleRef = gameConsole;
+  await gameConsoleRef.loadAssets();
+  gameConsoleRef.Clear();
+  window.Console = gameConsoleRef;
 
   const matriz = Array.from({ length: 136 }, () => Array(80).fill(0));
   const start = performance.now();
@@ -39,11 +37,21 @@ async function playGenerator(generatorFn) {
   if (status) status.textContent = `Finished in ${total}ms`;
 }
 
+function getAnimFromUrl() {
+  return new window.URLSearchParams(window.location.search).get('anim');
+}
+
+function setAnimInUrl(name) {
+  const url = new window.URL(window.location.href);
+  if (name) url.searchParams.set('anim', name);
+  else url.searchParams.delete('anim');
+  window.history.replaceState(null, '', url);
+}
+
 async function initGallery() {
-  await document.fonts.ready;
-  if (!baseConsole) baseConsole = new VirtualConsole('baseCanvas', 80, 63, 14);
-  if (!animConsole) animConsole = new VirtualConsole('animCanvas', 80, 63, 14, true);
-  window.Console = animConsole;
+  if (!gameConsoleRef) gameConsoleRef = gameConsole;
+  await gameConsoleRef.loadAssets();
+  window.Console = gameConsoleRef;
 
   const select = document.getElementById('animSelect');
   const btn = document.getElementById('playBtn');
@@ -53,9 +61,24 @@ async function initGallery() {
     opt.value = name; opt.textContent = name;
     select.appendChild(opt);
   }
+  const initial = getAnimFromUrl();
+  if (initial && GALLERY_GEN[initial]) select.value = initial;
+
+  select.addEventListener('change', () => {
+    if (GALLERY_GEN[select.value]) setAnimInUrl(select.value);
+  });
+
   btn.addEventListener('click', () => {
     const name = select.value;
-    if (GALLERY_GEN[name]) playGenerator(GALLERY_GEN[name]);
+    if (GALLERY_GEN[name]) {
+      setAnimInUrl(name);
+      playGenerator(GALLERY_GEN[name]);
+    }
+  });
+
+  window.addEventListener('popstate', () => {
+    const next = getAnimFromUrl();
+    if (next && GALLERY_GEN[next] && select.value !== next) select.value = next;
   });
 }
 

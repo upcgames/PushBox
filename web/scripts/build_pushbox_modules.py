@@ -235,6 +235,12 @@ def main():
     with open(col_path, 'w', encoding='utf-8') as cjf:
         json.dump(col_data, cjf, indent=2)
 
+    # sprite/manifest for map-viewer Sprites tab (all matrices except maps)
+    sprite_keys = sorted([m.replace('.json','') for m in os.listdir(json_dir) if m.endswith('.json') and not m.startswith('mapa') and m not in ('collision_data.json', '_manifest.json')])
+    manifest_path = os.path.join(json_dir, "_manifest.json")
+    with open(manifest_path, 'w', encoding='utf-8') as mf:
+        json.dump({"maps": sorted([m.replace('.json','') for m in os.listdir(json_dir) if m.startswith('mapa')]), "sprites": sprite_keys, "backgrounds": sorted([os.path.splitext(f)[0] for f in os.listdir(os.path.join(os.path.dirname(json_dir), 'backgrounds_json')) if f.endswith('.json')])}, mf, indent=2)
+
     if warnings:
         print("\n⚠️ MATRIX EXTRACTOR WARNINGS:")
         for w in warnings:

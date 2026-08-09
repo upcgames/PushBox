@@ -329,6 +329,13 @@ class CppToJsAST:
                     self._walk_for_edits(left, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator, is_current_async)
                     self._walk_for_edits(right, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator, is_current_async)
                     return
+            elif op.type == '/':
+                    # C++ int / int trunc → JS Math.floor for all / (PushBox uses only int)
+                    edits.append((node.start_byte, node.start_byte, "Math.floor("))
+                    edits.append((node.end_byte, node.end_byte, ")"))
+                    self._walk_for_edits(left, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator, is_current_async)
+                    self._walk_for_edits(right, code_bytes, edits, current_func_refs, skip_node_ids, all_async_funcs, generator_funcs, is_inside_generator, is_current_async)
+                    return
 
         elif node.type == 'new_expression':
             pass # We will handle new expressions globally with regex since C++ new int*[136] is hard to parse in JS

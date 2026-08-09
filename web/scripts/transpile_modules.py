@@ -118,10 +118,8 @@ def transpile_cpp_file(cpp_path, all_async_funcs, output_dir, generator_funcs=No
         sorted_funcs = ", ".join(sorted(list(funcs)))
         top_imports.append(f"import {{ {sorted_funcs} }} from './{target_mod}';")
 
-    if output_dir.endswith('generated_anim'):
-        console_import = "import { Console, ConsoleColor } from '../shims/animConsole.js';"
-    else:
-        console_import = "import { Console, ConsoleColor } from '../shims/gameConsole.js';"
+    # Single canonical console (80x63 gameCanvas) for both generated and gallery
+    console_import = "import { Console, ConsoleColor } from '../shims/gameConsole.js';"
     if console_import not in seen_imports:
         top_imports.append(console_import)
         seen_imports.add(console_import)
@@ -185,7 +183,7 @@ def main():
 
     check_circular_dependencies(dep_map, details_map)
 
-    # 3. Second pass: transpile only tagged modules to src/generated_anim/ with animConsole for gallery
+    # 3. Second pass: transpile only tagged modules to src/generated_anim/ (gallery subset)
     anim_js_dir = os.path.join(web_dir, "src", "generated_anim")
     if os.path.exists(anim_js_dir):
         shutil.rmtree(anim_js_dir)

@@ -169,6 +169,11 @@ void bar() {
         "cpp": "void GIF(int x) { Sleep(10); } void caller() { GIF(1); }",
         "generator_funcs": ["GIF"],
         "expected_contains": ["export async function* GIF", "export async function caller", "runAnim"]
+    },
+    {
+        "name": "Integer Division (C++ int / int → Math.floor)",
+        "cpp": "int a = 5 / 2; int b = colorcero / 100000; int c = (colorcero % 100000) / 1000; int d = na / 100;",
+        "expected_contains": ["Math.floor(5 / 2)", "Math.floor(colorcero / 100000)", "Math.floor((colorcero % 100000) / 1000)", "Math.floor(na / 100)"]
     }
 ]
 

@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (e) { /* ignore parse errors */ }
 
-  // Wait for the custom retro font to load to prevent canvas rendering gaps
-  await document.fonts.ready;
+  // Wait for Px437 + extended glyphs (176 ░) via VirtualConsole loadAssets
+  await gameConsole.loadAssets();
   startBtn.textContent = 'START GAME (Enter)';
   startBtn.disabled = false;
 

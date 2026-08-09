@@ -312,7 +312,6 @@ export class VirtualConsole {
       const char = decodeCp437(rawChar);
       const px = this.cursorX * this.tileSize;
       const py = this.cursorY * this.tileSize;
-
       if (this.transparent) {
         this.ctx.clearRect(px, py, this.tileSize, this.tileSize);
         if (this.bgColor !== DOS_PALETTE[9]) {
@@ -345,7 +344,21 @@ export class VirtualConsole {
       this.ctx.fillStyle = DOS_PALETTE[9]; // Pitch Black
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
+    this.ctx.font = `${this.tileSize}px "Px437", monospace`;
     this.cursorX = 0;
     this.cursorY = 0;
+  }
+
+  async loadAssets() {
+    // Preload Px437 extended CP437 glyphs used by PushBox (176 ░, 219 █ etc.) so first y=0 telaraña isn't half-width
+    const glyphs = '░▒▓█▄▌▐▀ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒';
+    try {
+      if (document.fonts?.load) {
+        await document.fonts.load(`${this.tileSize}px "Px437"`, glyphs);
+        await document.fonts.ready;
+      }
+    } catch {}
+    // ensure ctx font is set after load
+    this.ctx.font = `${this.tileSize}px "Px437", monospace`;
   }
 }

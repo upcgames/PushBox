@@ -1,13 +1,15 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import eslint from 'vite-plugin-eslint';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 
 export default defineConfig({
   root: '.',
   publicDir: 'public',
   plugins: [
+    svelte(),
     eslint({
-      include: ['src/**/*.js']
+      include: ['src/**/*.js', 'src/**/*.svelte']
     })
   ],
   server: {
@@ -17,9 +19,9 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        mapViewer: resolve(__dirname, 'map-viewer.html'),
-        sceneViewer: resolve(__dirname, 'scene-viewer.html')
+        main: resolve(import.meta.dirname, 'index.html'),
+        mapViewer: resolve(import.meta.dirname, 'map-viewer.html'),
+        sceneViewer: resolve(import.meta.dirname, 'scene-viewer.html')
       }
     }
   }
