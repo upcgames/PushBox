@@ -70,7 +70,7 @@ function renderMapList() {
 
 async function loadCollisionData() {
   try {
-    const res = await fetch('/src/dsl/maps_json/collision_data.json');
+    const res = await fetch('/pushbox_modules/maps_json/collision_data.json');
     if (res.ok) {
       collisionData = await res.json();
     }
@@ -88,7 +88,7 @@ async function selectMap(key) {
   currentMapTitleEl.textContent = `${key.toUpperCase()} (60 × 80)`;
 
   try {
-    const mod = await import(`../dsl/maps_json/${key}.json`);
+    const mod = await import(`../../pushbox_modules/maps_json/${key}.json`);
     currentMapData = mod.default;
   } catch (err) {
     console.error(`Failed to load ${key}.json:`, err);

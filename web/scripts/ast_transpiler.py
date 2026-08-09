@@ -5,7 +5,7 @@ class CppToJsAST:
     def __init__(self):
         self.language = Language(tree_sitter_cpp.language())
         self.parser = Parser(self.language)
-        # Pre-populate with known DSL functions for isolated tests
+        # Pre-populate with known game functions for isolated tests
         self.symbol_table = {
             "MenuPrincipal": [0],
             "InterfazPausa": [1, 2],

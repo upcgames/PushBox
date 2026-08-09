@@ -1,4 +1,4 @@
-import { GALLERY_GEN_FUNCTIONS as GALLERY_GEN } from '../dsl_gen/gallery_registry.js';
+import { GALLERY_GEN_FUNCTIONS as GALLERY_GEN } from '../generated_anim/gallery_registry.js';
 import { VirtualConsole } from '../shims/virtual_console.js';
 import { ConsoleColor } from '../shims/consoleColor.js';
 import '../shims/audio_shim.js';

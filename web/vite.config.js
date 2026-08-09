@@ -18,7 +18,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        viewer: resolve(__dirname, 'viewer.html')
+        mapViewer: resolve(__dirname, 'map-viewer.html'),
+        sceneViewer: resolve(__dirname, 'scene-viewer.html')
       }
     }
   }

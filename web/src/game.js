@@ -1,8 +1,8 @@
 import './shims/audio_shim.js';
 import { gameConsole } from './shims/gameConsole.js';
-import { main } from './dsl/main.js';
+import { main } from './generated/main.js';
 
-// Platform Virtual Console Instance (80x63 DOS Grid - canonical) - single base instance shared with DSL
+// Platform Virtual Console Instance (80x63 DOS Grid - canonical) - single base instance shared with generated modules
 window.Console = gameConsole;
 
 window.DEV_CONFIG_OVERRIDES = null;

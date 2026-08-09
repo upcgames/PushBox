@@ -4,13 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "pipeline": "python3 scripts/copy_resources.py && python3 scripts/build_pushbox_dsl.py && python3 scripts/transpile_dsl_to_js.py && eslint src/",
-    "lint": "eslint src/",
-    "dev": "npm run pipeline && vite",
-    "venv:pipeline": "source .venv/bin/activate && npm run pipeline",
-    "venv:test": "source .venv/bin/activate && python3 scripts/test_transpiler.py",
-    "build": "npm run pipeline && vite build",
-    "preview": "vite preview"
+    "generate": "make generate",
+    "test": "make test",
+    "dev": "npm run generate && vite",
+    "build": "npm run generate && vite build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

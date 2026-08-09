@@ -5,12 +5,12 @@ web/node_modules/
 web/dist/
 
 # Generated web pipeline artifacts
-web/pushbox_dsl/
-web/src/dsl/
+web/pushbox_modules/
+web/src/generated/
+web/src/generated_anim/
 web/public/audio/
 
 # Old root artifacts (Cleaned)
-/pushbox_dsl/
 /pushbox_js/
 /viewer/
 /scripts/
@@ -18,4 +18,4 @@ web/public/audio/
 /source-clean.cpp
 /maps_json/
 *.json.tmp
-/web/src/dsl_gen/
+

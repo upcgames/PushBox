@@ -9,10 +9,10 @@ web_dir = os.path.dirname(script_dir)
 repo_root = os.path.dirname(web_dir)
 
 source_file = os.path.join(repo_root, "Retro Push Box", "Source Code.cpp")
-rules_file = os.path.join(repo_root, "dsl_module_manifest.txt")
-dsl_dir = os.path.join(web_dir, "pushbox_dsl")
-json_dir = os.path.join(dsl_dir, "maps_json")
-bg_json_dir = os.path.join(dsl_dir, "backgrounds_json")
+rules_file = os.path.join(web_dir, "modules_manifest.txt")
+modules_dir = os.path.join(web_dir, "pushbox_modules")
+json_dir = os.path.join(modules_dir, "maps_json")
+bg_json_dir = os.path.join(modules_dir, "backgrounds_json")
 
 def strip_comments(code_text):
     pattern = re.compile(
@@ -88,7 +88,7 @@ def extract_collision_data(world_data_content):
 
 def main():
     print("==================================================")
-    print("🚀 PushBox DSL Extractor & Disassembler Pipeline")
+    print("🚀 PushBox modules Extractor & Disassembler Pipeline")
     print("==================================================")
 
     if not os.path.exists(source_file):
@@ -99,7 +99,7 @@ def main():
         print(f"❌ Fatal Error: Manifest file not found at {rules_file}")
         sys.exit(1)
 
-    os.makedirs(dsl_dir, exist_ok=True)
+    os.makedirs(modules_dir, exist_ok=True)
     os.makedirs(json_dir, exist_ok=True)
     os.makedirs(bg_json_dir, exist_ok=True)
 
@@ -122,7 +122,7 @@ def main():
                 func_name = line_str.split('#')[0].strip()
                 rules[func_name] = current_target_file
 
-    print(f"▶ Loaded {len(rules)} function mapping rules for {len(set(rules.values()))} DSL files.")
+    print(f"▶ Loaded {len(rules)} function mapping rules for {len(set(rules.values()))} modules files.")
 
     matrix_pattern = re.compile(
         r'int\s+([A-Za-z0-9_]+)\s*\[\s*(\d+)\s*\]\s*\[\s*(\d+)\s*\]\s*=\s*'
@@ -191,7 +191,7 @@ def main():
         replacements.append({
             "start_char": start_pos,
             "end_char": end_pos,
-            "comment": f"// @DSL_EXTRACTED_MATRIX {var_name} maps_json/{json_name}.json"
+            "comment": f"// @MODULE_EXTRACTED_MATRIX {var_name} maps_json/{json_name}.json"
         })
 
     # Background asset extraction: (Fondo01..Fondo05)
@@ -227,7 +227,7 @@ def main():
         replacements.append({
             "start_char": bg_start,
             "end_char": arr_end,
-            "comment": f"\n\t// @DSL_EXTRACTED_BACKGROUND {fondo_name} backgrounds_json/{fondo_name}.json\n"
+            "comment": f"\n\t// @MODULE_EXTRACTED_BACKGROUND {fondo_name} backgrounds_json/{fondo_name}.json\n"
         })
 
     col_data = extract_collision_data(content)
@@ -246,7 +246,7 @@ def main():
             print(f"  ❌ {e}")
         sys.exit(1)
 
-    print(f"▶ Extracted {len(decl_matches)} matrices + {len(bg_matches)} backgrounds + collision_data.json to web/pushbox_dsl/")
+    print(f"▶ Extracted {len(decl_matches)} matrices + {len(bg_matches)} backgrounds + collision_data.json to web/pushbox_modules/")
 
     # Sort replacements by start_char in reverse order so character indices remain valid
     replacements.sort(key=lambda x: x['start_char'], reverse=True)
@@ -300,20 +300,20 @@ def main():
     if len(rules) != extracted_count or missing_rules:
         print(f"\n❌ FATAL COVERAGE ERROR: Expected {len(rules)} functions, extracted {extracted_count}.")
         if missing_rules:
-            print(f"Missing DSL rules for: {missing_rules}")
+            print(f"Missing modules rules for: {missing_rules}")
         sys.exit(1)
 
     for target_filename, func_bodies in file_buffers.items():
-        out_path = os.path.join(dsl_dir, target_filename)
+        out_path = os.path.join(modules_dir, target_filename)
         with open(out_path, 'w', encoding='utf-8') as out_f:
             out_f.write("\n\n".join(func_bodies) + "\n")
 
     print("\n==================================================")
-    print("✅ PUSHBOX DSL PIPELINE COMPLETED SUCCESSFULLY!")
+    print("✅ PUSHBOX modules PIPELINE COMPLETED SUCCESSFULLY!")
     print("==================================================")
-    print(f"  • Matrices extracted: {len(decl_matches)} JSONs + collision_data.json in web/pushbox_dsl/maps_json/")
-    print(f"  • Backgrounds extracted: {len(bg_matches)} JSONs in web/pushbox_dsl/backgrounds_json/")
-    print(f"  • Modular DSL files generated: {len(file_buffers)} files inside web/pushbox_dsl/")
+    print(f"  • Matrices extracted: {len(decl_matches)} JSONs + collision_data.json in web/pushbox_modules/maps_json/")
+    print(f"  • Backgrounds extracted: {len(bg_matches)} JSONs in web/pushbox_modules/backgrounds_json/")
+    print(f"  • Modular modules files generated: {len(file_buffers)} files inside web/pushbox_modules/")
 
 if __name__ == "__main__":
     main()

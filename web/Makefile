@@ -1,31 +1,25 @@
-MANIFEST = ../dsl_module_manifest.txt
+PYTHON ?= $(shell test -x .venv/bin/python && echo .venv/bin/python || echo python3)
+MANIFEST = modules_manifest.txt
 SOURCE_CPP = ../Retro\ Push\ Box/Source\ Code.cpp
-DSL_STAMP = pushbox_dsl/.stamp
-JS_STAMP = src/dsl/.stamp
+MODULES_STAMP = pushbox_modules/.stamp
+JS_STAMP = src/generated/.stamp
+ANIM_STAMP = src/generated_anim/.stamp
 
-.PHONY: all clean pipeline lint
+.PHONY: generate test
 
-all: $(JS_STAMP)
+generate: $(JS_STAMP) $(ANIM_STAMP)
 
-$(DSL_STAMP): $(MANIFEST) $(SOURCE_CPP) scripts/build_pushbox_dsl.py
-	python3 scripts/build_pushbox_dsl.py
-	touch $(DSL_STAMP)
+$(MODULES_STAMP): $(MANIFEST) $(SOURCE_CPP) scripts/build_pushbox_modules.py
+	$(PYTHON) scripts/build_pushbox_modules.py
+	touch $(MODULES_STAMP)
 
-$(JS_STAMP): $(DSL_STAMP) scripts/transpile_dsl_to_js.py scripts/transpiler_core.py scripts/test_transpiler.py
-	python3 scripts/test_transpiler.py
-	python3 scripts/transpile_dsl_to_js.py
+test: scripts/test_transpiler.py scripts/dag.py scripts/ast_transpiler.py
+	$(PYTHON) scripts/test_transpiler.py
 	npx eslint src/
+
+$(JS_STAMP): $(MODULES_STAMP) scripts/transpile_modules.py scripts/ast_transpiler.py scripts/dag.py scripts/copy_resources.py
+	$(PYTHON) scripts/transpile_modules.py
 	touch $(JS_STAMP)
+	touch $(ANIM_STAMP)
 
-pipeline:
-	python3 scripts/test_transpiler.py
-	python3 scripts/build_pushbox_dsl.py
-	python3 scripts/transpile_dsl_to_js.py
-	npx eslint src/
-	touch $(DSL_STAMP) $(JS_STAMP)
 
-lint:
-	npx eslint src/
-
-clean:
-	rm -rf pushbox_dsl src/dsl

@@ -29,25 +29,4 @@ export async function runAnim(generatorFn, ...args) {
   });
 }
 
-export async function runAsyncGenerator(gen) {
-  // gen is already instantiated async generator
-  let virtualTime = 0;
-  let nextYield = await gen.next();
-  let startTime = null;
-  return new Promise(resolve => {
-    async function advance(elapsed) {
-      let it = 0;
-      while (nextYield && !nextYield.done && virtualTime + (nextYield.value ?? 0) + CELL_PAINT_COST <= elapsed) {
-        virtualTime += (nextYield.value ?? 0) + CELL_PAINT_COST;
-        nextYield = await gen.next();
-        if (++it > 10000) break;
-      }
-    }
-    async function tick(ts) {
-      if (startTime === null) startTime = ts;
-      await advance(ts - startTime);
-      if (!nextYield.done) requestAnimationFrame(tick); else { resolve(); }
-    }
-    requestAnimationFrame(tick);
-  });
-}
+

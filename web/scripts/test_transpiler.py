@@ -1,6 +1,6 @@
 import sys
 from ast_transpiler import CppToJsAST
-from transpile_dsl_to_js import resolve_async_functions
+from dag import resolve_async_functions
 
 TEST_CASES = [
     {
@@ -96,17 +96,17 @@ TEST_CASES = [
     },
     {
         "name": "Matrix Annotation Unpacking",
-        "cpp": "// @DSL_EXTRACTED_MATRIX matrizint maps_json/PushBox.json",
+        "cpp": "// @MODULE_EXTRACTED_MATRIX matrizint maps_json/PushBox.json",
         "asset_replacements": {
-            "// @DSL_EXTRACTED_MATRIX matrizint maps_json/PushBox.json": "const matrizint = PushBoxData.matrix || PushBoxData;"
+            "// @MODULE_EXTRACTED_MATRIX matrizint maps_json/PushBox.json": "const matrizint = PushBoxData.matrix || PushBoxData;"
         },
         "expected_contains": ["const matrizint = PushBoxData.matrix || PushBoxData;"]
     },
     {
         "name": "Background Annotation Unpacking",
-        "cpp": "// @DSL_EXTRACTED_BACKGROUND Fondo01 backgrounds_json/Fondo01.json",
+        "cpp": "// @MODULE_EXTRACTED_BACKGROUND Fondo01 backgrounds_json/Fondo01.json",
         "asset_replacements": {
-            "// @DSL_EXTRACTED_BACKGROUND Fondo01 backgrounds_json/Fondo01.json": "const letras = Fondo01Data.letras; const arr = Fondo01Data.colors || Fondo01Data.arr;"
+            "// @MODULE_EXTRACTED_BACKGROUND Fondo01 backgrounds_json/Fondo01.json": "const letras = Fondo01Data.letras; const arr = Fondo01Data.colors || Fondo01Data.arr;"
         },
         "expected_contains": ["const letras = Fondo01Data.letras; const arr = Fondo01Data.colors || Fondo01Data.arr;"]
     },
@@ -151,6 +151,24 @@ void bar() {
         "cpp": "void foo() { Sleep(0); }",
         "generator_funcs": ["foo"],
         "expected_contains": ["export async function* foo", "yield(0)"]
+    },
+    {
+        "name": "Full #animation GIF generator with console and Sleep",
+        "cpp": "void GIF(int x) { ir(10, 20); colorletra(1); Console.Write(String.fromCharCode(219)); Sleep(10); }",
+        "generator_funcs": ["GIF"],
+        "expected_contains": ["export async function* GIF", "ir(10, 20)", "colorletra(1)", "Console.Write", "yield(10)"]
+    },
+    {
+        "name": "main stays async not generator with runAnim call",
+        "cpp": "void GIF(int x) { Sleep(10); } void main() { GIF(1); }",
+        "generator_funcs": ["GIF"],
+        "expected_contains": ["export async function* GIF", "export async function main", "await runAnim"]
+    },
+    {
+        "name": "runAnim import injection for generator caller",
+        "cpp": "void GIF(int x) { Sleep(10); } void caller() { GIF(1); }",
+        "generator_funcs": ["GIF"],
+        "expected_contains": ["export async function* GIF", "export async function caller", "runAnim"]
     }
 ]
 
