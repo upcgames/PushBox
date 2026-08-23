@@ -1,4 +1,4 @@
-import './shims/audio_shim.js';
+import { preloadAudio } from './shims/audio_shim.js';
 import { gameConsole } from './shims/gameConsole.js';
 import { main } from './generated/main.js';
 
@@ -20,10 +20,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (saved.startLevel) startLevelSelect.value = saved.startLevel;
       if (saved.skipLore !== undefined) skipLoreCheckbox.checked = saved.skipLore;
     }
-  } catch (e) { /* ignore parse errors */ }
+  } catch (e) { console.warn('[Game] Failed to parse pushboxDevConfig from localStorage:', e); }
 
-  // Wait for Px437 + extended glyphs (176 ░) via VirtualConsole loadAssets
-  await gameConsole.loadAssets();
+  // WEB loading state — preload all required assets before enabling START
+  // Fonts (VirtualConsole) + audio (preloadAudio) — both are web shell concerns
+  startBtn.textContent = 'Loading fonts...';
+  await gameConsole.loadFonts();
+  startBtn.textContent = 'Loading audio 0/39...';
+  await preloadAudio((loaded, total) => {
+    startBtn.textContent = `Loading audio ${loaded}/${total}...`;
+  });
   startBtn.textContent = 'START GAME (Enter)';
   startBtn.disabled = false;
 

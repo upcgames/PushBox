@@ -22,7 +22,7 @@ async function playGenerator(generatorFn) {
   if (status) status.textContent = 'Playing...';
 
   if (!gameConsoleRef) gameConsoleRef = gameConsole;
-  await gameConsoleRef.loadAssets();
+  await gameConsoleRef.loadFonts();
   gameConsoleRef.Clear();
   window.Console = gameConsoleRef;
 
@@ -50,7 +50,7 @@ function setAnimInUrl(name) {
 
 async function initGallery() {
   if (!gameConsoleRef) gameConsoleRef = gameConsole;
-  await gameConsoleRef.loadAssets();
+  await gameConsoleRef.loadFonts();
   window.Console = gameConsoleRef;
 
   const select = document.getElementById('animSelect');

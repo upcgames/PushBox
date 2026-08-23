@@ -349,7 +349,7 @@ export class VirtualConsole {
     this.cursorY = 0;
   }
 
-  async loadAssets() {
+  async loadFonts() {
     // Preload Px437 extended CP437 glyphs used by PushBox (176 ░, 219 █ etc.) so first y=0 telaraña isn't half-width
     const glyphs = '░▒▓█▄▌▐▀ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒';
     try {
@@ -357,7 +357,9 @@ export class VirtualConsole {
         await document.fonts.load(`${this.tileSize}px "Px437"`, glyphs);
         await document.fonts.ready;
       }
-    } catch {}
+    } catch (e) {
+      console.warn('[VirtualConsole] loadFonts failed:', e);
+    }
     // ensure ctx font is set after load
     this.ctx.font = `${this.tileSize}px "Px437", monospace`;
   }
