@@ -1,0 +1,28 @@
+.rotate-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 13, 22, 0.95);
+  backdrop-filter: blur(8px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  gap: 16px;
+  text-align: center;
+  padding: 24px;
+}
+.rotate-icon { font-size: 3rem; }
+.rotate-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.rotate-sub {
+  font-size: 0.9rem;
+  color: var(--accent);
+  opacity: 0.8;
+}
+@media (max-width: 768px) and (orientation: landscape) {
+  .rotate-overlay { display: flex; }
+}

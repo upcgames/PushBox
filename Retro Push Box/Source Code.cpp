@@ -2520,6 +2520,7 @@ void InterfazCreditos(int **matriz){
 }
 void InterfazYouLose(int **matriz)
 {
+	// @web: inputMode=none
 	desvanecimiento(16); Sleep(200);
 	MusicaMuerte(2);
 	DuckHuntGif(matriz);
@@ -2527,6 +2528,7 @@ void InterfazYouLose(int **matriz)
 }
 void InterfazYouWin(int **matriz)
 {
+	// @web: inputMode=none
 
 	YouWinYouLose(matriz); colorletra(9); colorfondo(1);
 	SonidoSpiderman();
@@ -2680,13 +2682,15 @@ void InterfazCongratulations(int **matriz, int **Cantidades){
 		limpiartecla(3);
 		do{
 			ir(0, 1); for (int i = 0; i <= 79; i++)cout << " ";
-			ir(0, 1); Escribir("  Quieres usar un nombre o dos(1 o 2)? : ", 100, 2); scanf("%1s", c); limpiartecla(1);
+			// @web: inputMode=1v2
+ir(0, 1); Escribir("  Quieres usar un nombre o dos(1 o 2)? : ", 100, 2); scanf("%1s", c); limpiartecla(1);
 		} while (c[0] != '1'&&c[0] != '2');
 
 		do{
 			ir(0, 2); for (int i = 0; i <= 79; i++)cout << " ";
 			ir(0, 2); if (c[0] == '2')Escribir("  C\243al es tu primer nombre? : ", 100, 2); else Escribir("  C\243al es tu nombre? : ", 100, 2);
-			scanf("%8s", n1); limpiartecla(1);
+			// @web: inputMode=qwerty
+scanf("%8s", n1); limpiartecla(1);
 			for (int i = 0; i <= strlen(n1) - 1; i++)
 			{
 				if ((n1[i] != 32) && (n1[i] <= 47 || n1[i] >= 58) && (n1[i] <= 64 || n1[i] >= 91) && (n1[i] <= 96 || n1[i] >= 123) && (n1[i] <= -97 || n1[i] >= -90) && n1[i] != -126 && n1[i] != -75 && n1[i] != -112 && n1[i] != -42 && n1[i] != -32 && n1[i] != -23)
@@ -2720,6 +2724,7 @@ void InterfazCongratulations(int **matriz, int **Cantidades){
 }
 void InterfazGameOver(int **matriz)
 {
+	// @web: inputMode=none
 	desvanecimiento(16); Sleep(200);
 	jokerGif(matriz);
 	GameOver(46, 1, 1, 219, 1);
@@ -2730,6 +2735,7 @@ void InterfazGameOver(int **matriz)
 }
 void InterfazInstructions()
 {
+	// @web: inputMode=continue
 	int **matriz; matriz = new int *[18]; for (int i = 0; i <= 17; i++)matriz[i] = new int[80];
 	int matrizint[18][80] =
 	{ { 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9 },
@@ -2798,6 +2804,7 @@ void InterfazInstructions()
 	esperartecla();
 }
 void MenuPrincipal(int &nivel, int **matriz, int empezarconmusica = 1){
+	// @web: inputMode=continue
 	int modo; char tecla; int cap;
 	if (empezarconmusica == 1)MusicaMenu();
 
@@ -2815,6 +2822,7 @@ void MenuPrincipal(int &nivel, int **matriz, int empezarconmusica = 1){
 	colorfondo(5);
 	for (int i = 43; i <= 67; i++){ GIF(matriz, 13, 25, 26, 38, i, 47, 1, 5, 0, 78); Sleep(50); }
 	for (int i = 68; i <= 79; i++){ GIF(matriz, 13, 25, 26, 38 - (i - 67), i, 47, 1, 5); Sleep(50); }for (int i = 47; i <= 59; i++){ ir(78, i); cout << "  "; }
+	// @web: inputMode=paused
 	desvanecimiento(9); Sleep(200);
 	OpcionesMenu(0, 21, 13); Sleep(50);
 	OpcionesMenu(1, 21, 13);
@@ -2845,6 +2853,7 @@ void MenuPrincipal(int &nivel, int **matriz, int empezarconmusica = 1){
 	desvanecimiento(9);
 }
 void InterfazPausa(int **matriz, int &opcion, bool &sonido){
+	// @web: inputMode=paused
 	MusicaPausa();
 	Cartelpausa(matriz);
 	AsciiFuncion(matriz, 16, 16, 16, 16, 223, 0); Sleep(10);
@@ -3343,6 +3352,7 @@ void CuadroDeVidas(int nivel, int vidas, int movimientos, bool cuadro = 0)
 	else{ if (movimientos >= max)cout << "0  "; else cout << max - movimientos << "  "; }
 }
 void Lore(int nivel){
+	// @web: inputMode=continue
 
 
 	desvanecimiento(9);
@@ -3847,6 +3857,7 @@ void ColocarEscenario(int nivel, int **matriz)
 }
 void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int ***Paredes, int ***Vacios, int ***Huecos, int **Cantidades, int **Posiciones, int **matriz, bool &sonido)
 {
+	// @web: inputMode=dpad
 	int xportal; int yportal;//coordenadas del portal
 	int xp, yp;//Variables de apoyo para utilizar PBorrar
 

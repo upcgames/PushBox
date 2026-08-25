@@ -8,90 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
-  <style>
-    .console-frame {
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.1);
-    }
-    .launcher-overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(9, 13, 22, 0.85);
-      backdrop-filter: blur(8px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border-radius: 12px;
-      z-index: 10;
-      gap: 20px;
-    }
-    .launcher-title {
-      font-family: 'Px437', monospace;
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--text);
-      text-shadow: 0 0 20px var(--accent);
-      margin-bottom: 10px;
-    }
-    .dev-options {
-      background: rgba(22, 30, 46, 0.9);
-      border: 1px solid var(--accent);
-      padding: 20px;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      min-width: 300px;
-    }
-    .dev-options h3 {
-      color: var(--accent);
-      margin-bottom: 5px;
-      font-size: 1.1rem;
-    }
-    .dev-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    select, input[type="checkbox"] {
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 8px;
-      border-radius: 4px;
-      font-family: var(--font);
-      outline: none;
-    }
-    select:focus { border-color: var(--accent); }
-    
-    .start-btn {
-      background: var(--accent);
-      color: #000;
-      border: none;
-      padding: 15px 40px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: var(--font);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .start-btn:hover:not(:disabled) {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
-    }
-    .start-btn:disabled {
-      background: var(--border);
-      color: rgba(255, 255, 255, 0.5);
-      cursor: not-allowed;
-    }
-    canvas {
-      display: block;
-      border-radius: 4px;
-    }
-  </style>
+  <link rel="stylesheet" href="/src/styles/launcher.css">
+  <link rel="stylesheet" href="/src/styles/canvas.css">
+  <link rel="stylesheet" href="/src/styles/rotate.css">
+  <link rel="stylesheet" href="/src/styles/mobile.css">
+  <link rel="stylesheet" href="/src/styles/mute.css">
 </head>
 <body>
   <header>
@@ -128,9 +49,18 @@
 
       <button id="startBtn" class="start-btn" disabled>Loading Fonts...</button>
     </div>
-    <div style="position:relative; width:1120px; height:882px;">
+    <button id="muteBtn" class="mute-btn" aria-label="Mute">🔊</button>
+    <div class="canvas-wrap">
       <canvas id="gameCanvas" width="1120" height="882" style="position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
     </div>
+  </div>
+
+  <div id="controllerArea" class="controller-area"></div>
+
+  <div id="rotateOverlay" class="rotate-overlay" aria-hidden="true">
+    <div class="rotate-icon">📱↻</div>
+    <div class="rotate-text">Please rotate to portrait</div>
+    <div class="rotate-sub">This game is designed for portrait mode</div>
   </div>
 
   <script type="module" src="/src/game.js"></script>

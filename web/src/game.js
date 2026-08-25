@@ -1,6 +1,8 @@
 import { preloadAudio } from './shims/audio_shim.js';
 import { gameConsole } from './shims/gameConsole.js';
 import { main } from './generated/main.js';
+import { setupMobileShell } from './shell/mobileController.js';
+import { setupMuteButton, showMuteButton } from './shell/muteButton.js';
 
 // Platform Virtual Console Instance (80x63 DOS Grid - canonical) - single base instance shared with generated modules
 window.Console = gameConsole;
@@ -22,6 +24,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (e) { console.warn('[Game] Failed to parse pushboxDevConfig from localStorage:', e); }
 
+  setupMobileShell();
+  setupMuteButton();
+
   // WEB loading state — preload all required assets before enabling START
   // Fonts (VirtualConsole) + audio (preloadAudio) — both are web shell concerns
   startBtn.textContent = 'Loading fonts...';
@@ -38,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Hide Launcher
     launcherOverlay.style.display = 'none';
+    showMuteButton();
 
     // Parse UI state to global dev config
     const levelInt = parseInt(startLevelSelect.value, 10);

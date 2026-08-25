@@ -77,6 +77,9 @@ def transpile_cpp_file(cpp_path, all_async_funcs, output_dir, generator_funcs=No
     seen_imports = set()
     asset_replacements = {}
 
+    web_replacements = {}
+    has_web = False
+
     # Extract asset annotations (@MODULE_EXTRACTED_MATRIX and @MODULE_EXTRACTED_BACKGROUND)
     for line in code.splitlines():
         line_s = line.strip()
@@ -96,6 +99,20 @@ def transpile_cpp_file(cpp_path, all_async_funcs, output_dir, generator_funcs=No
                     top_imports.append(import_stmt)
                 
                 asset_replacements[line_s] = f"const {var_name} = {import_alias}.matrix || {import_alias};"
+
+        elif line_s.startswith("// @web:"):
+            # web telemetry marker: // @web: inputMode=dpad or event=mapRendered
+            payload = line_s[len("// @web:"):].strip()
+            has_web = True
+            # Support inputMode=X and generic event names
+            if payload.startswith("inputMode="):
+                mode = payload.split("=", 1)[1].strip()
+                web_replacements[line_s] = f"GameState.emit('inputMode', '{mode}');"
+            elif "=" in payload:
+                k, v = payload.split("=", 1)
+                web_replacements[line_s] = f"GameState.emit('{k.strip()}', '{v.strip()}');"
+            else:
+                web_replacements[line_s] = f"GameState.emit('{payload}');"
 
         elif line_s.startswith("// @MODULE_EXTRACTED_BACKGROUND"):
             parts = line_s.split()
@@ -124,9 +141,16 @@ def transpile_cpp_file(cpp_path, all_async_funcs, output_dir, generator_funcs=No
         top_imports.append(console_import)
         seen_imports.add(console_import)
 
-    # Apply asset replacements before AST parsing
+    # Apply asset and web replacements before AST parsing
     for k, v in asset_replacements.items():
         code = code.replace(k, v)
+    for k, v in web_replacements.items():
+        code = code.replace(k, v)
+    if has_web:
+        gameState_import = "import { GameState } from '../shims/gameState.js';"
+        if gameState_import not in seen_imports:
+            top_imports.append(gameState_import)
+            seen_imports.add(gameState_import)
         
     js_code = CppToJsAST().parse(code, all_async_funcs=all_async_funcs, generator_funcs=generator_funcs)
 

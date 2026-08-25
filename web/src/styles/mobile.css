@@ -1,0 +1,24 @@
+@media (max-width: 768px) {
+  header { display: none; }
+  body {
+    padding: 0;
+    min-height: 100dvh;
+    justify-content: flex-start;
+  }
+  .launcher-title { font-size: 2rem; }
+  .dev-options {
+    min-width: 0;
+    width: 90vw;
+    max-width: 340px;
+  }
+}
+
+.controller-area {
+  width: 100%;
+  max-width: 1150px;
+  margin-top: 12px;
+  display: none;
+}
+@media (max-width: 768px) {
+  .controller-area { display: block; }
+}

@@ -8,6 +8,7 @@ window.SND_LOOP = 8;
 window.SND_NOSTOP = 16;
 
 let currentAudio = null;
+let webMuted = false;
 
 // All wav assets in public/audio (copied via scripts/copy_resources.py)
 const AUDIO_FILES = [
@@ -121,6 +122,44 @@ export function getAudioCacheSize() {
   return audioCache.size;
 }
 
+export function setWebMuted(v) {
+  webMuted = !!v;
+  if (currentAudio) {
+    try { currentAudio.volume = webMuted ? 0 : 1; } catch {}
+    // Keep loop playing at volume 0 so unmute resumes seamlessly (no restart)
+  }
+  try { window.dispatchEvent(new window.CustomEvent('webMuteChanged', { detail: webMuted })); } catch {}
+}
+export function isWebMuted() { return webMuted; }
+export function getCurrentAudio() { return currentAudio; }
+
+let lastTrollMode = null;
+const TROLL_MAP = { 1: 'Sabe.wav', 2: 'Terroristas.wav', 3: 'Despierta.wav', 4: 'Rbr.wav' };
+const TROLL_FILES = new Set(Object.values(TROLL_MAP));
+
+function isTrollPlaying() {
+  if (!currentAudio) return false;
+  try {
+    if (currentAudio.paused || currentAudio.ended) return false;
+    const file = currentAudio.src.split('/').pop();
+    return TROLL_FILES.has(file);
+  } catch { return false; }
+}
+
+export function playTrollSound() {
+  // If a troll sound is already playing, stutter restart same
+  if (isTrollPlaying()) {
+    try { currentAudio.currentTime = 0; } catch {}
+    return;
+  }
+  // Otherwise pick random among remaining 3 (or 4 if first)
+  let candidates = [1,2,3,4];
+  if (lastTrollMode !== null) candidates = candidates.filter(m => m !== lastTrollMode);
+  const mode = candidates[Math.floor(Math.random() * candidates.length)];
+  lastTrollMode = mode;
+  PlaySound(TROLL_MAP[mode], null, window.SND_ASYNC);
+}
+
 export function PlaySound(soundFile, reserved, flags) {
   // Stop any currently playing 1-channel audio track immediately
   if (currentAudio) {
@@ -150,6 +189,7 @@ export function PlaySound(soundFile, reserved, flags) {
     if ((flags & window.SND_LOOP) !== 0) {
       audio.loop = true;
     }
+    try { audio.volume = webMuted ? 0 : 1; } catch {}
 
     currentAudio = audio;
     const playPromise = audio.play();
