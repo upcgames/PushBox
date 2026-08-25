@@ -3955,6 +3955,7 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 				ColocarEscenario(nivel, matriz); PonerCajas(nivel, Cajas, Cantidades);//Si se escoge continuar, nada cambia,
 				PonerHuecos(nivel, Huecos, Cajas, Cantidades); PonerPuentes(nivel, Vacios, Cantidades); PintarMovil(nivel, x, y); CuadroDeVidas(nivel, vidas, cantmovs, 1);
 				if (PortalVisible(nivel, Cajas, Huecos, Cantidades))PintarPortal(nivel, -1, -1);
+				// @web: inputMode=dpad
 				continue;
 			}//Se coloca todo de nuevo
 
