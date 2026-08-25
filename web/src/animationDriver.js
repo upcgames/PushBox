@@ -11,8 +11,13 @@ export async function runAnim(generatorFn, ...args) {
       let it = 0;
       while (nextYield && !nextYield.done && virtualTime + (nextYield.value ?? 0) + CELL_PAINT_COST <= elapsed) {
         virtualTime += (nextYield.value ?? 0) + CELL_PAINT_COST;
+        const before = performance.now();
         nextYield = await gen.next();
-        if (++it > 10000) { console.warn('catch-up capped'); break; }
+        const wait = performance.now() - before;
+        // Pause animation elapsed while generator was blocked on input (scanf/_getch).
+        // No magic number — any wall time spent waiting for input is excluded.
+        if (startTime !== null) startTime += wait;
+        if (++it > 10000) { console.warn('catch-up capped', {virtualTime, elapsed, it, yieldVal: nextYield.value}); break; }
       }
     }
     async function tick(ts) {
@@ -28,5 +33,3 @@ export async function runAnim(generatorFn, ...args) {
     requestAnimationFrame(tick);
   });
 }
-
-

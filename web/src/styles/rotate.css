@@ -23,6 +23,4 @@
   color: var(--accent);
   opacity: 0.8;
 }
-@media (max-width: 768px) and (orientation: landscape) {
-  .rotate-overlay { display: flex; }
-}
+html[data-shell="mobile"][data-orientation="landscape"] .rotate-overlay { display: flex; }

@@ -74,8 +74,8 @@ function loadSingleAudio(filename) {
         clearTimeout(timer);
         audio.removeEventListener('canplaythrough', done);
         audio.removeEventListener('error', done);
-        // Keep usable even on error — still cache to avoid retry churn
-        audioCache.set(filename, audio);
+        // Keep usable even on error — still cache to avoid retry churn (case-insensitive key for Win/Linux FS)
+        audioCache.set(filename.toLowerCase(), audio);
         resolve();
       };
       const timer = setTimeout(done, 4000);
@@ -175,7 +175,7 @@ export function PlaySound(soundFile, reserved, flags) {
     if (!filename) return;
 
     let audio = null;
-    const cached = audioCache.get(filename);
+    const cached = audioCache.get(filename.toLowerCase());
     if (cached) {
       // Clone cached element so SND_LOOP flag can be set per-play without mutating cache
       audio = cached.cloneNode();

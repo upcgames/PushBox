@@ -135,7 +135,7 @@ InterfazCreditos #animation #gallery
 InterfazYouLose #animation #gallery
 InterfazYouWin #animation #gallery
 InterfazCargando #animation #gallery
-InterfazCongratulations
+InterfazCongratulations #animation #gallery
 InterfazGameOver #animation #gallery
 InterfazInstructions
 MenuPrincipal

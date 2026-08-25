@@ -1,6 +1,6 @@
 import { GALLERY_GEN_FUNCTIONS as GALLERY_GEN } from '../generated_anim/gallery_registry.js';
 import { ConsoleColor } from '../shims/consoleColor.js';
-import '../shims/audio_shim.js';
+import { preloadAudio } from '../shims/audio_shim.js';
 import { runAnim } from '../animationDriver.js';
 import { gameConsole } from '../shims/gameConsole.js';
 
@@ -23,12 +23,25 @@ async function playGenerator(generatorFn) {
 
   if (!gameConsoleRef) gameConsoleRef = gameConsole;
   await gameConsoleRef.loadFonts();
+  try { await preloadAudio(); } catch (e) { console.warn('[scene-viewer] preloadAudio failed:', e); }
   gameConsoleRef.Clear();
   window.Console = gameConsoleRef;
 
   const matriz = Array.from({ length: 136 }, () => Array(80).fill(0));
   const start = performance.now();
-  await runAnim(generatorFn, matriz);
+  // Gallery functions have varying arities — InterfazCongratulations needs Cantidades
+  const fnName = generatorFn.name || '';
+  let args = [matriz];
+  if (fnName === 'InterfazCongratulations' || generatorFn.length >= 2) {
+    const Cantidades = Array.from({ length: 9 }, () => Array(8).fill(0));
+    // Mirror main's default PLAYER stub (else branch) so the gallery doesn't crash on Cantidades[8]
+    Cantidades[8][0] = '1';
+    Cantidades[8][1] = 6;
+    Cantidades[6][0] = 'P'; Cantidades[6][1] = 'L'; Cantidades[6][2] = 'A'; Cantidades[6][3] = 'Y'; Cantidades[6][4] = 'E'; Cantidades[6][5] = 'R';
+    // Provide char codes like C++ int(n1[i]) — keep as strings so '1'/'2' checks work, gallery only needs first display
+    args = [matriz, Cantidades];
+  }
+  await runAnim(generatorFn, ...args);
   const total = (performance.now() - start).toFixed(0);
 
   isPlaying = false;

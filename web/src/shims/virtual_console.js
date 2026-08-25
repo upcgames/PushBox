@@ -187,6 +187,18 @@ if (typeof window !== 'undefined') {
     if (str == null || typeof str.length === 'undefined') {
       throw new TypeError(`strlen(${str}): Segmentation fault or invalid pointer (no length property)`);
     }
+    if (typeof str === 'string') {
+      const nul = str.indexOf('\0');
+      return nul === -1 ? str.length : nul;
+    }
+    if (Array.isArray(str)) {
+      let len = 0;
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === '\0' || str[i] === 0) break;
+        len++;
+      }
+      return len;
+    }
     return str.length;
   };
 

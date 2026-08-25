@@ -4,11 +4,15 @@
     const evt = new window.KeyboardEvent('keydown', { key, bubbles: true });
     window.dispatchEvent(evt);
   }
+  function sendChoice(ch) {
+    dispatch(ch);
+    dispatch('Enter');
+  }
 </script>
 
 <div class="ctrl onetwo-ctrl">
-  <Button label="1" variant="big" onclick={() => dispatch('1')} />
-  <Button label="2" variant="big" onclick={() => dispatch('2')} />
+  <Button label="1" variant="big" onclick={() => sendChoice('1')} />
+  <Button label="2" variant="big" onclick={() => sendChoice('2')} />
 </div>
 
 <style>
