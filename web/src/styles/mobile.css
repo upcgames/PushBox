@@ -2,6 +2,9 @@ html[data-shell="mobile"] header { display: none; }
 html[data-shell="mobile"] body {
   padding: 0;
   min-height: 100dvh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   justify-content: flex-start;
 }
 html[data-shell="mobile"] .launcher-title { font-size: 2rem; }
@@ -11,10 +14,42 @@ html[data-shell="mobile"] .dev-options {
   max-width: 340px;
 }
 
+/* pin controls to bottom for thumb reach, safe-area aware */
 .controller-area {
   width: 100%;
   max-width: 1150px;
   margin-top: 12px;
   display: none;
 }
-html[data-shell="mobile"] .controller-area { display: block; }
+html[data-shell="mobile"] .controller-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  min-height: 184px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  box-sizing: border-box;
+  z-index: 5;
+}
+/* center game in remaining top area */
+html[data-shell="mobile"] .console-frame {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* mobile title — JS toggles data-title */
+#mobileTitle {
+  display: none;
+  text-align: center;
+  font-family: 'Px437', monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  text-shadow: 0 0 14px var(--accent);
+  padding: 8px 0 4px;
+}
+html[data-shell="mobile"][data-title="show"] #mobileTitle { display: block; }

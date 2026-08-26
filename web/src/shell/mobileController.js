@@ -1,17 +1,17 @@
 import { mount } from 'svelte';
-import Dpad from '../controllers/Dpad.svelte';
+import GameController from '../controllers/GameController.svelte';
 import Continue from '../controllers/Continue.svelte';
 import NoneCtrl from '../controllers/None.svelte';
-import Paused from '../controllers/Paused.svelte';
+import GamePaused from '../controllers/GamePaused.svelte';
 import Qwerty from '../controllers/Qwerty.svelte';
 import OneTwo from '../controllers/OneTwo.svelte';
 import Congrats from '../controllers/Congrats.svelte';
 
 const COMPONENTS = {
   none: NoneCtrl,
-  dpad: Dpad,
+  dpad: GameController,
   continue: Continue,
-  paused: Paused,
+  paused: GamePaused,
   qwerty: Qwerty,
   '1v2': OneTwo,
   congrats: Congrats,
@@ -46,14 +46,33 @@ export function mountController(container, mode) {
   }
 }
 
+
+function measureTitleSpace() {
+  if (!isMobile()) {
+    document.documentElement.removeAttribute('data-title');
+    return;
+  }
+  const frame = document.querySelector('.console-frame');
+  const ctrl = document.getElementById('controllerArea');
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const gameH = frame ? frame.getBoundingClientRect().height : 0;
+  const ctrlH = ctrl && ctrl.style.display !== 'none' ? ctrl.getBoundingClientRect().height : 0;
+  const available = vh - gameH - ctrlH;
+  document.documentElement.dataset.title = available > 80 ? 'show' : 'hide';
+}
+
 export function setupMobileShell() {
   const controllerArea = document.getElementById('controllerArea');
   if (!controllerArea) return;
 
   syncShellAttrs();
+  measureTitleSpace();
   mobileMQ.addEventListener('change', syncShellAttrs);
+  mobileMQ.addEventListener('change', measureTitleSpace);
   landscapeMQ.addEventListener('change', syncShellAttrs);
-
+  landscapeMQ.addEventListener('change', measureTitleSpace);
+  window.addEventListener('resize', measureTitleSpace);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', measureTitleSpace);
   let lastMode = null;
   const applyMode = (mode) => {
     if (!mode) return;
@@ -64,6 +83,7 @@ export function setupMobileShell() {
     }
     controllerArea.style.display = 'block';
     mountController(controllerArea, mode);
+    requestAnimationFrame(measureTitleSpace);
   };
 
   import('../shims/gameState.js').then(({ on }) => {
