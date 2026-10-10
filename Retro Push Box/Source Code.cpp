@@ -2438,7 +2438,6 @@ void AsciiFuncion(int **matriz, int cb = 16, int cc = 16, int cr = 16, int ce = 
 
 //------------------------------INTERFACES----------------------------------------------------------
 void InterfazCreditos(int **matriz){
-	// @web: inputMode=none
 	MusicaCreditos();
 	desvanecimiento(1);
 	UPC(matriz); GIF(matriz, 0, 54, 0, 58, 15, 5, 0, 0, 1, 32); Sleep(1500);
@@ -2521,7 +2520,6 @@ void InterfazCreditos(int **matriz){
 }
 void InterfazYouLose(int **matriz)
 {
-	// @web: inputMode=none
 	desvanecimiento(16); Sleep(200);
 	MusicaMuerte(2);
 	DuckHuntGif(matriz);
@@ -2529,7 +2527,6 @@ void InterfazYouLose(int **matriz)
 }
 void InterfazYouWin(int **matriz)
 {
-	// @web: inputMode=none
 
 	YouWinYouLose(matriz); colorletra(9); colorfondo(1);
 	SonidoSpiderman();
@@ -2620,8 +2617,6 @@ void InterfazCongratulations(int **matriz, int **Cantidades){
 		}
 
 		limpiartecla(3);
-
-		// @web: inputMode=none
 		//Inicio Pacman Sprites
 		desvanecimiento(9);
 		Pacmansprites(matriz);
@@ -2670,13 +2665,11 @@ void InterfazCongratulations(int **matriz, int **Cantidades){
 		MusicaCongratulations();
 		if (c[0] == '2')emp = 42; else emp = 35;
 		UPC(matriz); GIF(matriz, 58, 75, 0, 58, 10, emp, 0, 0, 5, 78);
-		// @web: inputMode=continue
 		esperartecla();
 
 		colorfondo(3); colorletra(9);
 
 		ir(0, 0); for (int i = 0; i <= 79; i++)cout << " ";
-		// @web: inputMode=congrats
 		ir(0, 0); Escribir("Presiona 'K' para cambiar de nombre o 'E' para salir.", 10); do{
 			limpiartecla(3); teclac = _getch();
 		} while (teclac != 'K'&&teclac != 'k'&&teclac != 'E'&&teclac != 'e');
@@ -2684,18 +2677,14 @@ void InterfazCongratulations(int **matriz, int **Cantidades){
 		Console::CursorVisible = TRUE;
 		limpiartecla(3);
 		do{
-			// @web: inputMode=none
 			ir(0, 1); for (int i = 0; i <= 79; i++)cout << " ";
 			ir(0, 1); Escribir("  Quieres usar un nombre o dos(1 o 2)? : ", 100, 2);
-			// @web: inputMode=1v2
 			scanf("%1s", c); limpiartecla(1);
 		} while (c[0] != '1'&&c[0] != '2');
 
 		do{
-			// @web: inputMode=none
 			ir(0, 2); for (int i = 0; i <= 79; i++)cout << " ";
 			ir(0, 2); if (c[0] == '2')Escribir("  C\243al es tu primer nombre? : ", 100, 2); else Escribir("  C\243al es tu nombre? : ", 100, 2);
-			// @web: inputMode=qwerty
 scanf("%8s", n1); limpiartecla(1);
 			for (int i = 0; i <= strlen(n1) - 1; i++)
 			{
@@ -2707,10 +2696,8 @@ scanf("%8s", n1); limpiartecla(1);
 		} while (error);
 
 		if (c[0] == '2')do{
-			// @web: inputMode=none
 			ir(0, 3); for (int i = 0; i <= 79; i++)cout << " ";
 			ir(0, 3); Escribir("  C\243al es tu segundo nombre?: ", 100, 2);
-			// @web: inputMode=qwerty
 scanf("%8s", n2); limpiartecla(1);
 			for (int i = 0; i <= strlen(n2) - 1; i++)
 			{
@@ -2720,7 +2707,6 @@ scanf("%8s", n2); limpiartecla(1);
 				}error = false;
 			}
 		} while (error);
-		// @web: inputMode=none
 	ir(0, 5); Escribir("LISTO!!!!!!!", 100, 4);
 
 		Cantidades[8][0] = c[0]; Cantidades[8][1] = strlen(n1); if (c[0] == '2')Cantidades[8][2] = strlen(n2);
@@ -2734,7 +2720,6 @@ scanf("%8s", n2); limpiartecla(1);
 }
 void InterfazGameOver(int **matriz)
 {
-	// @web: inputMode=none
 	desvanecimiento(16); Sleep(200);
 	jokerGif(matriz);
 	GameOver(46, 1, 1, 219, 1);
@@ -2745,7 +2730,6 @@ void InterfazGameOver(int **matriz)
 }
 void InterfazInstructions()
 {
-	// @web: inputMode=none
 	int **matriz; matriz = new int *[18]; for (int i = 0; i <= 17; i++)matriz[i] = new int[80];
 	int matrizint[18][80] =
 	{ { 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9 },
@@ -2811,11 +2795,9 @@ void InterfazInstructions()
 	ir(11, 44); cout << "   "; ir(11, 45); cout << " E "; ir(11, 46); cout << "   "; Sleep(500); ir(44, 55); cout << "E";
 	colorfondo(9); colorletra(1); Escribir(": Sirve para confirmar(como enter).", 20);
 	limpiartecla(2);
-	// @web: inputMode=continue
 	esperartecla();
 }
 void MenuPrincipal(int &nivel, int **matriz, int empezarconmusica = 1){
-	// @web: inputMode=none
 	int modo; char tecla; int cap;
 	if (empezarconmusica == 1)MusicaMenu();
 
@@ -2827,19 +2809,15 @@ void MenuPrincipal(int &nivel, int **matriz, int empezarconmusica = 1){
 	PushBox(matriz);
 	GIF(matriz, 0, 62, 0, 79); ir(0, 0);
 	Cplusplus(matriz);
-	// @web: inputMode=continue
 	esperartecla();
-	// @web: inputMode=none
 	GIF(matriz, 0, 11, 13, 25, 42, 48, 1, 5, 0, 78); Sleep(250); GIF(matriz, 0, 11, 26, 38, 42, 48, 1, 5, 0, 78); Sleep(250);
 	GIF(matriz, 13, 25, 0, 12, 42, 47, 1, 5, 0, 78); Sleep(250); GIF(matriz, 13, 25, 13, 25, 42, 47, 1, 5, 0, 78); Sleep(250); GIF(matriz, 27, 39, 26, 38, 42, 47, 1, 5, 0, 78); Sleep(1000);
 	colorfondo(5);
 	for (int i = 43; i <= 67; i++){ GIF(matriz, 13, 25, 26, 38, i, 47, 1, 5, 0, 78); Sleep(50); }
 	for (int i = 68; i <= 79; i++){ GIF(matriz, 13, 25, 26, 38 - (i - 67), i, 47, 1, 5); Sleep(50); }for (int i = 47; i <= 59; i++){ ir(78, i); cout << "  "; }
-	// @web: inputMode=none
 	desvanecimiento(9); Sleep(200);
 	OpcionesMenu(0, 21, 13); Sleep(50);
 	OpcionesMenu(1, 21, 13);
-	// @web: inputMode=paused
 
 	bool sigue = 1;
 	modo = 0;
@@ -2861,15 +2839,13 @@ void MenuPrincipal(int &nivel, int **matriz, int empezarconmusica = 1){
 		Sleep(16);
 
 	}
-	if (modo == 1){ nivel = 1; // @web: inputMode=none
+	if (modo == 1){ nivel = 1;
  desvanecimiento(9); InterfazInstructions(); }
 	if (modo == 2)nivel = 8;
 	if (modo == 3)nivel = 9;
-	// @web: inputMode=none
 	desvanecimiento(9);
 }
 void InterfazPausa(int **matriz, int &opcion, bool &sonido){
-	// @web: inputMode=paused
 	MusicaPausa();
 	Cartelpausa(matriz);
 	AsciiFuncion(matriz, 16, 16, 16, 16, 223, 0); Sleep(10);
@@ -3368,7 +3344,6 @@ void CuadroDeVidas(int nivel, int vidas, int movimientos, bool cuadro = 0)
 	else{ if (movimientos >= max)cout << "0  "; else cout << max - movimientos << "  "; }
 }
 void Lore(int nivel){
-	// @web: inputMode=none
 
 
 	desvanecimiento(9);
@@ -3453,7 +3428,6 @@ void Lore(int nivel){
 		ir(18, 40); colorletra(9); Escribir("M\242vil", 1); PintarMovil(5, 26, 40); ir(32, 40);
 		colorfondo(7); colorletra(9); Escribir("Bloques", 1); PintarCaja(5, 41, 40); colorfondo(9); colorletra(1);
 	}
-	// @web: inputMode=continue
 	esperartecla();
 }
 //--------------------------------------------------------------------------------------------------
@@ -3874,7 +3848,6 @@ void ColocarEscenario(int nivel, int **matriz)
 }
 void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int ***Paredes, int ***Vacios, int ***Huecos, int **Cantidades, int **Posiciones, int **matriz, bool &sonido)
 {
-	// @web: inputMode=dpad
 	int xportal; int yportal;//coordenadas del portal
 	int xp, yp;//Variables de apoyo para utilizar PBorrar
 
@@ -3955,7 +3928,6 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 				ColocarEscenario(nivel, matriz); PonerCajas(nivel, Cajas, Cantidades);//Si se escoge continuar, nada cambia,
 				PonerHuecos(nivel, Huecos, Cajas, Cantidades); PonerPuentes(nivel, Vacios, Cantidades); PintarMovil(nivel, x, y); CuadroDeVidas(nivel, vidas, cantmovs, 1);
 				if (PortalVisible(nivel, Cajas, Huecos, Cantidades))PintarPortal(nivel, -1, -1);
-				// @web: inputMode=dpad
 				continue;
 			}//Se coloca todo de nuevo
 
@@ -4146,9 +4118,7 @@ void ControlDeNiveles(int **matriz, int &nivel, int***Cajas, int***Paredes, int*
 		if (nivel == 6){ InterfazCongratulations(matriz, Cantidades); nivel = 8; }// Muesta la interfaz de congratulation
 		if (nivel == 7){ InterfazGameOver(matriz); nivel = 0; empezarconmusica = 1; }//Muesta la interfaz de GAME OVER
 		if (nivel == 8){ InterfazCreditos(matriz);
-	// @web: inputMode=continue
 	esperartecla();
-	// @web: inputMode=none
 	nivel = 0; }//Muestra la interfaz de los creditos
 		if (nivel == 9)break;//Se sale del control de niveles, con lo cual del juego
 
@@ -4211,7 +4181,6 @@ void main(){
 	//---------------------------------Mesaje Incial------------------------------------------------------------------------//
 	Console::CursorVisible = FALSE;
 	if (getDevConfig(1) == 0 && getDevConfig(2) == 0) {
-		// @web: inputMode=none
 		InterfazCargando(matriz);
 		Sleep(1000);
 	}
@@ -4231,7 +4200,6 @@ void main(){
 		Escribir("              Juego creado en la UPC, 2014 por Diego Jara y Jeremy Tornero.", 1);
 		ir(0, 0);
 		SonidoAlarma();
-		// @web: inputMode=continue
 		limpiartecla(2);
 		while (1){ Warning(9, 0, 4, 0, 31, 23, 1); Sleep(500); Warning(2, 0, 4, 0, 31, 23, 1); Sleep(500); if (_kbhit()){ int t = _getch(); if (t == 'e' || t == 'E')break; } }Warning(10, 0, 4, 0, 31, 23, 1);
 	}
@@ -4244,7 +4212,6 @@ void main(){
 	char *c; c = new char[1];
 	bool error = false;
 	if (getDevConfig(1) == 0 && getDevConfig(2) == 0) {
-		// @web: inputMode=none
 		desvanecimiento(9, 21, 79, 46, 0, 41);
 		colorletra(1); colorfondo(9);
 		Console::CursorVisible = TRUE;
@@ -4253,15 +4220,12 @@ void main(){
 		do{
 			ir(0, 49); for (int i = 0; i <= 79; i++)cout << " ";
 			ir(0, 49); Escribir("  Quieres usar un nombre o dos(1 o 2)? : ", 100, 2);
-			// @web: inputMode=1v2
 			scanf("%1s", c); limpiartecla(1);
 		} while (c[0] != '1'&&c[0] != '2');
 
 		do{
-			// @web: inputMode=none
 			ir(0, 50); for (int i = 0; i <= 79; i++)cout << " ";
 			ir(0, 50); if (c[0] == '2')Escribir("  C\243al es tu primer nombre? : ", 100, 2); else Escribir("  C\243al es tu nombre? : ", 100, 2);
-			// @web: inputMode=qwerty
 scanf("%8s", n1); limpiartecla(1);
 			for (int i = 0; i <= strlen(n1) - 1; i++)
 			{
@@ -4274,10 +4238,8 @@ scanf("%8s", n1); limpiartecla(1);
 
 
 		if (c[0] == '2')do{
-			// @web: inputMode=none
 			ir(0, 51); for (int i = 0; i <= 79; i++)cout << " ";
 			ir(0, 51); Escribir("  C\243al es tu segundo nombre?: ", 100, 2);
-			// @web: inputMode=qwerty
 scanf("%8s", n2); limpiartecla(1);
 			for (int i = 0; i <= strlen(n2) - 1; i++)
 			{
@@ -4287,9 +4249,7 @@ scanf("%8s", n2); limpiartecla(1);
 				}error = false;
 			}
 		} while (error);
-		// @web: inputMode=none
 		ir(34, 53); Escribir("LISTO!!!!!!!", 100, 4);
-		// @web: inputMode=none
 		Cantidades[8][0] = c[0]; Cantidades[8][1] = strlen(n1); if (c[0] == '2')Cantidades[8][2] = strlen(n2);
 		for (int i = 0; i <= Cantidades[8][1] - 1; i++)Cantidades[6][i] = n1[i];
 		if (c[0] == '2')for (int i = 0; i <= Cantidades[8][2] - 1; i++)Cantidades[7][i] = n2[i];
@@ -4321,7 +4281,6 @@ scanf("%8s", n2); limpiartecla(1);
 	//Cantidades[nivel][2]----->Huecos,
 	//Cantidades[nivel][3]----->Vacios,
 	if (getDevConfig(2) == 0) {
-		// @web: inputMode=none
 		NientiendoGif(matriz);//Se muestra la animacion de Nientiendo y la portada
 		PixelmenGif(matriz);
 		Sleep(3000);

@@ -1,9 +1,6 @@
 <script>
   import Button from './Button.svelte';
-  function dispatch(key) {
-    const evt = new window.KeyboardEvent('keydown', { key, bubbles: true });
-    window.dispatchEvent(evt);
-  }
+  import { sendInput as dispatch } from '../state/gameState.js';
   function sendChoice(ch) {
     dispatch(ch);
     dispatch('Enter');

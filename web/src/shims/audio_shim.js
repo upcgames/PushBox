@@ -1,3 +1,5 @@
+import { GameState, runtimeState } from '../state/gameState.js';
+
 // Win32 Multimedia API Shims (1-Channel Audio Architecture)
 window.TEXT = (str) => str;
 window.SND_SYNC = 0;
@@ -124,6 +126,9 @@ export function getAudioCacheSize() {
 
 export function setWebMuted(v) {
   webMuted = !!v;
+  if (GameState.getSnapshot().audio.muted !== webMuted) {
+    runtimeState.publish({ audio: { muted: webMuted } }, 'audioChanged');
+  }
   if (currentAudio) {
     try { currentAudio.volume = webMuted ? 0 : 1; } catch {}
     // Keep loop playing at volume 0 so unmute resumes seamlessly (no restart)

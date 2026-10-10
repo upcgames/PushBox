@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "test:web": "node --test tests/*.test.js",
     "generate": "make generate",
     "test": "make test",
     "dev": "vp run generate && vp dev",

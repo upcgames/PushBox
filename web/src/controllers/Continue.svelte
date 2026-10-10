@@ -1,13 +1,11 @@
 <script>
   import Button from './Button.svelte';
-  function dispatch(key) {
-    const evt = new window.KeyboardEvent('keydown', { key, bubbles: true });
-    window.dispatchEvent(evt);
-  }
+  import { sendInput as dispatch } from '../state/gameState.js';
+  import { GameState } from '../state/gameState.js';
 </script>
 
 <div class="ctrl continue-ctrl">
-  <Button icon="▶" label="Continue" onclick={() => dispatch('e')} />
+  <Button icon="▶" label="Continue" onclick={() => dispatch(GameState.getSnapshot().inputRequest?.key || 'e')} />
 </div>
 
 <style>

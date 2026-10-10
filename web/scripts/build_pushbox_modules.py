@@ -22,9 +22,6 @@ def strip_comments(code_text):
     def replacer(match):
         s = match.group(0)
         if s.startswith('/'):
-            # Preserve web telemetry markers
-            if s.startswith('// @web:'):
-                return s
             return ''
         return s
     

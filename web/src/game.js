@@ -3,9 +3,15 @@ import { gameConsole } from './shims/gameConsole.js';
 import { main } from './generated/main.js';
 import { setupMobileShell } from './shell/mobileController.js';
 import { setupMuteButton, showMuteButton } from './shell/muteButton.js';
+import { observeConsole } from './state/consoleTranscript.js';
+import { enterScreen } from './state/runtimeBridge.js';
+import { runtimeState } from './state/gameState.js';
+import { setupBoardFeedback } from './feedback/boardFeedback.js';
 
 // Platform Virtual Console Instance (80x63 DOS Grid - canonical) - single base instance shared with generated modules
 window.Console = gameConsole;
+observeConsole(gameConsole);
+const leaveLauncher = enterScreen('launcher');
 
 window.DEV_CONFIG_OVERRIDES = null;
 
@@ -26,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   setupMobileShell();
   setupMuteButton();
+  setupBoardFeedback(gameConsole.canvas, document.getElementById('feedbackBtn'));
 
   // WEB loading state — preload all required assets before enabling START
   // Fonts (VirtualConsole) + audio (preloadAudio) — both are web shell concerns
@@ -43,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Hide Launcher
     launcherOverlay.style.display = 'none';
+    leaveLauncher();
     showMuteButton();
 
     // Parse UI state to global dev config
@@ -63,6 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await main();
     } catch (err) {
+      runtimeState.event('runtimeError', { message: String(err.message || err) });
       console.error("🎮 PushBox Runtime Execution Report:", err);
     }
   };

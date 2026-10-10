@@ -51,6 +51,10 @@ npm run generate     # alias for make generate
 
 ## Test & Lint
 
+The [shared web-state API](src/state/README.md) supports controls and future QOL
+consumers (board overlays, lives/steps UI, input events, and console text).
+Run `npm run test:web` for its web-only tests; it does not run generation.
+
 ```bash
 make test            # Python transpiler unit tests (ast_transpiler) + eslint src/
 .venv/bin/python scripts/test_transpiler.py   # 25 tests, includes int-division flooring

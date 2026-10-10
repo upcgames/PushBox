@@ -10,6 +10,32 @@ canvas {
   width: 1120px;
   height: 882px;
 }
+.board-feedback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: transparent;
+  image-rendering: auto;
+}
+.feedback-button {
+  position: absolute;
+  top: 8px;
+  right: 54px;
+  z-index: 20;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--text);
+  font: 600 12px var(--font);
+  cursor: pointer;
+}
+.feedback-button[aria-pressed="true"] { color: #b6e9ff; }
+.feedback-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 html[data-shell="mobile"] .console-frame {
   width: 100vw;
   max-width: 100vw;

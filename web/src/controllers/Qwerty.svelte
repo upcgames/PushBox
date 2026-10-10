@@ -1,10 +1,7 @@
 <script>
   import Button from './Button.svelte';
+  import { sendInput as dispatch } from '../state/gameState.js';
   const ROWS = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
-  function dispatch(key) {
-    const evt = new window.KeyboardEvent('keydown', { key, bubbles: true });
-    window.dispatchEvent(evt);
-  }
 </script>
 
 <div class="ctrl qwerty-ctrl">

@@ -1,4 +1,4 @@
-import { mount } from 'svelte';
+import { mount, unmount } from 'svelte';
 import GameController from '../controllers/GameController.svelte';
 import Continue from '../controllers/Continue.svelte';
 import NoneCtrl from '../controllers/None.svelte';
@@ -6,6 +6,8 @@ import GamePaused from '../controllers/GamePaused.svelte';
 import Qwerty from '../controllers/Qwerty.svelte';
 import OneTwo from '../controllers/OneTwo.svelte';
 import Congrats from '../controllers/Congrats.svelte';
+import { GameState } from '../state/gameState.js';
+import { selectControlMode } from './controlPolicy.js';
 
 const COMPONENTS = {
   none: NoneCtrl,
@@ -33,17 +35,12 @@ export function isMobile() {
 
 export function mountController(container, mode) {
   if (currentInstance) {
-    try { currentInstance.$destroy?.(); } catch {}
-    container.innerHTML = '';
+    unmount(currentInstance);
     currentInstance = null;
   }
   const Comp = COMPONENTS[mode];
   if (!Comp) return;
-  try {
-    currentInstance = mount(Comp, { target: container });
-  } catch {
-    currentInstance = new Comp({ target: container });
-  }
+  currentInstance = mount(Comp, { target: container });
 }
 
 
@@ -86,9 +83,7 @@ export function setupMobileShell() {
     requestAnimationFrame(measureTitleSpace);
   };
 
-  import('../shims/gameState.js').then(({ on }) => {
-    on('inputMode', applyMode);
-  }).catch(() => {});
+  GameState.select(selectControlMode, applyMode);
 
   mobileMQ.addEventListener('change', () => {
     if (lastMode) applyMode(lastMode);

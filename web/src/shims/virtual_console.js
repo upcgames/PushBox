@@ -1,4 +1,5 @@
 import { ConsoleColor } from './consoleColor.js';
+import { recordInput } from '../state/runtimeBridge.js';
 
 // DOS Console 16-Color Palette
 const DOS_PALETTE = {
@@ -64,6 +65,7 @@ if (typeof window !== 'undefined') {
     let keyVal = e.key;
     if (keyVal === 'Enter') keyVal = 13;
     if (keyVal === 'Escape') keyVal = 27;
+    recordInput(keyVal, 'received');
 
     if (keyWaiters.length > 0) {
       const resolve = keyWaiters.shift();
@@ -137,10 +139,15 @@ if (typeof window !== 'undefined') {
   window._kbhit = () => (keyQueue.length > 0 ? 1 : 0);
 
   window._getch = async () => {
+    recordInput(null, 'waiting');
+    let key;
     if (keyQueue.length > 0) {
-      return keyQueue.shift();
+      key = keyQueue.shift();
+    } else {
+      key = await new Promise(resolve => keyWaiters.push(resolve));
     }
-    return new Promise(resolve => keyWaiters.push(resolve));
+    recordInput(key, 'consumed');
+    return key;
   };
 
   // Async DOM Text Input Shim for scanf(format, targetArray)
@@ -325,6 +332,7 @@ export class VirtualConsole {
       }
 
       const char = decodeCp437(rawChar);
+      this.observer?.write(this.cursorX, this.cursorY, char, this.fgColor, this.bgColor);
       const px = this.cursorX * this.tileSize;
       const py = this.cursorY * this.tileSize;
       if (this.transparent) {
@@ -364,6 +372,7 @@ export class VirtualConsole {
   }
 
   Clear() {
+    this.observer?.clear(this.cols, this.rows, this.tileSize);
     if (this.transparent) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     } else {

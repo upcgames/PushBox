@@ -1,19 +1,17 @@
 <script>
   import Button from './Button.svelte';
+  import { sendInput as dispatch } from '../state/gameState.js';
+  import { GameState } from '../state/gameState.js';
+  import { onMount } from 'svelte';
   import Dpad from '../components/Dpad.svelte';
-  import { playTrollSound, isWebMuted, setWebMuted } from '../shims/audio_shim.js';
+  import { playTrollSound, setWebMuted } from '../shims/audio_shim.js';
   let trolling = $state(false);
-  let muted = $state(false);
+  let muted = $state(GameState.getSnapshot().audio.muted);
   let trollTimer = null;
-  function dispatch(key) {
-    const evt = new window.KeyboardEvent('keydown', { key, bubbles: true });
-    window.dispatchEvent(evt);
-  }
   function dispatchTroll() {
     if (muted) {
       setWebMuted(false);
-      const evt = new window.KeyboardEvent('keydown', { key: 'f', bubbles: true });
-      window.dispatchEvent(evt);
+      dispatch('f');
       return;
     }
     playTrollSound();
@@ -31,10 +29,10 @@
       }
     });
   }
-  if (typeof window !== 'undefined') {
-    window.addEventListener('webMuteChanged', (e) => { muted = !!e.detail; });
-    try { muted = isWebMuted(); } catch {}
-  }
+  onMount(() => {
+    const off = GameState.select(state => state.audio.muted, value => { muted = value; });
+    return () => { off(); if (trollTimer) clearTimeout(trollTimer); };
+  });
 </script>
 
 <div class="ctrl game-ctrl">

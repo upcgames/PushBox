@@ -2,12 +2,14 @@ import { defineConfig } from "vite-plus";
 import { resolve } from "path";
 import eslint from "vite-plugin-eslint";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { runtimeStatePlugin } from './plugins/runtime-state.js';
 
 export default defineConfig({
   base: process.env.GITHUB_ACTIONS ? "/PushBox/" : "/",
   root: ".",
   publicDir: "public",
   plugins: [
+    runtimeStatePlugin(),
     svelte(),
     eslint({
       include: ["src/**/*.js", "src/**/*.svelte"],
