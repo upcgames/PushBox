@@ -112,8 +112,11 @@ if (typeof window !== 'undefined') {
   // No-op: C stdlib OS terminal command runner; screen clear/pause commands are handled natively by VirtualConsole and DOM listeners
   window.system = () => { };
 
-  // No-op: Win32 input buffer flush; DOM keydown listeners queue keypresses asynchronously
-  window.FlushConsoleInputBuffer = () => { };
+  // Discard buffered keypresses when the game requests fresh input.
+  window.FlushConsoleInputBuffer = () => {
+    keyQueue.length = 0;
+    return 1;
+  };
   window.fflush = () => { };
 
   window.STD_OUTPUT_HANDLE = 1;
@@ -336,9 +339,20 @@ export class VirtualConsole {
       }
 
       this.ctx.fillStyle = this.fgColor;
-      this.ctx.font = `${this.tileSize}px "Px437", monospace`;
-      this.ctx.textBaseline = 'top';
-      this.ctx.fillText(char, px, py);
+      if (char === '█') {
+        // Full blocks paint the entire cell without font edge antialiasing.
+        this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+      } else {
+        this.ctx.font = `${this.tileSize}px "Px437", monospace`;
+        this.ctx.textBaseline = 'top';
+        // Keep glyph overflow inside the cell that subsequent writes repaint.
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.rect(px, py, this.tileSize, this.tileSize);
+        this.ctx.clip();
+        this.ctx.fillText(char, px, py);
+        this.ctx.restore();
+      }
 
       this.cursorX++;
       if (this.cursorX >= this.cols) {
@@ -374,5 +388,6 @@ export class VirtualConsole {
     }
     // ensure ctx font is set after load
     this.ctx.font = `${this.tileSize}px "Px437", monospace`;
+
   }
 }

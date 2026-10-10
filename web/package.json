@@ -6,8 +6,8 @@
   "scripts": {
     "generate": "make generate",
     "test": "make test",
-    "dev": "npm run generate && vite",
-    "build": "npm run generate && vite build"
+    "dev": "vp run generate && vp dev",
+    "build": "vp run generate && vp build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

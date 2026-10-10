@@ -59,3 +59,33 @@ npx eslint src/      # JS lint (vite-plugin-eslint also runs on build)
 
 Python deps must use `.venv` (`python3 -m venv .venv && .venv/bin/pip install tree_sitter` etc. — do not use global pip).
 
+## Sandbox checks
+
+The bridge registry is `../sbx-here/bridge/registry.json`. On the host, prepare
+the Python dependencies once:
+
+```sh
+# from web/
+python3 -m venv .venv
+.venv/bin/python -m pip install tree_sitter tree_sitter_cpp
+```
+
+The repo-root `package.json` exposes these commands through `vpr` (shorthand
+for `vp run`). `web/` is registered in `pnpm-workspace.yaml`; run `vp install`
+from the PushBox root to install the task runner and web dependencies for both
+macOS and the Linux sandbox. From the host, `vpr dev` in the PushBox root
+forwards to `pushbox-web#dev`, which generates assets and starts the web dev
+server. You can also target it directly with `vpr pushbox-web#dev`.
+From the PushBox root on the host, start `sbx-here bridge`,
+then run `sbx-here` in another terminal. Inside the sandbox, from the repo root:
+
+```sh
+vpr pipeline  # make generate: extraction, transpilation, validation, assets
+vpr test      # make test: transpiler unit tests + ESLint
+vpr lint      # ESLint only
+```
+
+Each route runs in `web/` on the host and accepts no extra arguments. ESLint is
+the static check for this JavaScript repo; no TypeScript check is configured.
+Build, serving/dev, and deployment remain owner workflows.
+

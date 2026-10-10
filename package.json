@@ -1,0 +1,20 @@
+{
+  "name": "pushbox",
+  "private": true,
+  "scripts": {
+    "dev": "vp run pushbox-web#dev",
+    "pipeline": "sbx-route pushbox/pipeline",
+    "test": "sbx-route pushbox/test",
+    "lint": "sbx-route pushbox/lint"
+  },
+  "devDependencies": {
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.3.4",
+      "onFail": "download"
+    }
+  }
+}

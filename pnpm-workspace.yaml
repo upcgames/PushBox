@@ -1,0 +1,20 @@
+packages:
+  - web
+
+# Install host and sandbox native tools together for the whole workspace.
+supportedArchitectures:
+  os: [ darwin, linux ]
+  cpu: [ current ]
+  libc: [ glibc ]
+
+# Vite+ supplies Vite through its core package, whose version follows Vite+.
+peerDependencyRules:
+  allowedVersions:
+    vite: '*'
+  allowAny:
+    - vite
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@1.0.0
+  vite-plus: 1.0.0
+overrides:
+  vite@*: 'catalog:'

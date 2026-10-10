@@ -1,0 +1,23 @@
+{
+  "pushbox/pipeline": {
+    "description": "Generate extracted modules, transpile JavaScript, validate syntax and dependency DAG, and sync assets",
+    "cwd": "web",
+    "program": "make",
+    "baseArgs": ["generate"],
+    "params": []
+  },
+  "pushbox/test": {
+    "description": "Run Python transpiler unit tests and ESLint static checks",
+    "cwd": "web",
+    "program": "make",
+    "baseArgs": ["test"],
+    "params": []
+  },
+  "pushbox/lint": {
+    "description": "Check JavaScript sources with the repo's installed ESLint",
+    "cwd": "web",
+    "program": "node",
+    "baseArgs": ["node_modules/eslint/bin/eslint.js", "src/"],
+    "params": []
+  }
+}
