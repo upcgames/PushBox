@@ -25,22 +25,17 @@ jobs:
           python-version: '3.11'
           cache: pip
 
-      - uses: actions/setup-node@v4
+      - uses: pnpm/setup@v3
         with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+          runtime: node@24
+          cache: true
+          require-lockfile: true
 
       - name: Install Python deps
         run: pip install -r web/requirements.txt
 
-      - name: Install Node deps
-        run: npm ci
-        working-directory: web
-
       - name: Build web application
-        run: npm run build
-        working-directory: web
+        run: pnpm --filter pushbox-web run build
 
       - uses: actions/upload-pages-artifact@v3
         with:

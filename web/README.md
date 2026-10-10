@@ -42,9 +42,9 @@ index.html / scene-viewer.html / map-viewer.html  (Vite 8)
 ```bash
 # from web/
 make generate        # 1) extract modules → pushbox_modules/  2) transpile → src/generated{,_anim}/  3) rsync → public/pushbox_modules/
-npm run dev          # generate + vite dev server
-npm run build        # generate + vite build (outputs dist/)
-npm run generate     # alias for make generate
+pnpm run dev         # generate + vite dev server
+pnpm run build       # generate + vite build (outputs dist/)
+pnpm run generate    # alias for make generate
 ```
 
 `Makefile` is incremental (`MODULES_STAMP`, `JS_STAMP`/`ANIM_STAMP`, `PUBLIC_MODULES_STAMP`) and CI-safe — `public/pushbox_modules` is rebuilt via rsync so Vite serves JSON assets.
@@ -53,12 +53,12 @@ npm run generate     # alias for make generate
 
 The [shared web-state API](src/state/README.md) supports controls and future QOL
 consumers (board overlays, lives/steps UI, input events, and console text).
-Run `npm run test:web` for its web-only tests; it does not run generation.
+Run `pnpm run test:web` for its web-only tests; it does not run generation.
 
 ```bash
 make test            # Python transpiler unit tests (ast_transpiler) + eslint src/
 .venv/bin/python scripts/test_transpiler.py   # 25 tests, includes int-division flooring
-npx eslint src/      # JS lint (vite-plugin-eslint also runs on build)
+pnpm exec eslint src/ # JS lint (vite-plugin-eslint also runs on build)
 ```
 
 Python deps must use `.venv` (`python3 -m venv .venv && .venv/bin/pip install tree_sitter` etc. — do not use global pip).
