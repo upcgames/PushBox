@@ -41,6 +41,7 @@ index.html / scene-viewer.html / map-viewer.html  (Vite 8)
 
 ```bash
 # from web/
+uv sync --locked     # install the Python pipeline dependencies (also automatic on uv run)
 make generate        # 1) extract modules → pushbox_modules/  2) transpile → src/generated{,_anim}/  3) rsync → public/pushbox_modules/
 pnpm run dev         # generate + vite dev server
 pnpm run build       # generate + vite build (outputs dist/)
@@ -65,22 +66,23 @@ Run `pnpm run test:web` for its web-only tests; it does not run generation.
 
 ```bash
 make test            # Python transpiler unit tests (ast_transpiler) + eslint src/
-.venv/bin/python scripts/test_transpiler.py   # 25 tests, includes int-division flooring
+uv run --locked python scripts/test_transpiler.py # transpiler tests, includes int-division flooring
 pnpm exec eslint src/ # JS lint (vite-plugin-eslint also runs on build)
 ```
 
-Python deps must use `.venv` (`python3 -m venv .venv && .venv/bin/pip install tree_sitter` etc. — do not use global pip).
+Python dependencies are declared in `pyproject.toml` and pinned in the committed
+`uv.lock`. Install uv on the host; the sandbox already supplies it. The project
+selects Python 3.11 through `.python-version`, and uv downloads it if needed.
+Use `uv add` to change dependencies and commit both the manifest and lockfile.
+Pipeline commands use `uv run --locked`, which prepares the environment
+automatically and fails if the lockfile needs updating.
+
+On macOS, uv manages `web/.venv`. The sbx-here sandbox sets
+`UV_PROJECT_ENVIRONMENT=.venv-linux`, so the same commands use `web/.venv-linux`
+on Linux. Both directories are Git-ignored. Do not activate or install into the
+host `.venv` from Linux; separate paths are a convention, not write protection.
 
 ## Sandbox checks
-
-The bridge registry is `../sbx-here/bridge/registry.json`. On the host, prepare
-the Python dependencies once:
-
-```sh
-# from web/
-python3 -m venv .venv
-.venv/bin/python -m pip install tree_sitter tree_sitter_cpp
-```
 
 The repo-root `package.json` exposes these commands through `vpr` (shorthand
 for `vp run`). `web/` is registered in `pnpm-workspace.yaml`; run `vp install`
@@ -88,8 +90,8 @@ from the PushBox root to install the task runner and web dependencies for both
 macOS and the Linux sandbox. From the host, `vpr dev` in the PushBox root
 forwards to `pushbox-web#dev`, which generates assets and starts the web dev
 server. You can also target it directly with `vpr pushbox-web#dev`.
-From the PushBox root on the host, start `sbx-here bridge`,
-then run `sbx-here` in another terminal. Inside the sandbox, from the repo root:
+Run `sbx-here` from PushBox to enter the sandbox. From the repo root, the same
+commands work on the host and in the sandbox without starting a bridge:
 
 ```sh
 vpr pipeline  # make generate: extraction, transpilation, validation, assets
@@ -97,7 +99,7 @@ vpr test      # make test: transpiler unit tests + ESLint
 vpr lint      # ESLint only
 ```
 
-Each route runs in `web/` on the host and accepts no extra arguments. ESLint is
-the static check for this JavaScript repo; no TypeScript check is configured.
+Each task runs locally in `web/`. PushBox does not need a host bridge registry.
+ESLint is the static check for this JavaScript repo; no TypeScript check is configured.
 Build, serving/dev, and deployment remain owner workflows.
 

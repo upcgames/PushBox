@@ -3,6 +3,8 @@ node_modules/
 dist/
 web/node_modules/
 web/dist/
+.venv/
+.venv-linux/
 
 # Generated web pipeline artifacts
 web/pushbox_modules/

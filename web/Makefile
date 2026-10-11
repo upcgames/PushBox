@@ -1,4 +1,4 @@
-PYTHON ?= $(shell test -x .venv/bin/python && echo .venv/bin/python || echo python3)
+PYTHON ?= uv run --locked python
 MANIFEST = modules_manifest.txt
 SOURCE_CPP = ../Retro\ Push\ Box/Source\ Code.cpp
 MODULES_STAMP = pushbox_modules/.stamp

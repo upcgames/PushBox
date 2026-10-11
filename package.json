@@ -3,9 +3,9 @@
   "private": true,
   "scripts": {
     "dev": "vp run pushbox-web#dev",
-    "pipeline": "sbx-route pushbox/pipeline",
-    "test": "sbx-route pushbox/test",
-    "lint": "sbx-route pushbox/lint"
+    "pipeline": "vp run pushbox-web#generate",
+    "test": "vp run pushbox-web#test",
+    "lint": "vp run pushbox-web#lint"
   },
   "devDependencies": {
     "vite-plus": "catalog:"
