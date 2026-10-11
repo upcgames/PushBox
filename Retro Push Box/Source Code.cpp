@@ -2904,7 +2904,7 @@ void ac(int ***Cajas, int nivel, int cx, int cy, int **Cantidades)
 void DataCantidades(int **Cantidades){//0:Cajas, 1:Paredes, 2:Vacios, 3:Huecos
 	Cantidades[1][0] = 4; Cantidades[1][1] = 52; Cantidades[1][2] = 0; Cantidades[1][3] = 4;
 	Cantidades[2][0] = 6; Cantidades[2][1] = 72; Cantidades[2][2] = 2; Cantidades[2][3] = 6;
-	Cantidades[3][0] = 5; Cantidades[3][1] = 53; Cantidades[3][2] = 25; Cantidades[3][3] = 3;
+	Cantidades[3][0] = 5; Cantidades[3][1] = 53; Cantidades[3][2] = 117; Cantidades[3][3] = 3;
 	Cantidades[4][0] = 6; Cantidades[4][1] = 64; Cantidades[4][2] = 15; Cantidades[4][3] = 6;
 	Cantidades[5][0] = 17; Cantidades[5][1] = 117; Cantidades[5][2] = 0; Cantidades[5][3] = 10;
 }
@@ -2985,7 +2985,123 @@ void DataVacios(int nivel, int ***matriz)
 		matriz[2][1][0] = 50; matriz[2][1][1] = 24;
 	}
 	if (nivel == 3){
-		av(matriz, nivel, 0, 22, 18); av(matriz, nivel, 1, 34, 26); av(matriz, nivel, 2, 28, 34); av(matriz, nivel, 3, 30, 34); av(matriz, nivel, 4, 32, 34); av(matriz, nivel, 5, 34, 34); av(matriz, nivel, 6, 36, 34); av(matriz, nivel, 7, 38, 34); av(matriz, nivel, 8, 40, 34); av(matriz, nivel, 9, 42, 34); av(matriz, nivel, 10, 30, 36); av(matriz, nivel, 11, 32, 36); av(matriz, nivel, 12, 34, 36); av(matriz, nivel, 13, 36, 36); av(matriz, nivel, 14, 38, 36); av(matriz, nivel, 15, 40, 36); av(matriz, nivel, 16, 48, 36); av(matriz, nivel, 17, 30, 38); av(matriz, nivel, 18, 32, 38); av(matriz, nivel, 19, 34, 38); av(matriz, nivel, 20, 36, 38); av(matriz, nivel, 21, 46, 38); av(matriz, nivel, 22, 30, 44); av(matriz, nivel, 23, 32, 44); av(matriz, nivel, 24, 34, 46);
+		av(matriz, nivel, 0, 22, 18);
+		av(matriz, nivel, 1, 34, 26);
+		av(matriz, nivel, 2, 28, 34);
+		av(matriz, nivel, 3, 30, 34);
+		av(matriz, nivel, 4, 32, 34);
+		av(matriz, nivel, 5, 34, 34);
+		av(matriz, nivel, 6, 36, 34);
+		av(matriz, nivel, 7, 38, 34);
+		av(matriz, nivel, 8, 40, 34);
+		av(matriz, nivel, 9, 42, 34);
+		av(matriz, nivel, 10, 30, 36);
+		av(matriz, nivel, 11, 32, 36);
+		av(matriz, nivel, 12, 34, 36);
+		av(matriz, nivel, 13, 36, 36);
+		av(matriz, nivel, 14, 38, 36);
+		av(matriz, nivel, 15, 40, 36);
+		av(matriz, nivel, 16, 48, 36);
+		av(matriz, nivel, 17, 30, 38);
+		av(matriz, nivel, 18, 32, 38);
+		av(matriz, nivel, 19, 34, 38);
+		av(matriz, nivel, 20, 36, 38);
+		av(matriz, nivel, 21, 46, 38);
+		av(matriz, nivel, 22, 30, 44);
+		av(matriz, nivel, 23, 32, 44);
+		av(matriz, nivel, 24, 34, 46);
+		av(matriz, nivel, 25, 14, 6);
+		av(matriz, nivel, 26, 16, 6);
+		av(matriz, nivel, 27, 30, 6);
+		av(matriz, nivel, 28, 32, 6);
+		av(matriz, nivel, 29, 34, 6);
+		av(matriz, nivel, 30, 12, 8);
+		av(matriz, nivel, 31, 14, 8);
+		av(matriz, nivel, 32, 16, 8);
+		av(matriz, nivel, 33, 18, 8);
+		av(matriz, nivel, 34, 28, 8);
+		av(matriz, nivel, 35, 30, 8);
+		av(matriz, nivel, 36, 32, 8);
+		av(matriz, nivel, 37, 34, 8);
+		av(matriz, nivel, 38, 36, 8);
+		av(matriz, nivel, 39, 12, 10);
+		av(matriz, nivel, 40, 14, 10);
+		av(matriz, nivel, 41, 16, 10);
+		av(matriz, nivel, 42, 28, 10);
+		av(matriz, nivel, 43, 30, 10);
+		av(matriz, nivel, 44, 32, 10);
+		av(matriz, nivel, 45, 34, 10);
+		av(matriz, nivel, 46, 36, 10);
+		av(matriz, nivel, 47, 44, 10);
+		av(matriz, nivel, 48, 14, 12);
+		av(matriz, nivel, 49, 16, 12);
+		av(matriz, nivel, 50, 20, 12);
+		av(matriz, nivel, 51, 28, 12);
+		av(matriz, nivel, 52, 30, 12);
+		av(matriz, nivel, 53, 32, 12);
+		av(matriz, nivel, 54, 34, 12);
+		av(matriz, nivel, 55, 36, 12);
+		av(matriz, nivel, 56, 38, 12);
+		av(matriz, nivel, 57, 44, 12);
+		av(matriz, nivel, 58, 16, 14);
+		av(matriz, nivel, 59, 18, 14);
+		av(matriz, nivel, 60, 20, 14);
+		av(matriz, nivel, 61, 22, 14);
+		av(matriz, nivel, 62, 28, 14);
+		av(matriz, nivel, 63, 30, 14);
+		av(matriz, nivel, 64, 40, 14);
+		av(matriz, nivel, 65, 42, 14);
+		av(matriz, nivel, 66, 18, 16);
+		av(matriz, nivel, 67, 20, 16);
+		av(matriz, nivel, 68, 22, 16);
+		av(matriz, nivel, 69, 28, 16);
+		av(matriz, nivel, 70, 20, 18);
+		av(matriz, nivel, 71, 28, 18);
+		av(matriz, nivel, 72, 54, 18);
+		av(matriz, nivel, 73, 56, 18);
+		av(matriz, nivel, 74, 58, 18);
+		av(matriz, nivel, 75, 28, 20);
+		av(matriz, nivel, 76, 54, 20);
+		av(matriz, nivel, 77, 30, 22);
+		av(matriz, nivel, 78, 54, 22);
+		av(matriz, nivel, 79, 56, 22);
+		av(matriz, nivel, 80, 58, 22);
+		av(matriz, nivel, 81, 60, 22);
+		av(matriz, nivel, 82, 64, 22);
+		av(matriz, nivel, 83, 54, 24);
+		av(matriz, nivel, 84, 56, 24);
+		av(matriz, nivel, 85, 58, 24);
+		av(matriz, nivel, 86, 50, 36);
+		av(matriz, nivel, 87, 48, 38);
+		av(matriz, nivel, 88, 50, 38);
+		av(matriz, nivel, 89, 46, 40);
+		av(matriz, nivel, 90, 48, 40);
+		av(matriz, nivel, 91, 50, 40);
+		av(matriz, nivel, 92, 48, 42);
+		av(matriz, nivel, 93, 50, 42);
+		av(matriz, nivel, 94, 52, 42);
+		av(matriz, nivel, 95, 48, 44);
+		av(matriz, nivel, 96, 50, 44);
+		av(matriz, nivel, 97, 52, 44);
+		av(matriz, nivel, 98, 54, 44);
+		av(matriz, nivel, 99, 30, 46);
+		av(matriz, nivel, 100, 32, 46);
+		av(matriz, nivel, 101, 36, 46);
+		av(matriz, nivel, 102, 50, 46);
+		av(matriz, nivel, 103, 52, 46);
+		av(matriz, nivel, 104, 54, 46);
+		av(matriz, nivel, 105, 30, 48);
+		av(matriz, nivel, 106, 32, 48);
+		av(matriz, nivel, 107, 34, 48);
+		av(matriz, nivel, 108, 36, 48);
+		av(matriz, nivel, 109, 30, 50);
+		av(matriz, nivel, 110, 32, 50);
+		av(matriz, nivel, 111, 34, 50);
+		av(matriz, nivel, 112, 36, 50);
+		av(matriz, nivel, 113, 30, 52);
+		av(matriz, nivel, 114, 32, 52);
+		av(matriz, nivel, 115, 34, 52);
+		av(matriz, nivel, 116, 36, 52);
 	}
 	if (nivel == 4){
 		av(matriz, nivel, 0, 32, 20); av(matriz, nivel, 1, 36, 20); av(matriz, nivel, 2, 38, 20); av(matriz, nivel, 3, 40, 20); av(matriz, nivel, 4, 44, 20); av(matriz, nivel, 5, 32, 22); av(matriz, nivel, 6, 36, 22); av(matriz, nivel, 7, 38, 22); av(matriz, nivel, 8, 40, 22); av(matriz, nivel, 9, 44, 22); av(matriz, nivel, 10, 32, 24); av(matriz, nivel, 11, 36, 24); av(matriz, nivel, 12, 38, 24); av(matriz, nivel, 13, 40, 24); av(matriz, nivel, 14, 44, 24);
@@ -3215,10 +3331,10 @@ void PonerHuecos(int nivel, int ***huecos, int ***cajas, int **Cantidades)//Usan
 }
 void PonerPuentes(int nivel, int ***Vacios, int **Cantidades){
 	int maximo;
-	if (nivel == 1)maximo = 0; if (nivel == 2)maximo = 2; if (nivel == 3)maximo = 25; if (nivel == 4)maximo = 15; if (nivel == 5)maximo = 0;
+	if (nivel == 1)maximo = 0; if (nivel == 2)maximo = 2; if (nivel == 3)maximo = 117; if (nivel == 4)maximo = 15; if (nivel == 5)maximo = 0;
 	if (Cantidades[nivel][2] != maximo){
-		int ***VaciosDeReferencia; VaciosDeReferencia = new int**[6]; for (int i = 1; i <= 5; i++)VaciosDeReferencia[i] = new int*[25];
-		for (int i = 1; i <= 5; i++)for (int f = 0; f <= 24; f++)VaciosDeReferencia[i][f] = new int[2];
+		int ***VaciosDeReferencia; VaciosDeReferencia = new int**[6]; for (int i = 1; i <= 5; i++)VaciosDeReferencia[i] = new int*[117];
+		for (int i = 1; i <= 5; i++)for (int f = 0; f <= 116; f++)VaciosDeReferencia[i][f] = new int[2];
 		DataVacios(nivel, VaciosDeReferencia);
 		int next = 0;
 		if (Cantidades[nivel][2] != 0){
@@ -4307,8 +4423,8 @@ scanf("%8s", n2); limpiartecla(1);
 	//===========================================================VACIOS DE TODOS LOS NIVELES=================================//
 	int ***Vacios;
 	Vacios = new int**[8];//Primera Dimension: Nivel
-	for (int i = 1; i <= 5; i++)Vacios[i] = new int*[25];//Segunda Dimension: Numero De Vacio
-	for (int i = 1; i <= 5; i++){ for (int f = 0; f <= 24; f++)Vacios[i][f] = new int[2]; }//Tercera Dimension: Coordenadas
+	for (int i = 1; i <= 5; i++)Vacios[i] = new int*[117];//Segunda Dimension: Numero De Vacio
+	for (int i = 1; i <= 5; i++){ for (int f = 0; f <= 116; f++)Vacios[i][f] = new int[2]; }//Tercera Dimension: Coordenadas
 	//=======================================================================================================================//
 
 	//===========================================================HUECOS DE TODOS LOS NIVELES=================================//

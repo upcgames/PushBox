@@ -1,4 +1,6 @@
 <script>
+  import { onDestroy } from 'svelte';
+  onDestroy(clearHold);
   let { verticalOnly = false, onDir, initialDelay = 320, repeatDelay = 320 } = $props();
   let activeDir = $state(null);
   let shellEl;

@@ -18,6 +18,11 @@ export default [
         performance: "readonly",
         Audio: "readonly",
         fetch: "readonly",
+        structuredClone: "readonly",
+        ResizeObserver: "readonly",
+        cancelAnimationFrame: "readonly",
+        AbortController: "readonly",
+        DOMException: "readonly",
 
         // Extracted Asset Globals
         letras: "readonly",

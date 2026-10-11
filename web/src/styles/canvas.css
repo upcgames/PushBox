@@ -10,6 +10,12 @@ canvas {
   width: 1120px;
   height: 882px;
 }
+.canvas-wrap > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 .board-feedback {
   position: absolute;
   inset: 0;

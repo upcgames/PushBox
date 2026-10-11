@@ -10,6 +10,7 @@ web/src/generated/
 web/src/generated_anim/
 web/public/audio/
 web/public/pushbox_modules/
+web/public/level1-poc/
 
 # Old root artifacts (Cleaned)
 /pushbox_js/

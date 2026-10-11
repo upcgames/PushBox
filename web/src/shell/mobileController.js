@@ -8,6 +8,7 @@ import OneTwo from '../controllers/OneTwo.svelte';
 import Congrats from '../controllers/Congrats.svelte';
 import { GameState } from '../state/gameState.js';
 import { selectControlMode } from './controlPolicy.js';
+import { setupMobileBoardView } from '../presentation/mobileBoardView.js';
 
 const COMPONENTS = {
   none: NoneCtrl,
@@ -63,6 +64,12 @@ export function setupMobileShell() {
   if (!controllerArea) return;
 
   syncShellAttrs();
+  const boardView = setupMobileBoardView(document.body, GameState, isMobile);
+  mobileMQ.addEventListener('change', boardView.refresh);
+  if (import.meta.hot) import.meta.hot.dispose(() => {
+    mobileMQ.removeEventListener('change', boardView.refresh);
+    boardView.dispose();
+  });
   measureTitleSpace();
   mobileMQ.addEventListener('change', syncShellAttrs);
   mobileMQ.addEventListener('change', measureTitleSpace);

@@ -1,0 +1,41 @@
+body { display: block; padding: 24px; font-family: system-ui, sans-serif; }
+.inspector { margin: auto; max-width: 1450px; }
+.inspector-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.inspector-heading h1 { font-size: 24px; margin: 6px 0 18px; }
+.eyebrow { color: #8bc5e4; font-size: 11px; letter-spacing: .15em; text-transform: uppercase; }
+.inspector a { color: #8bc5e4; }
+.toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px; background: #141b28; border: 1px solid #2b374a; border-radius: 10px; }
+.toolbar label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.toolbar input[type="number"] { width: 58px; padding: 5px; }
+.toolbar input[type="range"] { width: 90px; }
+.toolbar input { accent-color: #38bdf8; }
+.toolbar select { padding: 6px; background: #1c293a; color: #e7eef5; border: 1px solid #36435a; border-radius: 6px; font: inherit; }
+.toolbar button, .preview-heading button { padding: 8px 12px; min-height: 36px; border-radius: 6px; border: 1px solid #36435a; background: #1c293a; color: #e7eef5; font: inherit; cursor: pointer; }
+.toolbar button:focus-visible, .preview-heading button:focus-visible { outline: 2px solid #38bdf8; }
+#comparison { color: #9eb1c6; font-size: 12px; }
+.inspector-help { color: #8f9caf; font-size: 13px; line-height: 1.6; margin: 14px 0; }
+#previews { display: flex; gap: 24px; align-items: flex-start; overflow-x: auto; padding: 8px 4px 24px; }
+.preview-card { flex: none; }
+.preview-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; font-size: 12px; }
+.selected .select-preview { border-color: #38bdf8; color: #7dd3fc; }
+.phone-scale { position: relative; width: 100%; }
+.phone-screen { width: var(--device-width); height: var(--device-height); transform: scale(var(--preview-scale)); transform-origin: top left; display: flex; flex-direction: column; background: #090d16; border-radius: 20px; overflow: hidden; outline: 2px solid #36435a; }
+.selected .phone-screen { outline-color: #38bdf8; }
+.status-bar { height: 24px; flex: none; padding: 4px 18px; display: flex; justify-content: space-between; font-size: 12px; background: #242832; }
+.browser-top { height: var(--top-height); flex: none; display: flex; align-items: center; gap: 14px; padding: 0 12px; background: #242832; overflow: hidden; }
+.address { flex: 1; padding: 9px 12px; border-radius: 24px; background: #383e49; font-size: 14px; }
+.browser-bottom { height: var(--bottom-height); flex: none; display: flex; align-items: center; justify-content: space-around; background: #242832; overflow: hidden; }
+.web-viewport { flex: 1; min-height: 0; overflow: auto; }
+.viewport-size, .session-status { font-size: 12px; color: #98a8bd; margin-top: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.mobile-session { min-height: 100%; display: flex; flex-direction: column; justify-content: flex-start; position: relative; --font: system-ui, sans-serif; }
+.mobile-session .mobile-title { display: none; text-align: center; font-family: 'Px437', monospace; font-size: 1.6rem; font-weight: 700; letter-spacing: .08em; color: var(--text); text-shadow: 0 0 14px var(--accent); padding: 8px 0 4px; }
+.mobile-session[data-title="show"] .mobile-title { display: block; }
+.mobile-session .console-frame { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 4px; border-radius: 0; box-shadow: none; }
+.mobile-session .canvas-wrap { width: 100%; height: auto; aspect-ratio: 1120 / 882; }
+.mobile-session canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mobile-session .controller-area { width: 100%; margin-top: auto; position: sticky; bottom: 0; min-height: 184px; padding-bottom: 14px; z-index: 5; }
+.mobile-session .launcher-title { font-size: 2rem; }
+.mobile-session .dev-options { min-width: 0; width: calc(var(--device-width) - 32px); max-width: 340px; }
+.mobile-session .launcher-overlay[hidden] { display: none; }
+.mobile-session .mute-btn { opacity: 1; display: flex; }
+@media (max-width: 700px) { body { padding: 12px; } .toolbar { gap: 10px; } }

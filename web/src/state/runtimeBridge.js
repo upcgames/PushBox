@@ -1,5 +1,7 @@
 import { runtimeState, GameState } from './gameState.js';
 
+export function createRuntimeBridge(store) {
+const GameState = store.api, runtimeState = store;
 let readGame = null;
 const screens = [];
 const inputScopes = [];
@@ -13,7 +15,7 @@ function publishContext(reason) {
   runtimeState.publish({ screen: screens.at(-1) || null, inputRequest: currentRequest() }, reason);
 }
 
-export function enterInput(request) {
+function enterInput(request) {
   const scope = { owner: screens.at(-1) || null, request };
   inputScopes.push(scope);
   publishContext('inputRequestChanged');
@@ -25,12 +27,12 @@ export function enterInput(request) {
   };
 }
 
-export async function withInput(request, read) {
+async function withInput(request, read) {
   const leave = enterInput(request);
   try { return await read(); } finally { leave(); }
 }
 
-export function refreshGame(reason = 'gameChanged') {
+function refreshGame(reason = 'gameChanged') {
   if (!readGame) return;
   const next = readGame();
   if (JSON.stringify(next) !== JSON.stringify(GameState.getSnapshot().game)) {
@@ -38,7 +40,7 @@ export function refreshGame(reason = 'gameChanged') {
   }
 }
 
-export function observeGame(reader) {
+function observeGame(reader) {
   readGame = reader;
   refreshGame('gameStarted');
   return () => {
@@ -50,7 +52,7 @@ export function observeGame(reader) {
   };
 }
 
-export function enterScreen(id) {
+function enterScreen(id) {
   refreshGame();
   const screen = { id };
   screens.push(screen);
@@ -62,12 +64,12 @@ export function enterScreen(id) {
   };
 }
 
-export async function observeAwait(value) {
+async function observeAwait(value) {
   refreshGame();
   try { return await value; } finally { refreshGame(); }
 }
 
-export function recordInput(key, stage) {
+function recordInput(key, stage) {
   refreshGame();
   const input = { key, stage, request: GameState.getSnapshot().inputRequest };
   runtimeState.publish({ input }, 'inputChanged');
@@ -75,7 +77,7 @@ export function recordInput(key, stage) {
 }
 
 // Called only from the runtime's rejected-push branch, independently of audio.
-export function reportBlockedPush(movement, boxIndex) {
+function reportBlockedPush(movement, boxIndex) {
   refreshGame();
   const { game, screen } = GameState.getSnapshot();
   if (!game || screen?.id !== 'gameplay') return;
@@ -91,6 +93,12 @@ export function reportBlockedPush(movement, boxIndex) {
   runtimeState.event('pushBlocked', { level: game.level, box, direction,
     obstacle: { x, y, kind: wall ? 'wall' : 'box' } });
 }
+
+return { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush };
+}
+
+const defaultBridge = createRuntimeBridge({ api: GameState, ...runtimeState });
+export const { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush } = defaultBridge;
 
 export function boardSnapshot(level, player, steps, lives, sound, arrays, portal, nextLevel, undoPosition) {
   const { Cajas, Paredes, Vacios, Huecos, Cantidades } = arrays;

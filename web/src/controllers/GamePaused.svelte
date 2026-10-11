@@ -1,6 +1,7 @@
 <script>
+  import { controllerServices } from './services.js';
+  const { store: GameState, sendInput: dispatch, audio } = controllerServices();
   import Button from './Button.svelte';
-  import { sendInput as dispatch } from '../state/gameState.js';
   import Dpad from '../components/Dpad.svelte';
 </script>
 

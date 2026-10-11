@@ -9,7 +9,7 @@ function immutable(value) {
   return Object.freeze(copy);
 }
 
-export function createGameState() {
+export function createGameState(inputCommand = sendInput) {
   let state = immutable({ version: 0, inputRequest: null, screen: null, game: null,
     input: null, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
   const listeners = new Map(), subscribers = new Set();
@@ -64,7 +64,7 @@ export function createGameState() {
       }
     });
   }
-  const api = Object.freeze({ getSnapshot: () => state, subscribe, select, on, sendInput });
+  const api = Object.freeze({ getSnapshot: () => state, subscribe, select, on, sendInput: inputCommand });
   return { api, publish, event };
 }
 

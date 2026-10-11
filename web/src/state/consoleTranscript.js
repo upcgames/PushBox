@@ -2,12 +2,12 @@ import { runtimeState } from './gameState.js';
 
 // Retain what is actually on screen, including overwrites and CP437 glyphs.
 // Flush once per frame, rather than publishing thousands of drawing operations.
-export function observeConsole(consoleInstance, schedule = requestAnimationFrame) {
+export function observeConsole(consoleInstance, schedule = requestAnimationFrame, publisher = runtimeState) {
   let cols, rows, tileSize, cells, pending = false, disposed = false;
   function flush() {
     pending = false;
     if (disposed) return;
-    runtimeState.publish({ console: { cols, rows, tileSize,
+    publisher.publish({ console: { cols, rows, tileSize,
       lines: cells.map(row => row.map(cell => cell?.char || ' ').join('').trimEnd()),
       cells } }, 'consoleChanged');
   }

@@ -1,24 +1,22 @@
 <script>
+  import { controllerServices } from './services.js';
+  const { store: GameState, sendInput: dispatch, audio } = controllerServices();
   import Button from './Button.svelte';
-  import { sendInput as dispatch } from '../state/gameState.js';
-  import { GameState } from '../state/gameState.js';
   import { onMount } from 'svelte';
   import Dpad from '../components/Dpad.svelte';
-  import { playTrollSound, setWebMuted } from '../shims/audio_shim.js';
   let trolling = $state(false);
   let muted = $state(GameState.getSnapshot().audio.muted);
   let trollTimer = null;
   function dispatchTroll() {
     if (muted) {
-      setWebMuted(false);
+      audio.setWebMuted(false);
       dispatch('f');
       return;
     }
-    playTrollSound();
+    audio.playTrollSound();
     trolling = true;
     if (trollTimer) clearTimeout(trollTimer);
-    import('../shims/audio_shim.js').then(m => {
-      const audio = m.getCurrentAudio && m.getCurrentAudio();
+    Promise.resolve(audio.getCurrentAudio()).then(audio => {
       if (audio) {
         const clear = () => { trolling = false; audio.removeEventListener('ended', clear); audio.removeEventListener('pause', clear); };
         audio.addEventListener('ended', clear, { once: true });

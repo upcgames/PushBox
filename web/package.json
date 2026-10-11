@@ -17,5 +17,8 @@
     "svelte": "^5.56.8",
     "vite": "^8.0.0",
     "vite-plugin-eslint": "^1.8.1"
+  },
+  "dependencies": {
+    "phaser": "3.90.0"
   }
 }

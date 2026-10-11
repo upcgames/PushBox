@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PushBox · Level 1 POC</title>
+</head>
+<body>
+  <main>
+    <div class="topline"><span class="eyebrow">PushBox / Playground</span><a href="./index.html">Original game</a></div>
+    <h1>Level 1</h1>
+    <div class="stats"><span>Moves<strong id="moves">0 / 150</strong></span><span>Lives<strong id="lives">5</strong></span><span>Targets<strong id="targets">0 / 4</strong></span></div>
+    <p id="status" role="status">Loading level…</p>
+    <div class="play">
+      <div id="board" role="img" aria-label="Level 1 PushBox board. Use the directional buttons or keyboard to play."></div>
+      <div class="controls">
+        <div class="dpad" role="group" aria-label="Movement">
+          <button data-direction="up" aria-label="Move up">↑</button>
+          <button data-direction="left" aria-label="Move left">←</button>
+          <button data-direction="down" aria-label="Move down">↓</button>
+          <button data-direction="right" aria-label="Move right">→</button>
+        </div>
+        <div class="actions">
+          <button id="undo" disabled>Undo (0)</button><button id="pause">Pause</button>
+          <button id="retry" hidden>Try again</button><button id="restart">Restart</button>
+        </div>
+      </div>
+    </div>
+    <div class="options">
+      <label><input id="boardOnly" type="checkbox" checked>Zoom to board</label>
+      <label><input id="motion" type="checkbox" checked>Character motion</label>
+    </div>
+    <p class="help">WASD or arrows to move · R to undo (+3 moves, last 5 turns) · P to pause.<br>Cover all targets, then enter the portal. This prototype ends at level 1.</p>
+    <details><summary>Session inspector</summary><div class="inspection"><pre id="snapshot"></pre><pre id="events">No events yet.</pre></div></details>
+  </main>
+  <script type="module" src="/src/level1-poc/main.js"></script>
+</body>
+</html>
