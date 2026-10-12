@@ -2,6 +2,7 @@ import { mountMobileOpening } from '../presentation/mountMobileOpening.js';
 import { createPlayerProfile } from '../presentation/playerIdentity.js';
 import { createSeenProgress } from '../state/seenProgress.js';
 import { mountTrollReward } from '../presentation/trollReward.js';
+import { mountUndoHint } from '../presentation/undoHint.js';
 import { mountExitCue } from '../presentation/mountExitCue.js';
 import { mountBobby } from '../presentation/mountBobby.js';
 import { populateStartPoints, startPointSettings } from '../shell/startPoints.js';
@@ -13,7 +14,8 @@ import { mountMobileInstructions } from '../presentation/mountMobileInstructions
 import { mountGameplayHud } from '../presentation/mountGameplayHud.js';
 import { setupMobileBoardView } from '../presentation/mobileBoardView.js';
 
-export function mountSessionPanel(root, runtimeFactory, routeInput, changed, settingsChanged = () => {}, requestStart) {
+export function mountSessionPanel(root, runtimeFactory, routeInput, changed, settingsChanged = () => {}, requestStart,
+  { progress = createSeenProgress({ storage: null }) } = {}) {
   root.innerHTML = `
     <div class="console-frame">
       <div class="launcher-overlay">
@@ -29,7 +31,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
       <div class="canvas-wrap"><canvas width="1120" height="882"></canvas></div>
     </div>
     <div class="controller-area"></div>`;
-  const previewProgress = createSeenProgress({ storage: null });
+  const previewProgress = progress;
   const previewProfile = createPlayerProfile({ storage: null });
   const canvas = root.querySelector('canvas');
   const launcher = root.querySelector('.launcher-overlay');
@@ -44,7 +46,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
   const changeSkipLore = () => settingsChanged({ skipLore: skipLore.checked });
   startPoint.addEventListener('change', changeStartPoint);
   skipLore.addEventListener('change', changeSkipLore);
-  let session, stopState, stopAudio, stopControls, stopHints, stopHud, instructions, loreView, boardView, bobby, exitCue, trollReward, opening, ready, running = false, disposed = false;
+  let session, stopState, stopAudio, stopControls, stopHints, stopHud, instructions, loreView, boardView, bobby, exitCue, trollReward, undoHint, opening, ready, running = false, disposed = false;
   let framing = 'walls';
   function teardown() {
     instructions?.dispose();
@@ -53,6 +55,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     bobby?.dispose();
     exitCue?.dispose();
     trollReward?.dispose();
+    undoHint?.dispose();
     opening?.dispose();
     stopHud?.(); stopState?.(); stopAudio?.(); stopControls?.(); stopHints?.(); session?.dispose();
   }
@@ -61,10 +64,11 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     startButton.disabled = true; startButton.textContent = 'Loading fonts…';
     session = createGameSession(canvas, runtimeFactory, { baseUrl: import.meta.env.BASE_URL });
     const current = session;
-    opening = mountMobileOpening(root, session.state, session.audio, { progress: previewProgress, profile: previewProfile,
-      onEnter: () => requestStart ? requestStart() : start() });
+    opening = mountMobileOpening(root, session.state, session.audio, { surface: session.console, progress: previewProgress, profile: previewProfile,
+      onEnter: destination => destination ? start() : requestStart ? requestStart() : start() });
     opening.setLoading(0); session.setOpening(opening);
     trollReward = mountTrollReward(session.state, { progress: previewProgress });
+    undoHint = mountUndoHint(session.state);
     exitCue = mountExitCue(session.console, session.state);
     bobby = mountBobby(session.console, session.state);
     stopState = session.state.subscribe(state => { changed(state); });
@@ -77,7 +81,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     loreView = mountMobileLore(root, session.state, routeInput);
     stopControls = setupSessionControls(root.querySelector('.controller-area'), services);
     stopHints = setupBoardFeedback(canvas, root.querySelector('.feedback-button'), session.state, { mobile: () => true });
-    boardView = setupMobileBoardView(root, session.state);
+    boardView = setupMobileBoardView(root, session.state, undefined, { surface: session.console });
     boardView.setFraming(framing);
     ready = session.loadAssets(percent => { if (session === current && !disposed) opening.setLoading(percent); }).then(() => {
       if (disposed || session !== current) return;

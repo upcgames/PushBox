@@ -113,3 +113,75 @@ test('mobile native identity reaches original congratulations initialization thr
     assert.deepEqual(captured[7].slice(0, 4), [-91, 'i', 'n', 'a']);
   } finally { game.dispose(); await done; }
 });
+
+test('original winner changes names through native reads, then redraws and exits normally', async () => {
+  const { createWinnerIdentity } = await import('../src/presentation/winnerIdentity.js');
+  const { createPlayerProfile } = await import('../src/presentation/playerIdentity.js');
+  let counts;
+  const game = session(environment => {
+    // Accelerate original text delays for this runtime integration check.
+    environment.shims.Sleep = async () => {
+      assert.notEqual(environment.console.drawScope, 'winner-prompts', 'Hidden mobile prompts must not run typing delays');
+    };
+    const play = environment.shims.PlaySound;
+    environment.shims.PlaySound = (...args) => {
+      assert.notEqual(environment.console.drawScope, 'winner-prompts', 'Hidden mobile prompts must not play typing sound');
+      return play(...args);
+    };
+    const bind = environment.bridge.bindPlayerIdentity;
+    environment.bridge.bindPlayerIdentity = value => { bind(value); counts = value; };
+    return createRuntime(environment);
+  });
+  const paintedPrompts = [];
+  game.console.setDrawScopeHidden('winner-prompts', true);
+  game.console.ctx.fillText = character => {
+    if (game.console.drawScope === 'winner-prompts') paintedPrompts.push(character);
+  };
+  const profile = createPlayerProfile({ storage: null });
+  const flow = createWinnerIdentity({ profile, store: game.state });
+  const stopReader = game.state.registerNativeTextReader(flow.read, flow.accepts);
+  game.state.setPlayerNames(['Ana']);
+  const done = game.start(startPointSettings('6', true));
+  try {
+    await waitFor(() => waiting(game, 'InterfazCongratulations', 'confirmation'));
+    game.sendInput('E');
+    await waitFor(() => waiting(game, 'InterfazCongratulations', 'key'));
+    assert.ok(game.console.cells.flat().some(cell => cell?.scope === 'winner-prompts' && cell.char !== ' '));
+    game.sendInput('K');
+    await waitFor(() => flow.getSnapshot().visible);
+    assert.equal(game.state.getSnapshot().inputRequest.native, true);
+    flow.submit('José Ñina');
+    await waitFor(() => counts[8][0] === '2' && counts[6][3] === -126 && counts[7][0] === -91);
+    assert.deepEqual(profile.getNames(), ['José', 'Ñina']);
+    assert.ok(paintedPrompts.length > 0);
+    assert.ok(paintedPrompts.every(character => character === ' '), 'Mobile hides prompts while retaining canonical writes');
+    await waitFor(() => waiting(game, 'InterfazCongratulations', 'confirmation'));
+    game.sendInput('E');
+    await waitFor(() => waiting(game, 'InterfazCongratulations', 'key'));
+    game.sendInput('E');
+    await waitFor(() => game.state.getSnapshot().screen?.id === 'InterfazCreditos');
+    assert.equal(flow.getSnapshot().visible, false);
+    assert.equal(game.console.drawScope, null);
+  } finally { stopReader(); flow.dispose(); game.dispose(); await done; }
+});
+
+test('saved selector choices reach original Game Over and Credits through main initialization', async () => {
+  const { startPointSettings } = await import('../src/shell/startPoints.js');
+  for (const [point, scene] of [['7', 'InterfazGameOver'], ['8', 'InterfazCreditos']]) {
+    const game = session(environment => {
+      environment.shims.Sleep = async () => {};
+      return createRuntime(environment);
+    });
+    const screens = [];
+    const stop = game.state.select(state => state.screen?.id, id => screens.push(id));
+    game.setOpening({ enabled: () => true, getNames: () => ['Ana'],
+      takeDestination: skipLore => startPointSettings(point, skipLore),
+      begin: async () => { throw new DOMException('reset', 'AbortError'); } });
+    const done = game.start(startPointSettings('0', false));
+    try {
+      await waitFor(() => screens.includes(scene));
+      assert.equal(screens.slice(0, screens.indexOf(scene)).includes('MenuPrincipal'), false);
+      assert.equal(game.state.getSnapshot().game, null);
+    } finally { stop(); game.dispose(); await done; }
+  }
+});

@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const progress = createSeenProgress();
   setupMobileShell({ progress });
-  const opening = mountMobileOpening(document.body, GameState, { play: PlaySound, stop: StopSound, setWebMuted }, { enabled: isMobile, progress, onEnter: () => startGame() });
+  const opening = mountMobileOpening(document.body, GameState, { play: PlaySound, stop: StopSound, setWebMuted }, { enabled: isMobile, surface: gameConsole, progress, onEnter: () => startGame() });
   opening.setLoading(0);
   if (import.meta.hot) import.meta.hot.dispose(opening.dispose);
   setupMuteButton();

@@ -30,9 +30,27 @@ function enterInput(request) {
   };
 }
 
-async function withInput(request, read) {
-  const leave = enterInput(request);
-  try { return await read(); } finally { leave(); }
+async function withInput(request, read, target) {
+  const native = request.kind === 'text' && target ? GameState.readNativeText(request, target) : undefined;
+  const leave = enterInput(native === undefined ? request : { ...request, native: true });
+  try { return await (native === undefined ? read() : native); } finally { leave(); }
+}
+
+async function readPauseKey(read, option) {
+  const key = await read();
+  if (key === 'Resume') {
+    // One explicit UI command selects the original Resume action, including
+    // linked Inspector sessions; no W/S navigation sequence is synthesized.
+    option.v = 1;
+    return 'E';
+  }
+  return key;
+}
+
+// Native input replaces these prompts. Preserve their console writes without
+// running an invisible typewriter or its audio; other contexts keep original timing.
+async function presentPrompt(consumer, type, write) {
+  return GameState.hasNativeTextReader(consumer) ? write() : type();
 }
 
 function refreshGame(reason = 'gameChanged') {
@@ -64,7 +82,9 @@ function enterScreen(id, context = {}) {
   publishContext('screenChanged');
   return () => {
     const index = screens.indexOf(screen);
-    if (index !== -1) screens.splice(index, 1);
+    if (index === -1) return;
+    runtimeState.event('screenExited', { screen, ...context.exit?.() });
+    screens.splice(index, 1);
     publishContext('screenChanged');
   };
 }
@@ -145,11 +165,11 @@ function bindPlayerIdentity(counts) { writePlayerIdentity(counts, GameState.getS
 
 function bindSound(reference) { bindSoundReference(store, reference); }
 function handleAudioInput(key) { return handleAudioKey(store, key); }
-return { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
+return { enterInput, withInput, readPauseKey, presentPrompt, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked: () => GameState.getSnapshot().winnerContinueBlocked, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
 }
 
 const defaultBridge = createRuntimeBridge({ api: GameState, ...runtimeState });
-export const { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputConsumer } = defaultBridge;
+export const { enterInput, withInput, readPauseKey, presentPrompt, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked, inputConsumer } = defaultBridge;
 
 export function boardSnapshot(level, player, steps, lives, sound, arrays, portal, nextLevel, undoPosition) {
   const { Cajas, Paredes, Vacios, Huecos, Cantidades } = arrays;
@@ -158,8 +178,9 @@ export function boardSnapshot(level, player, steps, lives, sound, arrays, portal
   const targets = coordinates(Huecos, counts[3]);
   const boxes = coordinates(Cajas, counts[0]).map((box, index) => ({ ...box, index,
     onTarget: targets.some(target => target.x === box.x && target.y === box.y) }));
-  return { level, nextLevel, player, steps, lives, sound: !!sound, undoAvailable: undoPosition > 1,
-    grid: { cols: 80, rows: 63, cellSize: 14, objectSize: 2 },
+  return { level, nextLevel, player, steps, lives, sound: !!sound, undoAvailable: undoPosition > 1, undoDepth: undoPosition - 1,
+    grid: { cols: 80, rows: 63, cellSize: 14, objectSize: 2,
+      walkBounds: { minX: 0, maxX: 79, minY: 0, maxY: 59 } },
     board: { boxes, targets: targets.map(target => ({ ...target,
       covered: boxes.some(box => box.x === target.x && box.y === target.y) })),
     walls: coordinates(Paredes, counts[1]), gaps: coordinates(Vacios, counts[2]) }, portal };

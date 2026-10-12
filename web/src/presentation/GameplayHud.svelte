@@ -1,6 +1,6 @@
 <script>
   import PixelButton from '../components/PixelButton.svelte';
-  let { lives, remaining, muted = false, jolt = 0, onMute, onPause } = $props();
+  let { lives, remaining, muted = false, paused = false, canResume = false, jolt = 0, onMute, onPause } = $props();
 </script>
 
   <div class="game-hud" class:critical={remaining !== null && remaining < 20}>
@@ -17,7 +17,7 @@
     <div class="utilities">
       <PixelButton icon="sound" label={muted ? 'Activar sonido' : 'Silenciar'} variant={muted ? 'utility muted' : 'utility'}
         pressed={muted} onclick={onMute} />
-      <PixelButton icon="pause" label="Pausar" variant="utility" onclick={onPause} />
+      <PixelButton icon="pause" label={paused ? 'Reanudar' : 'Pausar'} variant="utility" pressed={paused} disabled={paused && !canResume} onclick={onPause} />
     </div>
   </div>
 

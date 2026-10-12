@@ -12,6 +12,12 @@
     <path d="M5 3h14v3h3v12h-3v3H5v-3H2V6h3V3Zm3 4v3h3V7H8Zm6 0v3h3V7h-3Zm-7 7v3h3v2h5v-2h3v-3h-3v2h-5v-2H7Z" />
   {:else if name === 'pause'}
     <path d="M5 3h5v18H5V3Zm9 0h5v18h-5V3Z" />
+  {:else if name === 'portal'}
+    <path d="M4 2h16v20H4V2Z" />
+    <path fill="#182333" d="M7 5h10v17H7V5Z" />
+    <path fill="#b77935" d="M8 6h8v15H8V6Z" />
+    <path fill="#854d0e" d="M10 8h4v4h-4V8Zm0 7h4v4h-4v-4Z" />
+    <path d="M14 13h2v2h-2v-2ZM2 22h20v2H2v-2Z" />
   {:else if name === 'sound'}
     <path d="M3 9h5l6-5v16l-6-5H3V9Z" />
     {#if muted}

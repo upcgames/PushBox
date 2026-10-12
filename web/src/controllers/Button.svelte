@@ -1,8 +1,8 @@
 <script>
-  let { label = '', icon = '', variant = '', onclick } = $props();
+  let { label = '', icon = '', variant = '', onclick, disabled = false } = $props();
 </script>
 
-<button class="btn {variant}" onclick={onclick}>
+<button class="btn {variant}" {disabled} onclick={onclick}>
   {#if icon}<span class="icon">{icon}</span>{/if}
   {#if label}<span class="label">{label}</span>{/if}
 </button>
@@ -27,6 +27,7 @@
     box-sizing: border-box;
   }
   .btn.primary { background: var(--accent); }
+  .btn:disabled { opacity: 0.45; cursor: default; }
   .btn.big { font-size: 1.6rem; padding: 16px 32px; min-height: 56px; }
   .btn.troll .icon { font-size: 1.7em; }
   .icon { font-size: 1.1em; }

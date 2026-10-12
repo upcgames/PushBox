@@ -26,6 +26,7 @@ export function createSessionShims(surface, bridge, { config, audio, signal,
       else bridge.recordInput(value, 'consumed');
       return;
     }
+    if (bridge.inputBlocked()) return;
     if (waiters.length) waiters.shift().resolve(value);
     else queue.push(value);
   }

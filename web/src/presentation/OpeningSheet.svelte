@@ -1,5 +1,8 @@
 <script>
   import { onMount } from 'svelte';
+  import NativeNameField from './NativeNameField.svelte';
+  import DestinationModal from './DestinationModal.svelte';
+  import PixelButton from '../components/PixelButton.svelte';
   import ContinueButton from '../components/ContinueButton.svelte';
   import { drawTitle } from './titleArt.js';
   import linkData from '../../pushbox_modules/maps_json/LinkSprite.json';
@@ -58,8 +61,10 @@
     }
     function keyboard(event) {
       if (!acceptKeyboard() || ['hidden', 'complete'].includes(state.phase)) return;
+      if (state.destinationOpen) return;
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       event.stopImmediatePropagation();
+      if (event.target?.closest?.('button') && (event.key === 'Enter' || event.key === ' ')) return;
       if (event.target?.closest?.('input')) {
         if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); continueOpening(); }
         return;
@@ -81,7 +86,7 @@
   {#if state.phase === 'loading'}
     <div class="opening-loading">
       <canvas bind:this={title} class="opening-title" width="256" height="112" aria-label="PushBox"></canvas>
-      <h3>Loading</h3>
+      <h3>{state.ready ? 'Listo' : 'Loading'}</h3>
       <canvas bind:this={link} class="opening-link" width="56" height="76" aria-label="Link loading animation"></canvas>
       <div class="opening-meter" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow={state.percent}><span style:width={`${state.percent}%`}></span></div>
       <p>{state.percent}%</p>
@@ -92,10 +97,7 @@
       <canvas bind:this={alien} class="opening-alien" width="84" height="64" aria-label="Original space invader"></canvas>
       <div class="opening-content">
         {#if state.phase === 'name' || state.phase === 'complete'}
-          <form onsubmit={event => { event.preventDefault(); continueOpening(); }}>
-            <h3>¿Cómo te llamas?</h3>
-            <input bind:this={input} bind:value={name} disabled={state.phase === 'complete'} type="text" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="done" aria-label="¿Cómo te llamas?">
-          </form>
+          <NativeNameField bind:this={input} bind:value={name} disabled={state.phase === 'complete'} onsubmit={continueOpening} />
         {:else}
           <p class="opening-copy">{#each parts as part}{#if /^\s+$/u.test(part.text)}{part.text}{:else}<span class="opening-word">{#each [...part.text] as character, index}<span style:visibility={part.offset + index < state.position ? 'visible' : 'hidden'}>{character}</span>{/each}</span>{/if}{/each}</p>
         {/if}
@@ -103,6 +105,14 @@
     </div>
   {/if}
   {#if state.phase !== 'loading' || state.ready}
-    <div class="opening-continue"><ContinueButton label={state.phase === 'loading' ? 'Enter' : 'Continue'} disabled={!ready} onclick={continueOpening} /></div>
+    <div class="opening-continue">
+      <ContinueButton label={state.phase === 'loading' ? 'Enter' : 'Continue'} disabled={!ready} onclick={continueOpening} />
+      {#if state.phase === 'loading' && state.ready && state.destinations.length > 0}
+        <PixelButton icon="portal" label="Saltar directo a" variant="utility" onclick={flow.openDestinations} />
+      {/if}
+    </div>
+  {/if}
+  {#if state.phase === 'loading' && state.destinationOpen}
+    <DestinationModal destinations={state.destinations} onChoose={flow.chooseDestination} onClose={flow.closeDestinations} {acceptKeyboard} />
   {/if}
 </div>

@@ -5,6 +5,7 @@
   import Dpad from '../components/Dpad.svelte';
   const { store: GameState, sendInput: dispatch, audio } = controllerServices();
   let reward = $state(GameState.getSnapshot().trollReward);
+  let undoHint = $state(GameState.getSnapshot().undoHint);
   let trolling = $state(false);
   let undoing = $state(false);
   let undoTimer;
@@ -42,20 +43,21 @@
   }
   onMount(() => {
     const stopReward = GameState.select(state => state.trollReward, next => reward = next);
+    const stopUndoHint = GameState.select(state => state.undoHint, next => undoHint = next);
     const off = GameState.on('input:consumed', ({ key }) => {
       if (key.toLowerCase() !== 'r' || !GameState.getSnapshot().game?.undoAvailable) return;
       undoing = true;
       clearTimeout(undoTimer);
       undoTimer = setTimeout(() => undoing = false, 1800);
     });
-    return () => { stopReward(); GameState.setTrollActive(false); disposed = true; off(); clearTimeout(undoTimer); stopTroll(); };
+    return () => { stopReward(); stopUndoHint(); GameState.setTrollActive(false); disposed = true; off(); clearTimeout(undoTimer); stopTroll(); };
   });
 </script>
 
 <div class="gameplay-deck">
   <Dpad facelift onDir={dispatch} />
   <div class="secondary-actions">
-    <PixelButton icon="undo" label="Retroceder" variant="rewind-cue" active={undoing} onclick={dispatchUndo} />
+    <PixelButton icon="undo" label="Retroceder" variant="rewind-cue" hinted={undoHint} active={undoing} onclick={dispatchUndo} />
     {#if reward.unlocked}
       <PixelButton icon="troll" label="¿Premio?" variant="face" hinted={reward.hinted} active={trolling} onclick={dispatchTroll} />
     {/if}

@@ -170,6 +170,7 @@ CajaLugarPermitido
 MovilPuedeMoverse
 muerte
 ZonaEstable
+EsSitioDeParedDisfrazada
 PortalVisible
 CajayHueco
 PonerCajas

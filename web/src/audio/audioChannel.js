@@ -5,7 +5,8 @@ const TROLL_FILES = ['Sabe.wav', 'Terroristas.wav', 'Despierta.wav', 'Rbr.wav'];
 // One channel per game/session; all channels use the same implementation.
 export function createAudioChannel(store, { baseUrl = '/', initialMuted = store.api.getSnapshot().audio.muted,
   createAudio = path => new Audio(path), random = Math.random, onMutedChange = () => {} } = {}) {
-  let current = null, currentFile = null, lastTroll = null;
+  let current = null, currentFile = null, lastTroll = null, removePlaybackListeners = () => {};
+  const publishPlayback = playback => store.publish({ audio: { ...store.api.getSnapshot().audio, playback } }, 'audioPlaybackChanged');
   setAudioMuted(store, initialMuted);
   const isWebMuted = () => store.api.getSnapshot().audio.muted;
   const unsubscribe = store.api.select(state => state.audio.muted, muted => {
@@ -14,8 +15,10 @@ export function createAudioChannel(store, { baseUrl = '/', initialMuted = store.
   });
   function stop() {
     const previous = current;
+    removePlaybackListeners(); removePlaybackListeners = () => {};
     current = null; currentFile = null;
     if (previous) previous.pause();
+    if (store.api.getSnapshot().audio.playback) publishPlayback(null);
   }
   function play(filename, reserved, flags = 0) {
     stop();
@@ -25,11 +28,23 @@ export function createAudioChannel(store, { baseUrl = '/', initialMuted = store.
     try {
       current = createAudio(`${baseUrl}audio/${file}`);
       currentFile = file;
+      const track = current;
+      const settle = status => { if (current === track) publishPlayback({ file, status }); };
+      const ended = () => settle('ended'), failed = () => settle('failed'), paused = () => settle('interrupted');
+      track.addEventListener?.('ended', ended);
+      track.addEventListener?.('error', failed);
+      track.addEventListener?.('pause', paused);
+      removePlaybackListeners = () => {
+        track.removeEventListener?.('ended', ended);
+        track.removeEventListener?.('error', failed);
+        track.removeEventListener?.('pause', paused);
+      };
+      publishPlayback({ file, status: 'playing' });
       current.currentTime = 0; current.loop = !!(flags & 8);
       current.volume = isWebMuted() ? 0 : 1;
-      current.play()?.catch(error => console.warn(`[Audio] play() rejected for ${file}:`, error));
+      current.play()?.catch(error => { settle('failed'); console.warn(`[Audio] play() rejected for ${file}:`, error); });
       return current;
-    } catch (error) { console.warn(`[Audio] Playback failed for ${file}:`, error); }
+    } catch (error) { stop(); console.warn(`[Audio] Playback failed for ${file}:`, error); }
   }
   function playTrollSound() {
     if (current && !current.paused && !current.ended && TROLL_FILES.includes(currentFile)) {

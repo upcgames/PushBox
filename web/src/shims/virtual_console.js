@@ -1,5 +1,5 @@
 import { ConsoleColor } from './consoleColor.js';
-import { handleAudioInput, inputConsumer, recordInput } from '../state/runtimeBridge.js';
+import { handleAudioInput, inputBlocked, inputConsumer, recordInput } from '../state/runtimeBridge.js';
 
 export class Random {
   Next(min, max) {
@@ -32,6 +32,7 @@ if (typeof window !== 'undefined') {
       return;
     }
 
+    if (inputBlocked()) return;
     if (keyWaiters.length > 0) {
       const resolve = keyWaiters.shift();
       resolve(keyVal);

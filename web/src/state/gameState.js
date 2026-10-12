@@ -10,8 +10,10 @@ function immutable(value) {
 }
 
 export function createGameState(inputCommand = sendInput) {
+  let nativeTextReader = null;
+  let acceptsNativeText = () => false;
   let state = immutable({ version: 0, inputRequest: null, screen: null, game: null,
-    input: null, playerNames: [], playerDrawing: null, playerAnimation: null, trollActive: false, trollReward: { unlocked: false, hinted: false }, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
+    input: null, playerNames: [], playerDrawing: null, playerAnimation: null, undoHint: false, winnerContinueBlocked: false, trollActive: false, trollReward: { unlocked: false, hinted: false }, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
   const listeners = new Map(), subscribers = new Set();
   let sequence = 0;
   const notifications = [];
@@ -72,7 +74,16 @@ export function createGameState(inputCommand = sendInput) {
     if (!state.trollReward.unlocked) return;
     publish({ trollReward: { unlocked: true, hinted: false } }, 'trollRewardUsed');
   }
-  const api = Object.freeze({ getSnapshot: () => state, subscribe, select, on, setPlayerNames: names => publish({ playerNames: names }, 'playerNamesChanged'), setTrollReward, useTrollReward, setTrollActive: active => publish({ trollActive: !!active }, 'trollChanged'), sendInput: inputCommand });
+  const api = Object.freeze({ getSnapshot: () => state, subscribe, select, on,
+    setUndoHint(hinted) { if (state.undoHint !== !!hinted) publish({ undoHint: !!hinted }, 'undoHintChanged'); },
+    setWinnerContinueBlocked(blocked) { if (state.winnerContinueBlocked !== !!blocked) publish({ winnerContinueBlocked: !!blocked }, 'winnerContinueChanged'); },
+    registerNativeTextReader(reader, accepts = () => false) {
+      nativeTextReader = reader; acceptsNativeText = accepts;
+      return () => { if (nativeTextReader === reader) { nativeTextReader = null; acceptsNativeText = () => false; } };
+    },
+    hasNativeTextReader: consumer => !!nativeTextReader && acceptsNativeText(consumer),
+    readNativeText: (request, target) => nativeTextReader?.(request, target),
+    setPlayerNames: names => publish({ playerNames: names }, 'playerNamesChanged'), setTrollReward, useTrollReward, setTrollActive: active => publish({ trollActive: !!active }, 'trollChanged'), sendInput: inputCommand });
   return { api, publish, event };
 }
 

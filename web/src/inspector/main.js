@@ -13,6 +13,19 @@ import './page.css';
 const devices = INSPECTOR_DEVICES;
 const router = createInputRouter(), panels = [], cleanups = [];
 const container = document.getElementById('previews');
+const seenDialog = document.getElementById('seenDialog');
+const seenButton = document.getElementById('openSeenConditions');
+const openSeen = () => seenDialog.showModal();
+// Register before runtime capture handlers: dialog keys retain their native
+// button/focus behavior without reaching any running preview underneath.
+const containSeenInput = event => { if (seenDialog.open) event.stopImmediatePropagation(); };
+seenButton.addEventListener('click', openSeen);
+window.addEventListener('keydown', containSeenInput, true);
+cleanups.push(() => {
+  seenButton.removeEventListener('click', openSeen);
+  window.removeEventListener('keydown', containSeenInput, true);
+  seenDialog.close();
+});
 let selected = 0;
 devices.forEach(([width, height], index) => {
   const card = document.createElement('section');
@@ -34,7 +47,7 @@ devices.forEach(([width, height], index) => {
       select(index);
       if (linkInput.checked) panels.forEach(({ panel }) => panel.start());
       else panels[index].panel.start();
-    });
+    }, { progress: createSeenProgress({ key: `pushboxInspectorSeen:${width}x${height}` }) });
   panels.push({ panel, card });
   cleanups.push(router.register(index, key => panel.sendInput(key)));
   card.querySelector('.reset-preview').addEventListener('click', () => panel.reset());

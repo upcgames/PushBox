@@ -1,3 +1,4 @@
+import { completion } from './completion.js';
 import { drawPushCue } from './pushCue.js';
 import { drawLava } from './lava.js';
 
@@ -89,10 +90,13 @@ export function drawFeedback(ctx, scene, time = 0, { motion = true, completedAt 
       ctx.globalAlpha = cue.kind === 'complete' ? 0.75 : 0.5;
       corners(ctx, x + 2, y + 2, size - 4, 4);
       if (cue.kind === 'complete') {
-        check(ctx, cx, cy);
+        if (!strongPush) check(ctx, cx, cy);
         const landed = completedAt.get(`${cue.x},${cue.y}`);
         const age = time - landed;
-        if (motion && landed !== undefined && age >= 0 && age < 600) {
+        if (strongPush) {
+          ctx.globalAlpha = 1;
+          completion(ctx, x, y, motion && landed !== undefined ? age : 650, false);
+        } else if (motion && landed !== undefined && age >= 0 && age < 600) {
           ctx.globalAlpha = 0.16 * (1 - age / 600);
           ctx.fillRect(x + 2, y + 2, size - 4, size - 4);
         }

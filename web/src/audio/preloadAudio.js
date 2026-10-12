@@ -38,7 +38,7 @@ const AUDIO_FILES = [
   'TypeWriter1.wav',
   'TypeWriter2.wav',
   'WakaWaka.wav',
-  'YouWInMetal.wav',
+  'YouWinMetal.wav',
 ];
 
 const loads = new Map(), cache = new Map();

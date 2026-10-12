@@ -70,6 +70,7 @@ function recordingContext() {
     arc(...args) { this.paths.push(['arc', ...args]); },
     fill() { this.paths.push(['fill', typeof this.fillStyle === 'string' ? this.fillStyle : 'gradient', this.globalAlpha]); },
     stroke() { this.paths.push(['stroke', this.strokeStyle, this.globalAlpha]); },
+    strokeRect(...args) { this.paths.push(['strokeRect', ...args, this.strokeStyle, this.globalAlpha]); },
     fillRect(x, y, width, height) {
       this.rectangles.push({ x, y, width, height,
         color: typeof this.fillStyle === 'string' ? this.fillStyle : 'gradient', opacity: this.globalAlpha });
@@ -107,6 +108,36 @@ test('hidden final-level boxes have only proximity markers until the portal reve
   snapshot.game.portal.active = true;
   snapshot.game.player = { x: 2, y: 4 };
   assert.equal(feedbackScene(snapshot).cues.find(cue => cue.x === 8).kind, 'locked');
+});
+
+test('disguised cajas never reveal placement checks, including nearby and hardened cajas', () => {
+  const snapshot = state();
+  snapshot.game.level = snapshot.game.nextLevel = 5;
+  snapshot.game.board.boxes[1].index = 10;
+  for (const active of [false, true]) {
+    snapshot.game.portal.active = active;
+    for (const player of [{ x: 2, y: 4 }, { x: 10, y: 4 }]) {
+      snapshot.game.player = player;
+      const cues = feedbackScene(snapshot).cues.filter(cue => cue.x === 12 && cue.y === 4);
+      assert.deepEqual(cues.map(cue => cue.kind), active ? ['locked'] : []);
+    }
+  }
+});
+
+test('mobile visible-caja completion uses the outlined lab check and a brief ring; reduced motion stays steady', () => {
+  const scene = feedbackScene(state());
+  scene.cues = scene.cues.filter(cue => cue.kind === 'complete');
+  const completedAt = new Map([['12,4', 0]]), ctx = recordingContext();
+  drawFeedback(ctx, scene, 100, { strongPush: true, completedAt });
+  assert.ok(ctx.rectangles.some(rect => rect.color === '#080914' && rect.opacity === 1));
+  assert.ok(ctx.rectangles.some(rect => rect.color === '#a4f0bf' && rect.opacity === 1));
+  assert.ok(ctx.paths.some(path => path[0] === 'strokeRect' && path.at(-1) > 0));
+  const a = recordingContext(), b = recordingContext();
+  drawFeedback(a, scene, 0, { strongPush: true, motion: false, completedAt });
+  drawFeedback(b, scene, 5000, { strongPush: true, motion: false, completedAt });
+  assert.deepEqual(a.rectangles, b.rectangles);
+  assert.deepEqual(a.paths, b.paths);
+  assert.ok(!a.paths.some(path => path[0] === 'strokeRect' && path.at(-1) > 0));
 });
 
 test('reduced-motion rendering is stable and marks stay inside original tile bounds', () => {

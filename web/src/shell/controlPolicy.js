@@ -10,6 +10,7 @@ const KEY_CONTROLS = {
 
 export function selectControlMode({ inputRequest }) {
   if (!inputRequest) return 'none';
+  if (inputRequest.native) return 'none';
   if (inputRequest.kind === 'confirmation') return 'continue';
   if (inputRequest.kind === 'text') {
     return inputRequest.choices?.join(',') === '1,2' ? '1v2' : 'qwerty';

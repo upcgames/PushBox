@@ -30,7 +30,9 @@ body { display: block; padding: 24px; font-family: system-ui, sans-serif; }
 .mobile-session .launcher-overlay[hidden] { display: none; }
 .mobile-session .mute-btn { opacity: 1; display: flex; }
 @media (max-width: 700px) { body { padding: 12px; } .toolbar { gap: 10px; } }
-.seen-panel { margin: 18px 0; padding: 14px; background: #141b28; border: 1px solid #2b374a; border-radius: 10px; }
+.seen-panel { margin: auto; width: min(1100px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 20px; background: #141b28; color: #e7eef5; border: 1px solid #2b374a; border-radius: 10px; }
+.seen-panel::backdrop { background: #000a; }
+.seen-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .seen-panel h2 { margin: 0; font-size: 18px; }
 #seenConditions { overflow-x: auto; }
 .seen-panel table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -38,6 +40,7 @@ body { display: block; padding: 24px; font-family: system-ui, sans-serif; }
 .seen-panel th span, .seen-panel td span { margin-right: 8px; }
 .seen-panel button { padding: 4px 8px; border: 1px solid #36435a; border-radius: 5px; background: #1c293a; color: #e7eef5; cursor: pointer; }
 .seen-panel button:disabled { opacity: 0.4; cursor: default; }
+.seen-panel button:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
 .seen-active { color: #a4f0bf; }
 
 .preview-launch-settings .dev-options { margin-top: 10px; min-width: 0; width: 100%; box-sizing: border-box; padding: 10px; font-size: 12px; }

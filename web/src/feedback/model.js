@@ -15,10 +15,10 @@ export function feedbackScene({ game, screen }) {
     const locked = hidden && portal.active;
     const nearby = (box.x === player.x && Math.abs(box.y - player.y) === grid.objectSize) ||
       (box.y === player.y && Math.abs(box.x - player.x) === grid.objectSize);
-    if (hidden && !locked && !box.onTarget && !nearby) continue;
+    if (hidden && !locked && (box.onTarget || !nearby)) continue;
     cues.push({ x: box.x, y: box.y, nearby, idle: !hidden,
       direction: nearby ? { x: Math.sign(box.x - player.x), y: Math.sign(box.y - player.y) } : null,
-      kind: box.onTarget ? 'complete' : locked ? 'locked' : 'box' });
+      kind: locked ? 'locked' : box.onTarget ? 'complete' : 'box' });
   }
   if (portal.active) cues.push({ x: portal.x, y: portal.y, kind: 'portal' });
   return { level, grid, cues, portalActive: portal.active };

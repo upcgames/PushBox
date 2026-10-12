@@ -190,3 +190,5 @@ canvas[data-kind^="move"] { width: 392px; max-width: 100%; height: auto; }
 
 /* Preview layout stays local; promoted controls and HUD are web-owned. */
 .opening-preview { height: 100%; }
+
+.runtime-winner-controls { width: 100%; }

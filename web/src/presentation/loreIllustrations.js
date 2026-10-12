@@ -37,6 +37,10 @@ export function rewardScene(ctx, t, style = 'heart') {
 }
 
 export function lore(ctx, t, level) {
+  // RAF timestamps precede callback execution; a freshly mounted illustration
+  // can receive a frame timestamp earlier than its performance.now() start.
+  // Elapsed animation time starts at zero, never at a negative path index.
+  t = Math.max(0, t);
   rect(ctx, '#080914', 0, 0, 224, 112);
   rect(ctx, palette[floorColors[level - 1]], 28, 42, 168, 28);
   const pulse = (Math.sin(t / 500) + 1) / 2;

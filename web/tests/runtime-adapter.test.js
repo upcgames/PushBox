@@ -32,9 +32,9 @@ test('adapter produces valid JavaScript for each runtime module without editing 
   assert.equal(runtimeStatePlugin().transform.call(context, '', '/src/generated/maps.js'), undefined);
 });
 
-function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1 } = {}) {
+function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1, startLevel = 1 } = {}) {
   setAudioMuted({ api: GameState, ...runtimeState }, false);
-  const snapshots = [], events = [];
+  const snapshots = [], events = [], sounds = [];
   const off = GameState.subscribe(state => { if (state.game) snapshots.push(state); });
   const offEvents = GameState.on('*', event => events.push(event));
   const noop = () => {};
@@ -55,10 +55,10 @@ function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1 } = {}) {
     PintarCaja: noop, PintarHueco: noop, PintarMovil: noop, PintarPortal: noop,
     PintarPuente: noop, ArmarPuente: noop, PBorrar: noop, PintarMuerte: noop, Retroceder: noop,
     ir: noop, colorfondo: noop, colorletra: noop,
-    SonidoMovilSeMueve: noop, SonidoMovilNoSeMueve: noop, SonidoCajaHueco: noop,
+    SonidoMovilSeMueve: kind => sounds.push(`move:${kind}`), SonidoMovilNoSeMueve: noop, SonidoCajaHueco: () => sounds.push('bell'),
     SonidoCajaVacio: noop, Musicatiempo: noop, Teletransporte: noop, PortalInteractivo: noop,
     InterfazYouWin: noop, InterfazYouLose: noop,
-    runAnim: noop,
+    runAnim: noop, Endurecimiento: async () => sounds.push('hardening'),
     InterfazPausa: async (matrix, option) => {
       const leave = bridge.enterScreen('InterfazPausa');
       const leaveInput = bridge.enterInput({ kind: 'key', consumer: 'InterfazPausa' });
@@ -68,18 +68,19 @@ function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1 } = {}) {
     Console: { Write: noop, enterDrawScope: () => noop },
   };
   const sandbox = vm.createContext(globals);
+  vm.runInContext(executable(read('world_data')), sandbox);
   vm.runInContext(executable(read('world_logic')), sandbox);
   // Painting is outside this test; the small fixture deliberately differs from level art.
   sandbox.PonerPuentes = noop;
   const source = read('game_logic');
   const result = runtimeStatePlugin().transform.call(context, source, '/src/generated/game_logic.js');
   vm.runInContext(executable(result.code), sandbox);
-  const level = { v: 1 }, lives = { v: 5 }, sound = { v: 1 };
+  const level = { v: startLevel }, lives = { v: 5 }, sound = { v: 1 };
   const positions = Array.from({ length: 200 }, () => Array(5).fill(0));
   const matrix = Array.from({ length: 60 }, () => Array(80).fill(0));
   return sandbox.ControlDeMovimiento(level, lives, x, y,
     arrays.Cajas, arrays.Paredes, arrays.Vacios, arrays.Huecos, arrays.Cantidades, positions, matrix, sound)
-    .then(() => ({ snapshots, events, level, lives })).finally(() => { off(); offEvents(); });
+    .then(() => ({ snapshots, events, sounds, level, lives })).finally(() => { off(); offEvents(); });
 }
 
 const board = () => ({ Cajas: [null, [[38, 34]]], Paredes: [null, []],
@@ -225,4 +226,204 @@ test('rejected walking emits structured blocked feedback once, independently of 
   push.Paredes[1] = [[40, 34]]; push.Cantidades[1][1] = 1;
   const pushed = await runtime(['f', 'd', 'c', 'c', 'c'], push);
   assert.equal(pushed.events.filter(event => event.type === 'movementBlocked').length, 1);
+});
+
+
+test('original pause exit reports its selected action before restoring gameplay', async () => {
+  for (const [keys, expected] of [[['e'], 1], [['s', 'e'], 2], [['s', 's', 'e'], 3]]) {
+    const parent = bridge.enterScreen('gameplay');
+    const exits = [];
+    const stop = GameState.on('screenExited', event => {
+      if (event.screen.id === 'InterfazPausa') exits.push({ option: event.option, screen: GameState.getSnapshot().screen.id });
+    });
+    const sandbox = evaluateModule('interfaces', { Console: { Write() {} }, Sleep: async () => {}, _getch: async () => keys.shift() });
+    sandbox.AsciiFuncion = () => {};
+    try {
+      await sandbox.InterfazPausa([], { v: 0 }, { v: 1 });
+      assert.deepEqual(exits, [{ option: expected, screen: 'InterfazPausa' }]);
+      assert.equal(GameState.getSnapshot().screen.id, 'gameplay');
+    } finally { stop(); parent(); }
+  }
+});
+
+test('explicit toolbar Resume selects original option one without altering normal P or E behavior', async () => {
+  for (const [input, expected] of [[['s', 'Resume'], 1], [['s', 's', 'Resume'], 1], [['s', 'p'], 2], [['s', 's', 'e'], 3]]) {
+    const keys = [...input], parent = bridge.enterScreen('gameplay');
+    const exits = [], waits = [];
+    const stop = GameState.on('screenExited', event => { if (event.screen.id === 'InterfazPausa') exits.push(event.option); });
+    const sandbox = evaluateModule('interfaces', { Console: { Write() {} },
+      Sleep: async milliseconds => waits.push(milliseconds), _getch: async () => keys.shift() });
+    sandbox.AsciiFuncion = () => {};
+    const option = { v: 0 };
+    try {
+      await sandbox.InterfazPausa([], option, { v: 1 });
+      assert.equal(option.v, expected);
+      assert.deepEqual(exits, [expected]);
+      assert.equal(keys.length, 0, 'No synthetic navigation commands');
+      assert.equal(waits.at(-1), 200, 'Original pause exit delay remains');
+    } finally { stop(); parent(); }
+  }
+});
+
+
+test('original push, pause and successful undo drive mobile hints from canonical board/history', async () => {
+  const { mountUndoHint } = await import('../src/presentation/undoHint.js');
+  const hint = mountUndoHint(GameState);
+  const samples = [];
+  const stop = GameState.on('input:waiting', ({ request }) => {
+    if (request?.consumer !== 'ControlDeMovimiento') return;
+    const state = GameState.getSnapshot();
+    samples.push({ hint: state.undoHint, game: state.game });
+  });
+  const arrays = board();
+  arrays.Paredes[1] = [[42, 34], [40, 32]];
+  arrays.Vacios[1] = [];
+  arrays.Huecos[1] = [[60, 50]];
+  arrays.Cantidades[1] = [1, 2, 0, 1];
+  try {
+    await runtime(['d', 'p', 'r', 'c', 'c', 'c'], arrays);
+    assert.equal(samples[0].hint, false);
+    assert.ok(samples.some(sample => sample.hint && sample.game.board.boxes[0].x === 40 && sample.game.undoDepth === 1));
+    assert.ok(samples.some(sample => !sample.hint && sample.game.board.boxes[0].x === 38 && sample.game.steps === 4 && sample.game.undoDepth === 0));
+    assert.equal(GameState.getSnapshot().undoHint, false);
+    assert.equal(GameState.getSnapshot().game, null);
+  } finally { stop(); hint.dispose(); }
+});
+
+test('level-one hints catch the earlier movable trap and persist until both cajas recover', async () => {
+  const { mountUndoHint, boxHasLegalPush } = await import('../src/presentation/undoHint.js');
+  const data = vm.createContext({}); vm.runInContext(executable(read('world_data')), data);
+  const slots = () => Array.from({ length: 8 }, () => Array.from({ length: 200 }, () => []));
+  const arrays = { Cajas: slots(), Paredes: slots(), Vacios: slots(), Huecos: slots(), Cantidades: slots() };
+  data.DataCantidades(arrays.Cantidades); data.DataICajas(1, arrays.Cajas); data.DataParedes(1, arrays.Paredes); data.DataVacios(1, arrays.Vacios); data.DataHuecos(1, arrays.Huecos);
+  const hint = mountUndoHint(GameState), samples = [];
+  const stop = GameState.on('input:waiting', ({ request }) => {
+    if (request?.consumer === 'ControlDeMovimiento') samples.push({ hint: GameState.getSnapshot().undoHint, game: GameState.getSnapshot().game });
+  });
+  try {
+    await runtime(['a', ...Array(5).fill('w'), 'd', ...Array(5).fill('w'), 'a', 'a', 'r', 'r', 'r', 'c', 'c', 'c'], arrays);
+    const trapped = samples.find(sample => sample.game.steps === 14);
+    assert.equal(trapped.hint, true);
+    assert.ok(trapped.game.board.boxes.some(box => box.x === 30 && box.y === 14));
+    const earlier = samples.find(sample => sample.game.steps === 12);
+    assert.equal(earlier.hint, true, 'Earlier caja at (36,12) is movable but lost');
+    assert.equal(boxHasLegalPush(earlier.game, earlier.game.board.boxes[2]), true);
+    assert.equal(samples.find(sample => sample.game.steps === 17).hint, true, 'One undo recovers only the later corner trap');
+    const recovered = samples.find(sample => sample.game.steps === 23);
+    assert.equal(recovered.hint, false);
+  } finally { stop(); hint.dispose(); }
+});
+
+
+test('original pushes hint for a movable wall-strip caja and undo recovers it', async () => {
+  const { mountUndoHint, boxHasLegalPush } = await import('../src/presentation/undoHint.js');
+  const arrays = board();
+  arrays.Paredes[1] = Array.from({ length: 40 }, (_, index) => [index * 2, 30]);
+  arrays.Huecos[1] = [[40, 36]]; arrays.Vacios[1] = [];
+  arrays.Cantidades[1] = [1, 40, 0, 1];
+  const hint = mountUndoHint(GameState), samples = [];
+  const stop = GameState.on('input:waiting', ({ request }) => {
+    if (request?.consumer === 'ControlDeMovimiento') samples.push({ hint: GameState.getSnapshot().undoHint, game: GameState.getSnapshot().game });
+  });
+  try {
+    await runtime(['w', 'r', 'c', 'c', 'c'], arrays, { x: 38, y: 36 });
+    const lost = samples.find(sample => sample.game.steps === 1);
+    assert.equal(boxHasLegalPush(lost.game, lost.game.board.boxes[0]), true);
+    assert.equal(lost.hint, true);
+    const recovered = samples.find(sample => sample.game.steps === 4);
+    assert.equal(recovered.hint, false);
+  } finally { stop(); hint.dispose(); }
+});
+
+test('original bridge creation/removal drives sacrifice hints and exempts the intended level-three routes', async () => {
+  const { mountUndoHint } = await import('../src/presentation/undoHint.js');
+  for (const [level, caja, gap, player, move, expected] of [
+    [2, [38, 34], [40, 34], [36, 34], 'd', true],
+    [3, [42, 32], [42, 34], [42, 30], 's', false],
+    [3, [38, 38], [36, 38], [40, 38], 'a', false],
+    [3, [34, 28], [34, 26], [34, 30], 'w', true],
+  ]) {
+    const hint = mountUndoHint(GameState), samples = [];
+    const stop = GameState.on('input:waiting', ({ request }) => {
+      if (request?.consumer === 'ControlDeMovimiento') samples.push({ hinted: GameState.getSnapshot().undoHint, game: GameState.getSnapshot().game });
+    });
+    const rows = () => Array.from({ length: 8 }, () => []);
+    const arrays = { Cajas: rows(), Paredes: rows(), Vacios: rows(), Huecos: rows(), Cantidades: rows() };
+    arrays.Cajas[level] = [caja, [30, 30]];
+    arrays.Vacios[level] = [gap]; arrays.Huecos[level] = [[20, 20]]; arrays.Cantidades[level] = [2, 0, 1, 1];
+    try {
+      await runtime([move, 'r', 'c', 'c', 'c'], arrays, { startLevel: level, x: player[0], y: player[1] });
+      const created = samples.find(sample => sample.game.steps === 1);
+      assert.equal(created.game.board.boxes.length, 1);
+      assert.equal(created.game.board.gaps.length, 0);
+      assert.equal(created.hinted, expected);
+      const recovered = samples.find(sample => sample.game.steps === 4);
+      assert.equal(recovered.game.board.boxes.length, 2);
+      assert.equal(recovered.game.board.gaps.length, 1);
+      assert.equal(recovered.hinted, false);
+    } finally { stop(); hint.dispose(); }
+  }
+});
+
+function levelFiveBoard() {
+  const data = vm.createContext({}); vm.runInContext(executable(read('world_data')), data);
+  const slots = () => Array.from({ length: 8 }, () => Array.from({ length: 200 }, () => []));
+  const arrays = { Cajas: slots(), Paredes: slots(), Vacios: slots(), Huecos: slots(), Cantidades: slots() };
+  data.DataCantidades(arrays.Cantidades); data.DataICajas(5, arrays.Cajas); data.DataHuecos(5, arrays.Huecos);
+  // Isolate the sound rule from routing: retain original identities, origins,
+  // counts and huecos, with an unobstructed approach to the pushed object.
+  arrays.Cantidades[5][1] = 0;
+  return arrays;
+}
+
+test('canonical level-five sound distinguishes real huecos from any DP position', async () => {
+  for (const scenario of [
+    { index: 0, before: [34, 16], player: [34, 18], bell: true },
+    { index: 10, before: [34, 16], player: [34, 18], bell: false },
+    ...Array.from({ length: 7 }, (_, offset) => {
+      const index = 10 + offset, origin = levelFiveBoard().Cajas[5][index];
+      return { index, before: [origin[0], origin[1] + 2], player: [origin[0], origin[1] + 4], bell: true };
+    }),
+    { index: 10, before: [34, 28], player: [34, 30], bell: true, otherOrigin: true },
+  ]) {
+    const arrays = levelFiveBoard(); arrays.Cajas[5][scenario.index] = [...scenario.before];
+    if (scenario.otherOrigin) arrays.Cajas[5][11] = [70, 50];
+    const result = await runtime(['w', 'c', 'c', 'c'], arrays,
+      { startLevel: 5, x: scenario.player[0], y: scenario.player[1] });
+    assert.equal(result.sounds.includes('bell'), scenario.bell, `Object ${scenario.index} from ${scenario.before}`);
+    assert.equal(result.sounds.includes('hardening'), false);
+    assert.ok(result.snapshots.some(({ game }) => game.steps === 1 && game.board.boxes[scenario.index].y === scenario.before[1] - 2));
+  }
+});
+
+test('final DP return rings before endurecimiento takes priority; DPs cannot replace real cajas for completion', async () => {
+  const arrays = levelFiveBoard();
+  for (let index = 0; index < 10; index++) arrays.Cajas[5][index] = [...arrays.Huecos[5][index]];
+  // DP 10 completes DP 11's position; DP 11 already occupies DP 10's.
+  arrays.Cajas[5][11] = [32, 24];
+  arrays.Cajas[5][10] = [34, 28];
+  const result = await runtime(['w', 'c', 'c', 'c'], arrays, { startLevel: 5, x: 34, y: 30 });
+  assert.deepEqual(result.sounds.slice(0, 2), ['bell', 'hardening']);
+  assert.ok(result.snapshots.some(({ game }) => game.portal.active));
+
+  const rules = vm.createContext({}); vm.runInContext(executable(read('world_logic')), rules);
+  assert.equal(rules.PortalVisible(5, arrays.Cajas, arrays.Huecos, arrays.Cantidades), true);
+  arrays.Cajas[5][0] = [70, 50]; arrays.Cajas[5][10] = [...arrays.Huecos[5][0]];
+  assert.equal(rules.CajayHueco(5, 10, arrays.Cajas, arrays.Huecos, arrays.Cantidades), true);
+  assert.equal(rules.PortalVisible(5, arrays.Cajas, arrays.Huecos, arrays.Cantidades), false);
+});
+
+test('level-five completion accepts interchangeable DP but still requires all seven positions and ten real cajas', () => {
+  const rules = vm.createContext({}); vm.runInContext(executable(read('world_logic')), rules);
+  const origins = levelFiveBoard().Cajas[5].slice(10, 17).map(position => [...position]);
+  for (let shift = 0; shift < 7; shift++) {
+    const arrays = levelFiveBoard();
+    for (let index = 0; index < 10; index++) arrays.Cajas[5][index] = [...arrays.Huecos[5][index]];
+    for (let index = 0; index < 7; index++) arrays.Cajas[5][10 + index] = [...origins[(index + shift) % 7]];
+    assert.equal(rules.PortalVisible(5, arrays.Cajas, arrays.Huecos, arrays.Cantidades), true);
+    arrays.Cajas[5][10] = [70, 50];
+    assert.equal(rules.PortalVisible(5, arrays.Cajas, arrays.Huecos, arrays.Cantidades), false, 'An unfilled DP position prevents completion');
+    arrays.Cajas[5][0] = [...origins[shift]];
+    assert.equal(rules.PortalVisible(5, arrays.Cajas, arrays.Huecos, arrays.Cantidades), false, 'Real cajas cannot substitute for DP');
+  }
 });

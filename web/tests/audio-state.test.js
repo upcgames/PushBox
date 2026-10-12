@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createGameState } from '../src/state/gameState.js';
 import { createRuntimeBridge } from '../src/state/runtimeBridge.js';
 import { createSessionShims } from '../src/runtime/sessionShims.js';
@@ -14,6 +15,27 @@ function channel(store, options = {}) {
   } });
   return { audio, tracks };
 }
+
+test('ending music request, preload and served asset use exactly the same filename casing', () => {
+  const sounds = readFileSync(new URL('../src/generated/sounds.js', import.meta.url), 'utf8');
+  const filename = sounds.match(/function MusicaCongratulations\(\)[\s\S]*?TEXT\("([^"]+)"\)/)[1];
+  assert.ok(readdirSync(new URL('../../Retro Push Box/', import.meta.url)).includes(filename));
+  assert.ok(readdirSync(new URL('../public/audio/', import.meta.url)).includes(filename));
+  const preloads = readFileSync(new URL('../src/audio/preloadAudio.js', import.meta.url), 'utf8');
+  assert.ok(preloads.includes(`'${filename}'`));
+});
+
+test('endurecimiento replaces the final placement bell on the canonical single channel', () => {
+  const store = createGameState(), { audio, tracks } = channel(store);
+  audio.play('Coin02.wav', null, 1);
+  audio.play('Endurecimiento.wav', null, 1);
+  assert.equal(tracks[0].paused, true);
+  assert.equal(audio.getCurrentAudio(), tracks[1]);
+  assert.equal(tracks[1].paused, false);
+  audio.setWebMuted(true);
+  assert.equal(tracks[1].volume, 0);
+  audio.dispose();
+});
 
 test('UI mute, canonical sound references and every playback type use the same state', () => {
   const store = createGameState(), bridge = createRuntimeBridge(store);

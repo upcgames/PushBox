@@ -47,6 +47,33 @@ export function runtimeStatePlugin() {
         const fn = entry.type === 'ExportNamedDeclaration' && entry.declaration;
         if (fn?.type !== 'FunctionDeclaration') continue;
         const name = fn.id.name;
+        if (name === 'CuadroDeVidas') {
+          insert(fn.body.start + 1, "\nconst _webHud = Console.enterDrawScope('canonical-hud'); try {\n");
+          insert(fn.body.end - 1, '\n} finally { _webHud(); }\n');
+        }
+        if (name === 'InterfazCongratulations') {
+          // Observe the original prompt section; no copied name-entry logic.
+          const statements = [];
+          walk(fn.body, node => { if (node.type === 'ExpressionStatement') statements.push(node); });
+          const prompt = statements.find(node => node.expression.type === 'AwaitExpression' &&
+            node.expression.argument.callee?.name === 'Escribir' &&
+            node.expression.argument.arguments[0]?.value?.startsWith("Presiona 'K'"));
+          const assignments = statements.filter(node => node.expression.type === 'AssignmentExpression' &&
+            node.expression.left.type === 'MemberExpression' && node.expression.left.object.type === 'MemberExpression' &&
+            node.expression.left.object.object.name === 'Cantidades');
+          const end = assignments.find(node => prompt && node.start > prompt.end);
+          if (!prompt || !end) throw new Error('Runtime adapter: winner prompt boundary changed');
+          insert(prompt.start, "const _webPrompts = Console.enterDrawScope('winner-prompts'); try {\n");
+          insert(end.start, '\n} finally { _webPrompts(); }\n');
+          bridgeUsed = true;
+          walk(fn.body, node => {
+            if (node.type !== 'CallExpression' || node.callee.name !== 'Escribir' ||
+                node.start < prompt.start || node.end > end.start) return;
+            const text = source.slice(node.arguments[0].start, node.arguments[0].end);
+            insert(node.start, "presentPrompt('InterfazCongratulations', () => ");
+            insert(node.end, `, () => Console.Write(${text}))`);
+          });
+        }
         if (name === 'ControlDeNiveles') {
           if (!fn.params.some(parameter => parameter.name === 'Cantidades')) throw new Error('Runtime adapter: identity argument changed');
           bridgeUsed = true; insert(fn.body.start + 1, '\nbindPlayerIdentity(Cantidades);\n');
@@ -131,7 +158,8 @@ try {`);
           bridgeUsed = true;
           // Structured facts from original scene arguments, independent of UI.
           const hasLevel = fn.params.some(parameter => parameter.type === 'Identifier' && parameter.name === 'nivel');
-          const context = hasLevel ? ', { level: nivel }' : '';
+          const context = name === 'InterfazPausa' ? ', { exit: () => ({ option: opcion.v }) }'
+            : hasLevel ? ', { level: nivel }' : '';
           insert(fn.body.start + 1, `\nconst _webLeave = enterScreen('${name}'${context}); try {\n`);
           insert(fn.body.end - 1, '\n} finally { _webLeave(); }\n');
         }
@@ -142,6 +170,10 @@ try {`);
           if (node.type !== 'AwaitExpression' || node.argument.type !== 'CallExpression') return;
           const call = node.argument, callee = call.callee.name;
           if (callee === '_getch') {
+            if (name === 'InterfazPausa') {
+              insert(call.start, 'readPauseKey(() => ');
+              insert(call.end, ', opcion)');
+            }
             const loop = ancestors.findLast(parent => LOOP_TYPES.has(parent.type));
             if (!loop) throw new Error(`Runtime adapter: unscoped key input in ${name}`);
             inputLoops.add(loop);
@@ -158,7 +190,8 @@ try {`);
               const key = call.arguments[0];
               request = `{ kind: 'confirmation', consumer: '${name}', key: ${key ? source.slice(key.start, key.end) : "'E'"} }`;
             }
-            insert(call.start, `withInput(${request}, () => `); insert(call.end, ')');
+            insert(call.start, `withInput(${request}, () => `);
+            insert(call.end, callee === 'scanf' ? `, ${source.slice(call.arguments[1].start, call.arguments[1].end)})` : ')');
           }
         });
         for (const loop of inputLoops) {
@@ -186,7 +219,7 @@ try {`);
       for (const edit of edits.sort((a, b) => b.start - a.start || b.end - a.end)) {
         source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
       }
-      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, reportBlockedPush, reportBlockedMove, bindSound, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity } from '../state/runtimeBridge.js';\n" : '';
+      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, readPauseKey, presentPrompt, reportBlockedPush, reportBlockedMove, bindSound, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity } from '../state/runtimeBridge.js';\n" : '';
       return { code: imports + source, map: null };
     },
   };

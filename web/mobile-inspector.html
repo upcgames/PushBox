@@ -11,6 +11,7 @@
     <div class="inspector-heading"><div><p class="eyebrow">PushBox / Playground</p><h1>Mobile inspector</h1></div><a href="./index.html">Original game</a></div>
     <div class="toolbar">
       <button id="resetAll">Reset all</button>
+      <button id="openSeenConditions" aria-haspopup="dialog" aria-controls="seenDialog">Seen conditions</button>
       <label>Quick start point <select id="quickLevel" title="Reset and start all previews at this start point">
         <option value="">Jump to…</option>
       </select></label>
@@ -25,11 +26,14 @@
       <span id="comparison">Sessions match</span>
     </div>
     <p class="inspector-help">Each preview owns a running game. Click a phone to select it for keyboard input. When linked, Start game starts all previews, and keys, start-point changes, and skip-lore changes are shared. Reset all, then Start game to align games.</p>
-    <section class="seen-panel" aria-labelledby="seenHeading">
-      <h2 id="seenHeading">Seen conditions</h2>
-      <p class="inspector-help">Preview flags are local; saved-game flags persist in this browser. Clearing preview flags resets that preview. Clearing Carita unlocked also clears its first-use flag.</p>
+    <dialog id="seenDialog" class="seen-panel" aria-labelledby="seenHeading">
+      <div class="seen-dialog-heading">
+        <h2 id="seenHeading">Seen conditions</h2>
+        <form method="dialog"><button type="submit">Close</button></form>
+      </div>
+      <p class="inspector-help">Each phone’s flags are saved separately from game progress and survive refreshes. Clearing preview flags resets that preview. Clearing Carita unlocked also clears its first-use flag.</p>
       <div id="seenConditions"></div>
-    </section>
+    </dialog>
     <div id="previews"></div>
     <p class="inspector-help">Crop framing changes all previews immediately without restarting games. Reachable-area framing fits map tiles connected to the starting position, using collision walls as barriers. Browser bars are adjustable approximations; preview scale only changes the phones' size on this page.</p>
   </main>

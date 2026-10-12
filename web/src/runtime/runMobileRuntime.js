@@ -4,6 +4,8 @@ import { startRuntime } from './startRuntime.js';
 // runs all gameplay. Exit returns to the warning without replaying asset loading.
 export async function runMobileRuntime(runtime, { settings, configure, runAnim, opening, setPlayerNames }) {
   if (!opening?.enabled()) return startRuntime(runtime, { entry: settings.entry, configure, runAnim });
+  const destination = opening.takeDestination?.(settings.skipLore);
+  if (destination) { settings = { ...settings, ...destination }; configure(destination); }
   setPlayerNames(opening.getNames());
   let entry = settings.entry;
   if (entry === 'main' && !settings.skipIntro && settings.startLevel === 0) {

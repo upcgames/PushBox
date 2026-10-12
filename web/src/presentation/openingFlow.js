@@ -1,14 +1,21 @@
 import { WARNING_COPY } from './warningCopy.js';
 import { parsePlayerNames } from './playerIdentity.js';
+import { availableDestinations, destinationSettings } from './seenDestinations.js';
 
 export function createOpeningFlow({ progress, profile, audio, onEnter = () => {},
   schedule = setTimeout, cancel = clearTimeout, message = WARNING_COPY }) {
-  let state = { phase: 'hidden', position: 0, percent: 0, ready: false, seen: false, name: '', message };
+  let state = { phase: 'hidden', position: 0, percent: 0, ready: false, seen: false, name: '', message,
+    destinations: availableDestinations(progress), destinationOpen: false };
   const listeners = new Set();
   let timer = null, resolveName = null, rejectName = null, disposed = false, playing = false, paused = false;
+  let selectedDestination = null;
   function update(patch) { state = { ...state, ...patch }; for (const listener of listeners) listener(state); }
   function stopAudio() { if (playing) audio.stop(); playing = false; }
   function stopTyping() { cancel(timer); timer = null; stopAudio(); }
+  const stopProgress = progress.subscribe(() => {
+    const destinations = availableDestinations(progress);
+    update({ destinations, destinationOpen: state.destinationOpen && destinations.length > 0 });
+  });
   function type() {
     timer = null;
     if (disposed || paused || state.phase !== 'typing') return;
@@ -32,12 +39,25 @@ export function createOpeningFlow({ progress, profile, audio, onEnter = () => {}
     subscribe(listener) { listeners.add(listener); listener(state); return () => listeners.delete(listener); },
     setLoading(percent, ready = false) {
       stopTyping(); rejectName?.(new DOMException('Opening replayed', 'AbortError')); resolveName = rejectName = null;
-      update({ phase: 'loading', percent, ready });
+      selectedDestination = null;
+      update({ phase: 'loading', percent, ready, destinationOpen: false });
     },
     begin,
-    hideLoading() { if (state.phase === 'loading') update({ phase: 'hidden' }); },
+    hideLoading() { if (state.phase === 'loading') update({ phase: 'hidden', destinationOpen: false }); },
+    openDestinations() {
+      if (!disposed && state.phase === 'loading' && state.ready && state.destinations.length) update({ destinationOpen: true });
+    },
+    closeDestinations() { update({ destinationOpen: false }); },
+    chooseDestination(id) {
+      if (disposed || !state.destinationOpen || !state.ready || !destinationSettings(progress, id, false)) return false;
+      selectedDestination = id; update({ destinationOpen: false }); onEnter(id); return true;
+    },
+    takeDestination(skipLore) {
+      const selected = selectedDestination; selectedDestination = null;
+      return selected ? destinationSettings(progress, selected, skipLore) : null;
+    },
     continue() {
-      if (state.phase === 'loading') { if (state.ready) onEnter(); }
+      if (state.phase === 'loading') { if (state.ready && !state.destinationOpen) { selectedDestination = null; onEnter(); } }
       else if (state.phase === 'typing' && state.seen) { stopTyping(); update({ position: message.length, phase: 'warning' }); }
       else if (state.phase === 'warning') {
         progress.mark('warning'); update({ phase: 'name' });
@@ -58,7 +78,7 @@ export function createOpeningFlow({ progress, profile, audio, onEnter = () => {}
     dispose() {
       disposed = true; stopTyping();
       rejectName?.(new DOMException('Opening stopped', 'AbortError'));
-      resolveName = rejectName = null; listeners.clear();
+      resolveName = rejectName = null; stopProgress(); selectedDestination = null; listeners.clear();
     },
   };
 }

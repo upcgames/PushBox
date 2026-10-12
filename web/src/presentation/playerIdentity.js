@@ -9,6 +9,7 @@ export function parsePlayerNames(value) {
 // Original BuscarLetra expects signed CP850 values for these accented glyphs.
 const ORIGINAL_CHARACTERS = { á: -96, é: -126, í: -95, ó: -94, ú: -93, ñ: -92, Ñ: -91,
   Á: -75, É: -112, Í: -42, Ó: -32, Ú: -23 };
+export function encodePlayerName(name) { return [...name].map(character => ORIGINAL_CHARACTERS[character] ?? character); }
 export function writePlayerIdentity(counts, names) {
   const parsed = parsePlayerNames(names.join(' '));
   if (!parsed.length) return;

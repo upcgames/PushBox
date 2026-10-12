@@ -62,6 +62,8 @@ export class VirtualConsole {
 
     this.drawScope = null;
     this.hidePlayer = false;
+    this.hiddenDrawScopes = new Set();
+    this.hiddenScopeBackdrops = new Map();
     this.Clear();
   }
 
@@ -155,11 +157,23 @@ export class VirtualConsole {
     }
   }
 
+  setDrawScopeHidden(scope, hidden, backdrop = 'blank') {
+    if (this.hiddenDrawScopes.has(scope) === hidden && (!hidden || this.hiddenScopeBackdrops.get(scope) === backdrop)) return;
+    if (hidden) { this.hiddenDrawScopes.add(scope); this.hiddenScopeBackdrops.set(scope, backdrop); }
+    else { this.hiddenDrawScopes.delete(scope); this.hiddenScopeBackdrops.delete(scope); }
+    for (let y = 0; y < this.rows; y++) for (let x = 0; x < this.cols; x++) {
+      const cell = this.cells[y][x];
+      if (cell?.scope === scope) this.paintCell(x, y, cell);
+    }
+  }
+
   paintCell(x, y, cell) {
     const hidden = this.hidePlayer && cell.scope === 'player';
-    const terrain = hidden && this.terrainCells[y]?.[x];
-    const { foreground, background } = terrain || cell;
-    const char = terrain ? terrain.char : hidden ? ' ' : cell.char;
+    const scopeHidden = this.hiddenDrawScopes.has(cell.scope);
+    const restoreTerrain = scopeHidden && this.hiddenScopeBackdrops.get(cell.scope) === 'terrain';
+    const terrain = (hidden || restoreTerrain) && this.terrainCells[y]?.[x];
+    const { foreground, background } = terrain || (restoreTerrain ? { foreground: cell.foreground, background: DOS_PALETTE[9] } : cell);
+    const char = terrain ? terrain.char : hidden || scopeHidden ? ' ' : cell.char;
     const px = x * this.tileSize;
     const py = y * this.tileSize;
     if (this.transparent) {

@@ -3300,12 +3300,20 @@ bool ZonaEstable(int nivel, int zona, int ***Cajas, int ***Huecos, int **Cantida
 	if (nivel == 5 && modo5 == 1)for (int i = 0; i <= Cantidades[nivel][0] - 1; i++)if (a == Cajas[nivel][i][0] && b == Cajas[nivel][i][1])return true;
 	return false;
 }
+// Las siete paredes disfrazadas son intercambiables: importa el sitio, no su identidad.
+bool EsSitioDeParedDisfrazada(int x, int y)
+{
+	return (x == 32 && y == 24) || (x == 34 && y == 26) ||
+		(x == 46 && y == 26) || (x == 48 && y == 24) ||
+		(x == 38 && y == 32) || (x == 42 && y == 32) ||
+		(x == 40 && y == 34);
+}
 bool PortalVisible(int nivel, int ***Cajas, int ***Huecos, int **Cantidades)
 {
 	for (int i = 0; i <= Cantidades[nivel][3] - 1; i++)if (!ZonaEstable(nivel, i, Cajas, Huecos, Cantidades)){ return false; }
 	if (nivel == 5){
-		if (Cajas[5][10][0] != 32 || Cajas[5][10][1] != 24 || Cajas[5][11][0] != 34 || Cajas[5][11][1] != 26 || Cajas[5][12][0] != 46 || Cajas[5][12][1] != 26 || Cajas[5][13][0] != 48 || Cajas[5][13][1] != 24 || Cajas[5][14][0] != 38 || Cajas[5][14][1] != 32 || Cajas[5][15][0] != 42 || Cajas[5][15][1] != 32 || Cajas[5][16][0] != 40 || Cajas[5][16][1] != 34)
-			return false;
+		// Las cajas no pueden superponerse: siete DP en siete sitios los cubren todos.
+		for (int caja = 10; caja <= 16; caja++)if (!EsSitioDeParedDisfrazada(Cajas[5][caja][0], Cajas[5][caja][1]))return false;
 	}
 	return true;
 }
@@ -4105,7 +4113,8 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 						if (!PortalVisible(nivel, Cajas, Huecos, Cantidades)){
 							GuardarPosicion(posicion, 2, x, y, mov, caja, Cajas, Posiciones);
 							mod(Cajas[nivel][caja], mov); movi(x, y, mov); cantmovs++;
-							if (CajayHueco(nivel, caja, Cajas, Huecos, Cantidades))SonidoCajaHueco(); else if (sonido)SonidoMovilSeMueve(2);
+							// Cajas reales: hueco. Paredes disfrazadas: cualquiera de sus siete sitios.
+							if ((caja < 10 && CajayHueco(nivel, caja, Cajas, Huecos, Cantidades)) || (caja >= 10 && EsSitioDeParedDisfrazada(Cajas[5][caja][0], Cajas[5][caja][1])))SonidoCajaHueco(); else if (sonido)SonidoMovilSeMueve(2);
 						}
 						//Aca es donde se modican las coorenadas
 						//tanto del movil como de la caja

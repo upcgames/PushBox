@@ -102,8 +102,8 @@ from its canonical asset. No auto-navigation keys or copied gameplay initializer
 are used. Skip entering name retains the original startup sequence without its
 name-entry block.
 
-The **Seen conditions** section above the phones shows saved-game browser flags
-and each preview's local flags. Clear a flag or use Clear all for that column.
+The toolbar’s **Seen conditions** modal shows saved-game browser flags and each
+preview’s separately saved flags. Clear a flag or use Clear all for that column.
 Clearing Carita unlocked also clears Carita used. Preview clearing resets that
 phone to its launcher; ordinary Reset retains its seen flags. Saved-game clearing
 applies to real browser progress and synchronizes with other open game tabs.
@@ -119,3 +119,14 @@ Fresh previews default to Standard intro with lore enabled, matching the mobile
 game. Enter follows the shared warning/name path. Selecting a level, Menu or
 Instructions explicitly overrides the entry for inspection. Both pages compose
 the same original game via runMobileRuntime; each phone owns an isolated session.
+
+The loading screen’s pixel portal beside Enter opens **Saltar directo a** after that preview
+has reached level-1 gameplay. It lists only visited destinations and starts that
+preview independently of linked inputs; normal Enter still links starts. Visits
+persist per phone across resets/refreshes and appear in the toolbar’s Seen conditions modal
+for inspection/clearing. Close or Escape returns to previews; modal keys do not
+reach the running games.
+
+Preview seen flags use `pushboxInspectorSeen:<width>x<height>` localStorage keys.
+They never read or overwrite production `pushboxSeen`; Clear/Clear all also
+updates each preview’s persisted flags. Preview names remain in memory.

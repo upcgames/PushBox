@@ -1,8 +1,9 @@
+import { completion, sparks } from '../feedback/completion.js';
 import { mount, unmount } from 'svelte';
 import LorePreview from './LorePreview.svelte';
 import { rewardScene } from '../presentation/loreIllustrations.js';
 import InstructionPreview from './InstructionPreview.svelte';
-import { rect, ladder, player, travel, sparks, completion, lesson, palette, playerSprite } from '../presentation/instructionIllustrations.js';
+import { rect, ladder, player, travel, lesson, palette, playerSprite } from '../presentation/instructionIllustrations.js';
 import { mountSharedPreviews } from './sharedPreviews.js';
 import './style.css';
 import { drawPushCue } from '../feedback/pushCue.js';
