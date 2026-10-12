@@ -1,0 +1,16 @@
+.pixel-confirmation {
+  font-family: 'Px437', monospace;
+  font-size: 13px;
+  padding: 17px 24px;
+  flex-shrink: 0;
+  background: #334155;
+  color: #fff0ba;
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 3px 3px #64748b, inset -3px -3px #182333, 0 4px #000;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pixel-confirmation:active:not(:disabled) { transform: translateY(3px); box-shadow: inset 3px 3px #182333, inset -3px -3px #64748b; }
+.pixel-confirmation:focus-visible { outline: 2px solid #fff0ba; outline-offset: 3px; }
+.pixel-confirmation:disabled { opacity: .45; cursor: default; }

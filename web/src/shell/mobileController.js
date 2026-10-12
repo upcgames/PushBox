@@ -1,3 +1,8 @@
+import { mountTrollReward } from '../presentation/trollReward.js';
+import { mountExitCue } from '../presentation/mountExitCue.js';
+import { mountBobby } from '../presentation/mountBobby.js';
+import { gameConsole } from '../shims/gameConsole.js';
+import { mountMobileLore } from '../presentation/mountMobileLore.js';
 import { mount, unmount } from 'svelte';
 import GameController from '../controllers/GameController.svelte';
 import Continue from '../controllers/Continue.svelte';
@@ -8,6 +13,8 @@ import OneTwo from '../controllers/OneTwo.svelte';
 import Congrats from '../controllers/Congrats.svelte';
 import { GameState } from '../state/gameState.js';
 import { selectControlMode } from './controlPolicy.js';
+import { mountMobileInstructions } from '../presentation/mountMobileInstructions.js';
+import { mountGameplayHud } from '../presentation/mountGameplayHud.js';
 import { setupMobileBoardView } from '../presentation/mobileBoardView.js';
 
 const COMPONENTS = {
@@ -45,38 +52,41 @@ export function mountController(container, mode) {
 }
 
 
-function measureTitleSpace() {
-  if (!isMobile()) {
-    document.documentElement.removeAttribute('data-title');
-    return;
-  }
-  const frame = document.querySelector('.console-frame');
-  const ctrl = document.getElementById('controllerArea');
-  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const gameH = frame ? frame.getBoundingClientRect().height : 0;
-  const ctrlH = ctrl && ctrl.style.display !== 'none' ? ctrl.getBoundingClientRect().height : 0;
-  const available = vh - gameH - ctrlH;
-  document.documentElement.dataset.title = available > 80 ? 'show' : 'hide';
-}
-
-export function setupMobileShell() {
+export function setupMobileShell({ progress } = {}) {
   const controllerArea = document.getElementById('controllerArea');
   if (!controllerArea) return;
 
   syncShellAttrs();
+  const trollReward = mountTrollReward(GameState, { enabled: isMobile, progress });
+  mobileMQ.addEventListener('change', trollReward.refresh);
+  const exitCue = mountExitCue(gameConsole, GameState, isMobile);
+  mobileMQ.addEventListener('change', exitCue.refresh);
+  const bobby = mountBobby(gameConsole, GameState, isMobile);
+  mobileMQ.addEventListener('change', bobby.refresh);
+  const stopHud = mountGameplayHud(document.body, GameState);
+  const instructions = mountMobileInstructions(document.body, GameState, GameState.sendInput, isMobile);
+  const loreView = mountMobileLore(document.body, GameState, GameState.sendInput, isMobile);
+  mobileMQ.addEventListener('change', loreView.refresh);
+  mobileMQ.addEventListener('change', instructions.refresh);
   const boardView = setupMobileBoardView(document.body, GameState, isMobile);
   mobileMQ.addEventListener('change', boardView.refresh);
   if (import.meta.hot) import.meta.hot.dispose(() => {
+    mobileMQ.removeEventListener('change', trollReward.refresh);
+    trollReward.dispose();
+    mobileMQ.removeEventListener('change', exitCue.refresh);
+    exitCue.dispose();
+    mobileMQ.removeEventListener('change', bobby.refresh);
+    bobby.dispose();
     mobileMQ.removeEventListener('change', boardView.refresh);
     boardView.dispose();
+    stopHud();
+    mobileMQ.removeEventListener('change', instructions.refresh);
+    instructions.dispose();
+    mobileMQ.removeEventListener('change', loreView.refresh);
+    loreView.dispose();
   });
-  measureTitleSpace();
   mobileMQ.addEventListener('change', syncShellAttrs);
-  mobileMQ.addEventListener('change', measureTitleSpace);
   landscapeMQ.addEventListener('change', syncShellAttrs);
-  landscapeMQ.addEventListener('change', measureTitleSpace);
-  window.addEventListener('resize', measureTitleSpace);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', measureTitleSpace);
   let lastMode = null;
   const applyMode = (mode) => {
     if (!mode) return;
@@ -87,7 +97,6 @@ export function setupMobileShell() {
     }
     controllerArea.style.display = 'block';
     mountController(controllerArea, mode);
-    requestAnimationFrame(measureTitleSpace);
   };
 
   GameState.select(selectControlMode, applyMode);

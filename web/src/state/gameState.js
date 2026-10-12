@@ -11,7 +11,7 @@ function immutable(value) {
 
 export function createGameState(inputCommand = sendInput) {
   let state = immutable({ version: 0, inputRequest: null, screen: null, game: null,
-    input: null, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
+    input: null, playerNames: [], playerDrawing: null, playerAnimation: null, trollActive: false, trollReward: { unlocked: false, hinted: false }, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
   const listeners = new Map(), subscribers = new Set();
   let sequence = 0;
   const notifications = [];
@@ -64,7 +64,15 @@ export function createGameState(inputCommand = sendInput) {
       }
     });
   }
-  const api = Object.freeze({ getSnapshot: () => state, subscribe, select, on, sendInput: inputCommand });
+  function setTrollReward(reward) {
+    if (state.trollReward.unlocked === reward.unlocked && state.trollReward.hinted === reward.hinted) return;
+    publish({ trollReward: reward }, 'trollRewardChanged');
+  }
+  function useTrollReward() {
+    if (!state.trollReward.unlocked) return;
+    publish({ trollReward: { unlocked: true, hinted: false } }, 'trollRewardUsed');
+  }
+  const api = Object.freeze({ getSnapshot: () => state, subscribe, select, on, setPlayerNames: names => publish({ playerNames: names }, 'playerNamesChanged'), setTrollReward, useTrollReward, setTrollActive: active => publish({ trollActive: !!active }, 'trollChanged'), sendInput: inputCommand });
   return { api, publish, event };
 }
 

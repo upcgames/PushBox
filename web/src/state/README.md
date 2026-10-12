@@ -72,7 +72,7 @@ Prompt typing and transitions outside those loops have no active request.
 | `game.board` | `boxes` with `index` and `onTarget`; `targets` with `covered`; `gaps`; `walls` |
 | `game.portal` | `{ x, y, active }`, using canonical `PortalVisible`, including level 5 |
 | `game.grid` | Coordinate grid and object dimensions |
-| `screen` | Current `{ id }`, or null; nested screens restore their parent |
+| `screen` | Current `{ id, level? }`, or null; level comes from the original scene argument and nested screens restore their parent |
 | `input` | Last `{ key, stage, request }`; stages: received, waiting, consumed |
 | `audio.muted` | Single session mute state; canonical `game.sound` reads its inverse |
 | `console` | `cols`, `rows`, `tileSize`, current `lines`, and `cells` with character and foreground/background colors |
@@ -136,3 +136,42 @@ including during animation, and is not buffered as a gameplay command. During
 text input, F is a literal character. Pause may receive F to redraw its sound
 label, but its old toggle is suppressed. UI mute controls update the same state
 directly, without dispatching F. Changes also update retained `game.sound`.
+
+Scene metadata: the web observer captures original `nivel` arguments for scene
+functions such as Lore and MenuPrincipal. `screen.level` is detached scalar data,
+not a mutable Ref or a level inferred from console text. Mobile lore uses this
+metadata before the original scene has painted its heading.
+
+Bobby presentation observes `playerDrawing` (original `PintarMovil` arguments) and
+`playerAnimation` (named original routine scopes). Death and teleport retain
+canonical ownership until a fresh player drawing; undo covers all of `Regresar`,
+including board restoration. `setTrollActive` controls only the mobile troll
+presentation and is cleared on controller disposal/game exit. The console keeps
+canonical tagged cells while the mobile layer hides normal player glyphs; its
+transcript and cursor remain canonical. Desktop does not enable this layer.
+
+The console also retains terrain from original board/floor/target/portal/bridge
+drawing scopes. Hidden player cells display that terrain while Bobby travels;
+actor writes and animation effects do not overwrite the terrain cache. Canonical
+player backgrounds remain in the original cells for animation handoff.
+
+`movementBlocked` reports only canonical rejected-walk/push branches, including
+level-5 hardened cajas. It carries the player, cardinal direction and structured
+obstacle when available. Mobile Bobby uses it for contained tremble; mobile board
+feedback uses actual wall obstacles for ripple. The existing `pushBlocked` event
+remains available for desktop push-wall feedback. Neither event depends on audio.
+
+`seenProgress.js` persists encountered features in `pushboxSeen`. Carita is earned
+from three canonical `onTarget` cajas during visible level-4 mobile gameplay.
+`trollReward` exposes unlocked/hinted presentation state; first use marks
+`caritaUsed` so the hint does not return on refresh. Seeing level-4 lore does not
+earn the reward. Inspector panels use independent in-memory progress across
+session resets; they do not modify production persistence.
+
+Mobile opening stores `warning` seen only when completed warning advances to
+native names. The shared player profile stores Unicode display names separately
+from seen flags. `playerNames` feeds an explicit adapter hook at original
+ControlDeNiveles, after original main initializes Cantidades; supported accented
+characters map to original signed CP850 glyph identifiers. Empty identity leaves
+the original defaults intact, including desktop. Mobile opening composition uses
+existing skip-intro settings; original main retains gameplay initialization.

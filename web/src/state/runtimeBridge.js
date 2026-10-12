@@ -1,3 +1,4 @@
+import { writePlayerIdentity } from '../presentation/playerIdentity.js';
 import { bindSoundReference, handleAudioInput as handleAudioKey } from '../audio/audioState.js';
 import { runtimeState, GameState } from './gameState.js';
 
@@ -6,6 +7,7 @@ const GameState = store.api, runtimeState = store;
 let readGame = null;
 const screens = [];
 const inputScopes = [];
+const playerAnimations = [];
 
 function currentRequest() {
   const owner = screens.at(-1) || null;
@@ -43,19 +45,21 @@ function refreshGame(reason = 'gameChanged') {
 
 function observeGame(reader) {
   readGame = reader;
+  runtimeState.publish({ playerAnimation: null }, 'playerAnimationChanged');
   refreshGame('gameStarted');
   return () => {
     refreshGame('gameEnded');
     if (readGame === reader) {
       readGame = null;
-      runtimeState.publish({ game: null }, 'gameExited');
+      runtimeState.publish({ game: null, playerDrawing: null, playerAnimation: null, trollActive: false }, 'gameExited');
     }
   };
 }
 
-function enterScreen(id) {
+function enterScreen(id, context = {}) {
   refreshGame();
-  const screen = { id };
+  const level = typeof context.level === 'object' && context.level !== null ? context.level.v : context.level;
+  const screen = { id, ...(Number.isInteger(level) ? { level } : {}) };
   screens.push(screen);
   publishContext('screenChanged');
   return () => {
@@ -90,18 +94,62 @@ function reportBlockedPush(movement, boxIndex) {
   const y = box.y + direction.y * game.grid.objectSize;
   const wall = game.board.walls.find(item => item.x === x && item.y === y);
   const otherBox = game.board.boxes.find(item => item.index !== boxIndex && item.x === x && item.y === y);
-  if (!wall && !otherBox) return;
-  runtimeState.event('pushBlocked', { level: game.level, box, direction,
-    obstacle: { x, y, kind: wall ? 'wall' : 'box' } });
+  const locked = game.level === 5 && box.index >= 10 && game.portal.active;
+  const event = { level: game.level, player: game.player, box, direction,
+    obstacle: wall || otherBox ? { x, y, kind: wall ? 'wall' : 'box' }
+      : locked ? { x: box.x, y: box.y, kind: 'locked' } : null };
+  if (wall || otherBox) runtimeState.event('pushBlocked', event);
+  runtimeState.event('movementBlocked', event);
 }
+
+// This runs only after the original runtime rejects a walk, regardless of mute.
+function reportBlockedMove(movement) {
+  refreshGame();
+  const { game, screen } = GameState.getSnapshot();
+  if (!game || screen?.id !== 'gameplay') return;
+  const direction = ({ 1: { x: 0, y: -1 }, 2: { x: 0, y: 1 },
+    3: { x: 1, y: 0 }, 4: { x: -1, y: 0 } })[movement];
+  if (!direction) return;
+  const x = game.player.x + direction.x * game.grid.objectSize;
+  const y = game.player.y + direction.y * game.grid.objectSize;
+  const wall = game.board.walls.find(item => item.x === x && item.y === y);
+  runtimeState.event('movementBlocked', { level: game.level, player: game.player, direction,
+    obstacle: wall ? { x, y, kind: 'wall' } : null });
+}
+
+// Observe original routine boundaries, including the complete undo restoration.
+// Terminal effects keep ownership until a fresh attempt draws Bobby again.
+function enterPlayerAnimation(name) {
+  const scope = { name };
+  playerAnimations.push(scope);
+  runtimeState.publish({ playerAnimation: name }, 'playerAnimationChanged');
+  return () => {
+    const index = playerAnimations.indexOf(scope);
+    if (index === -1) return;
+    playerAnimations.splice(index, 1);
+    const terminal = name === 'PintarMuerte' || name === 'Teletransporte';
+    runtimeState.publish({ playerAnimation: playerAnimations.at(-1)?.name || (terminal ? name : null) }, 'playerAnimationChanged');
+  };
+}
+
+function reportPlayerDraw(level, x, y, background, foreground) {
+  const playerDrawing = { level, x, y, background, foreground };
+  const previous = GameState.getSnapshot().playerDrawing;
+  const playerAnimation = playerAnimations.at(-1)?.name || null;
+  if (JSON.stringify(playerDrawing) !== JSON.stringify(previous) || GameState.getSnapshot().playerAnimation !== playerAnimation) {
+    runtimeState.publish({ playerDrawing, playerAnimation }, 'playerDrawn');
+  }
+}
+
+function bindPlayerIdentity(counts) { writePlayerIdentity(counts, GameState.getSnapshot().playerNames); }
 
 function bindSound(reference) { bindSoundReference(store, reference); }
 function handleAudioInput(key) { return handleAudioKey(store, key); }
-return { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, bindSound, handleAudioInput, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
+return { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
 }
 
 const defaultBridge = createRuntimeBridge({ api: GameState, ...runtimeState });
-export const { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, bindSound, handleAudioInput, inputConsumer } = defaultBridge;
+export const { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputConsumer } = defaultBridge;
 
 export function boardSnapshot(level, player, steps, lives, sound, arrays, portal, nextLevel, undoPosition) {
   const { Cajas, Paredes, Vacios, Huecos, Cantidades } = arrays;

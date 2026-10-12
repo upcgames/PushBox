@@ -1,22 +1,26 @@
+import { mountMobileOpening } from '../presentation/mountMobileOpening.js';
+import { createPlayerProfile } from '../presentation/playerIdentity.js';
+import { createSeenProgress } from '../state/seenProgress.js';
+import { mountTrollReward } from '../presentation/trollReward.js';
+import { mountExitCue } from '../presentation/mountExitCue.js';
+import { mountBobby } from '../presentation/mountBobby.js';
+import { populateStartPoints, startPointSettings } from '../shell/startPoints.js';
+import { mountMobileLore } from '../presentation/mountMobileLore.js';
 import { createGameSession } from '../runtime/createGameSession.js';
 import { setupBoardFeedback } from '../feedback/boardFeedback.js';
 import { setupSessionControls } from '../shell/controllerMount.js';
+import { mountMobileInstructions } from '../presentation/mountMobileInstructions.js';
+import { mountGameplayHud } from '../presentation/mountGameplayHud.js';
 import { setupMobileBoardView } from '../presentation/mobileBoardView.js';
 
 export function mountSessionPanel(root, runtimeFactory, routeInput, changed, settingsChanged = () => {}, requestStart) {
   root.innerHTML = `
-    <div class="mobile-title">PUSHBOX</div>
     <div class="console-frame">
       <div class="launcher-overlay">
         <div class="launcher-title">PUSHBOX</div>
         <div class="dev-options"><h3>Start point</h3>
-          <div class="dev-row"><select aria-label="Start point">
-            <option value="1">Level 1</option><option value="2">Level 2</option>
-            <option value="3">Level 3</option><option value="4">Level 4</option>
-            <option value="5">Level 5</option><option value="0">Full introduction</option>
-            <option value="-1">Skip intro · menu</option>
-          </select></div>
-          <label class="dev-row">Skip lore <input class="skip-lore" type="checkbox" checked></label>
+          <div class="dev-row"><select aria-label="Start point"></select></div>
+          <label class="dev-row">Skip lore <input class="skip-lore" type="checkbox"></label>
         </div>
         <button class="start-btn" disabled>Loading fonts…</button>
       </div>
@@ -25,45 +29,60 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
       <div class="canvas-wrap"><canvas width="1120" height="882"></canvas></div>
     </div>
     <div class="controller-area"></div>`;
+  const previewProgress = createSeenProgress({ storage: null });
+  const previewProfile = createPlayerProfile({ storage: null });
   const canvas = root.querySelector('canvas');
   const launcher = root.querySelector('.launcher-overlay');
   const startButton = root.querySelector('.start-btn');
   const mute = root.querySelector('.mute-btn');
   const startPoint = root.querySelector('select');
+  populateStartPoints(startPoint);
   const skipLore = root.querySelector('.skip-lore');
+  const previewSettings = root.closest('.preview-card')?.querySelector('.preview-launch-settings');
+  if (previewSettings) previewSettings.append(root.querySelector('.dev-options'));
   const changeStartPoint = () => settingsChanged({ startPoint: startPoint.value });
   const changeSkipLore = () => settingsChanged({ skipLore: skipLore.checked });
   startPoint.addEventListener('change', changeStartPoint);
   skipLore.addEventListener('change', changeSkipLore);
-  let session, stopState, stopAudio, stopControls, stopHints, boardView, ready, running = false, disposed = false;
+  let session, stopState, stopAudio, stopControls, stopHints, stopHud, instructions, loreView, boardView, bobby, exitCue, trollReward, opening, ready, running = false, disposed = false;
   let framing = 'walls';
-  function measure() {
-    const game = root.querySelector('.canvas-wrap').getBoundingClientRect();
-    const controls = root.querySelector('.controller-area').getBoundingClientRect();
-    root.dataset.title = root.clientHeight - game.height - controls.height > 80 ? 'show' : 'hide';
-  }
   function teardown() {
+    instructions?.dispose();
+    loreView?.dispose();
     boardView?.dispose();
-    stopState?.(); stopAudio?.(); stopControls?.(); stopHints?.(); session?.dispose();
+    bobby?.dispose();
+    exitCue?.dispose();
+    trollReward?.dispose();
+    opening?.dispose();
+    stopHud?.(); stopState?.(); stopAudio?.(); stopControls?.(); stopHints?.(); session?.dispose();
   }
   function initialize() {
     teardown(); running = false; launcher.hidden = false;
     startButton.disabled = true; startButton.textContent = 'Loading fonts…';
     session = createGameSession(canvas, runtimeFactory, { baseUrl: import.meta.env.BASE_URL });
     const current = session;
-    stopState = session.state.subscribe(state => { changed(state); measure(); });
+    opening = mountMobileOpening(root, session.state, session.audio, { progress: previewProgress, profile: previewProfile,
+      onEnter: () => requestStart ? requestStart() : start() });
+    opening.setLoading(0); session.setOpening(opening);
+    trollReward = mountTrollReward(session.state, { progress: previewProgress });
+    exitCue = mountExitCue(session.console, session.state);
+    bobby = mountBobby(session.console, session.state);
+    stopState = session.state.subscribe(state => { changed(state); });
     stopAudio = session.state.select(state => state.audio.muted, muted => {
       mute.textContent = muted ? '🔇' : '🔊'; mute.setAttribute('aria-label', muted ? 'Unmute this preview' : 'Mute this preview');
     });
-    stopControls = setupSessionControls(root.querySelector('.controller-area'), {
-      store: session.state, sendInput: routeInput, audio: session.audio,
-    }, measure);
-    stopHints = setupBoardFeedback(canvas, root.querySelector('.feedback-button'), session.state);
+    const services = { store: session.state, sendInput: routeInput, audio: session.audio };
+    stopHud = mountGameplayHud(root, session.state, services);
+    instructions = mountMobileInstructions(root, session.state, routeInput);
+    loreView = mountMobileLore(root, session.state, routeInput);
+    stopControls = setupSessionControls(root.querySelector('.controller-area'), services);
+    stopHints = setupBoardFeedback(canvas, root.querySelector('.feedback-button'), session.state, { mobile: () => true });
     boardView = setupMobileBoardView(root, session.state);
     boardView.setFraming(framing);
-    ready = session.loadAssets().then(() => {
+    ready = session.loadAssets(percent => { if (session === current && !disposed) opening.setLoading(percent); }).then(() => {
       if (disposed || session !== current) return;
       startButton.disabled = false; startButton.textContent = 'Start game';
+      opening.setLoading(100, true);
     });
   }
   async function start() {
@@ -71,9 +90,8 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     await ready;
     if (disposed || current !== session || running) return;
     running = true; launcher.hidden = true;
-    const value = Number(startPoint.value);
-    session.start({ skipIntro: value !== 0, startLevel: value > 0 ? value : 0,
-      skipLore: skipLore.checked }).catch(error => {
+    opening.hideLoading();
+    session.start(startPointSettings(startPoint.value, skipLore.checked)).catch(error => {
       if (current !== session || disposed) return;
       changed({ screen: { id: 'error' }, error: error.message });
     });
@@ -84,13 +102,15 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
   mute.addEventListener('click', toggleMute);
   initialize();
   return {
-    start, reset: initialize, measure,
-    setFraming(mode) { framing = mode; boardView.setFraming(mode); measure(); },
+    start, reset: initialize,
+    setFraming(mode) { framing = mode; boardView.setFraming(mode); },
     setStartSettings(settings) {
       if (settings.startPoint !== undefined) startPoint.value = settings.startPoint;
       if (settings.skipLore !== undefined) skipLore.checked = settings.skipLore;
     },
     sendInput(key) { if (running) session.sendInput(key); },
+    seenProgress: previewProgress,
+    clearSeen(names) { previewProgress.clear(names); initialize(); },
     getSnapshot: () => session.state.getSnapshot(),
     getSession: () => session,
     dispose() {

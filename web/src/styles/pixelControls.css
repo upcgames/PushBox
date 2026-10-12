@@ -1,0 +1,63 @@
+.pixel-control {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  background: #334155;
+  color: #fff0ba;
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 3px 3px #64748b, inset -3px -3px #182333, 0 4px #000;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pixel-control:active { transform: translateY(3px); box-shadow: inset 3px 3px #182333, inset -3px -3px #64748b; }
+.pixel-control:focus-visible { outline: 2px solid #fff0ba; outline-offset: 3px; }
+.pixel-control svg { width: 36px; height: 36px; fill: currentColor; shape-rendering: crispEdges; }
+.pixel-control.utility { width: 44px; height: 44px; flex: none; }
+.pixel-control.utility svg { width: 24px; height: 24px; }
+.pixel-control.muted { color: #94a3b8; }
+.pixel-control.rewind-cue svg { width: 44px; overflow: visible; }
+.pixel-control.rewind-cue.activated { color: #67e8f9; outline: 2px solid currentColor; outline-offset: 3px; }
+.pixel-control.rewind-cue.activated .cue-chevron { animation: game-cue-travel 420ms steps(6) infinite; }
+.pixel-control.rewind-cue.activated .second { animation-delay: -210ms; }
+@keyframes game-cue-travel { 0% { transform: translateX(3px); opacity: .2; } 25%, 65% { opacity: 1; } 100% { transform: translateX(-3px); opacity: .2; } }
+@keyframes game-party-colors {
+  0%, 100% { background: #701a75; color: #67e8f9; outline: 2px solid #67e8f9; outline-offset: 3px; }
+  25% { background: #155e75; color: #fff0ba; outline-color: #fff0ba; }
+  50% { background: #854d0e; color: #d6c2ff; outline-color: #d6c2ff; }
+  75% { background: #1e3a8a; color: #a4f0bf; outline-color: #a4f0bf; }
+}
+@keyframes game-party-dance { 0%, 100% { transform: rotate(-8deg) translateY(-2px); } 50% { transform: rotate(8deg) translateY(2px); } }
+@media (prefers-reduced-motion: reduce) {
+  .pixel-control.activated, .pixel-control.activated svg, .pixel-control .cue-chevron { animation: none !important; }
+}
+
+.pixel-control.hinted { position: relative; animation: pixel-hint 6s steps(1) infinite; }
+.pixel-control.hinted svg { transform-origin: center; }
+.pixel-control.face.hinted svg { animation: pixel-curiosity 6s steps(2) infinite; }
+.pixel-control.face.hinted::after { content: ''; position: absolute; width: 12px; height: 12px; right: -12px; top: -10px; background: #fff0ba; clip-path: polygon(40% 0, 60% 0, 60% 40%, 100% 40%, 100% 60%, 60% 60%, 60% 100%, 40% 100%, 40% 60%, 0 60%, 0 40%, 40% 40%); animation: pixel-spark 6s steps(1) infinite; }
+.pixel-control.rewind-cue.hinted { animation: pixel-rewind-halo 700ms steps(1) infinite; outline: 3px solid currentColor; outline-offset: 4px; }
+.pixel-control.rewind-cue.hinted .cue-chevron { animation: game-cue-travel 900ms steps(6) infinite; }
+.pixel-control.rewind-cue.hinted .second { animation-delay: -450ms; }
+/* Active feedback wins when a hinted button is pressed. */
+.pixel-control.rewind-cue.activated .cue-chevron { animation-duration: 420ms; }
+.pixel-control.rewind-cue.activated .second { animation-delay: -210ms; }
+.pixel-control.face.activated { animation: game-party-colors 1600ms steps(1) infinite; }
+.pixel-control.face.activated svg { animation: game-party-dance 650ms steps(2) infinite; }
+@keyframes pixel-hint { 0%, 10%, 22%, 34%, 46%, 100% { outline: none; } 16%, 28%, 40% { outline: 3px solid currentColor; outline-offset: 4px; } }
+@keyframes pixel-curiosity { 0%, 10%, 46%, 100% { transform: none; } 16%, 28%, 40% { transform: rotate(-8deg) translateY(-2px); } 22%, 34% { transform: rotate(8deg); } }
+@keyframes pixel-spark { 0%, 10%, 22%, 34%, 46%, 100% { opacity: 0; } 16%, 28%, 40% { opacity: 1; } }
+@keyframes pixel-rewind-halo { 0%, 100% { outline-color: currentColor; } 50% { outline-color: transparent; } }
+@media (prefers-reduced-motion: reduce) {
+  .pixel-control.hinted, .pixel-control.hinted svg, .pixel-control.hinted::after,
+  .pixel-control.activated, .pixel-control.activated svg, .pixel-control .cue-chevron { animation: none !important; }
+  .pixel-control.hinted { outline: 2px solid currentColor; outline-offset: 4px; }
+}
+
+.pixel-control.direction { width: 62px; height: 62px; }
+.pixel-control.direction svg { width: 28px; height: 28px; }
+.pixel-control.direction.left svg { transform: rotate(-90deg); }
+.pixel-control.direction.right svg { transform: rotate(90deg); }
+.pixel-control.direction.down svg { transform: rotate(180deg); }

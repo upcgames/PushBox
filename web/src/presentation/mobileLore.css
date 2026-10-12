@@ -1,0 +1,4 @@
+.mobile-lore-host { position: fixed; inset: 0; z-index: 30; min-height: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; background: #000; }
+.mobile-session .mobile-lore-host { position: absolute; }
+[data-mobile-lore="on"] > .console-frame { visibility: hidden; }
+[data-mobile-lore="on"] > .controller-area { display: none !important; }

@@ -1,72 +1,78 @@
 <script>
-  import { controllerServices } from './services.js';
-  const { store: GameState, sendInput: dispatch, audio } = controllerServices();
-  import Button from './Button.svelte';
   import { onMount } from 'svelte';
+  import { controllerServices } from './services.js';
+  import PixelButton from '../components/PixelButton.svelte';
   import Dpad from '../components/Dpad.svelte';
+  const { store: GameState, sendInput: dispatch, audio } = controllerServices();
+  let reward = $state(GameState.getSnapshot().trollReward);
   let trolling = $state(false);
-  let muted = $state(GameState.getSnapshot().audio.muted);
-  let trollTimer = null;
-  function dispatchTroll() {
-    if (muted) {
-      audio.setWebMuted(false);
-      return;
-    }
-    audio.playTrollSound();
-    trolling = true;
-    if (trollTimer) clearTimeout(trollTimer);
-    Promise.resolve(audio.getCurrentAudio()).then(audio => {
-      if (audio) {
-        const clear = () => { trolling = false; audio.removeEventListener('ended', clear); audio.removeEventListener('pause', clear); };
-        audio.addEventListener('ended', clear, { once: true });
-        audio.addEventListener('pause', clear, { once: true });
-        trollTimer = setTimeout(clear, 4000);
-      } else {
-        trollTimer = setTimeout(() => trolling = false, 2200);
-      }
-    });
+  let undoing = $state(false);
+  let undoTimer;
+  let trollTimer;
+  let stopTroll = () => {};
+  let disposed = false;
+  let trollRequest = 0;
+
+  function dispatchUndo() {
+    // Always let the original runtime handle unavailable undo, including its sound.
+    dispatch('r');
+  }
+  async function dispatchTroll() {
+    if (!GameState.getSnapshot().trollReward.unlocked) return;
+    GameState.useTrollReward();
+    const request = ++trollRequest;
+    stopTroll();
+    GameState.setTrollActive(true);
+    await audio.playTrollSound();
+    const current = await audio.getCurrentAudio();
+    if (disposed || request !== trollRequest) return;
+    trolling = !!current && !current.ended;
+    const clear = () => {
+      trolling = false;
+      GameState.setTrollActive(false);
+      clearTimeout(trollTimer);
+      current?.removeEventListener('ended', clear);
+      current?.removeEventListener('pause', clear);
+    };
+    stopTroll = clear;
+    current?.addEventListener('ended', clear, { once: true });
+    current?.addEventListener('pause', clear, { once: true });
+    if (!trolling) clear();
+    else trollTimer = setTimeout(clear, 4000);
   }
   onMount(() => {
-    const off = GameState.select(state => state.audio.muted, value => { muted = value; });
-    return () => { off(); if (trollTimer) clearTimeout(trollTimer); };
+    const stopReward = GameState.select(state => state.trollReward, next => reward = next);
+    const off = GameState.on('input:consumed', ({ key }) => {
+      if (key.toLowerCase() !== 'r' || !GameState.getSnapshot().game?.undoAvailable) return;
+      undoing = true;
+      clearTimeout(undoTimer);
+      undoTimer = setTimeout(() => undoing = false, 1800);
+    });
+    return () => { stopReward(); GameState.setTrollActive(false); disposed = true; off(); clearTimeout(undoTimer); stopTroll(); };
   });
 </script>
 
-<div class="ctrl game-ctrl">
-  <Dpad onDir={dispatch} />
-  <div class="ctrl-actions">
-    <Button icon="⏸" label="Pause" onclick={() => dispatch('p')} />
-    <Button icon="⏪" label="Undo" onclick={() => dispatch('r')} />
-    <span class:trolling={trolling} class="troll-wrap">
-      {#if muted}
-        <Button icon="🔊" label="Unmute" onclick={dispatchTroll} />
-      {:else}
-        <Button icon="🤡" variant="troll" onclick={dispatchTroll} />
-      {/if}
-    </span>
+<div class="gameplay-deck">
+  <Dpad facelift onDir={dispatch} />
+  <div class="secondary-actions">
+    <PixelButton icon="undo" label="Retroceder" variant="rewind-cue" active={undoing} onclick={dispatchUndo} />
+    {#if reward.unlocked}
+      <PixelButton icon="troll" label="¿Premio?" variant="face" hinted={reward.hinted} active={trolling} onclick={dispatchTroll} />
+    {/if}
   </div>
 </div>
 
 <style>
-  .ctrl {
-    background: rgba(22, 30, 46, 0.9);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px;
+  .gameplay-deck {
+    width: 100%;
     display: flex;
-    gap: 12px;
     align-items: center;
     justify-content: space-between;
-    min-height: 184px;
-    height: 184px;
+    gap: 16px;
+    padding: 10px 24px;
     box-sizing: border-box;
+    background: #080914;
   }
-  .game-ctrl { flex-direction: row; }
-  .ctrl-actions { display: flex; flex-direction: column; gap: 8px; }
-  .troll-wrap { display: inline-flex; align-items: center; gap: 4px; position: relative; }
-  .troll-wrap.trolling { animation: troll-shake 0.12s infinite, troll-rainbow 0.6s infinite; }
-  .troll-wrap.trolling :global(.btn) { animation: troll-wobble 0.18s infinite; background: hotpink !important; color: yellow !important; border: 2px dashed lime !important; font-family: 'Comic Sans MS', cursive !important; transform: rotate(-1deg); }
-  @keyframes troll-shake { 0% { transform: translateX(0) } 25% { transform: translateX(-2px) rotate(1deg) } 50% { transform: translateX(2px) rotate(-1deg) } 75% { transform: translateX(-1px) rotate(1deg) } 100% { transform: translateX(0) } }
-  @keyframes troll-rainbow { 0% { filter: hue-rotate(0deg) } 100% { filter: hue-rotate(360deg) } }
-  @keyframes troll-wobble { 0% { transform: scale(1) rotate(0) } 25% { transform: scale(1.15) rotate(3deg) } 50% { transform: scale(0.95) rotate(-3deg) } 75% { transform: scale(1.1) rotate(2deg) } 100% { transform: scale(1) rotate(0) } }
+  .secondary-actions { display: grid; justify-items: center; gap: 20px; }
+  @media (max-width: 370px) { .gameplay-deck { padding-inline: 16px; gap: 8px; } }
 </style>

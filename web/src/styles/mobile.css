@@ -40,16 +40,3 @@ html[data-shell="mobile"] .console-frame {
   align-items: center;
   justify-content: center;
 }
-/* mobile title — JS toggles data-title */
-#mobileTitle {
-  display: none;
-  text-align: center;
-  font-family: 'Px437', monospace;
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text);
-  text-shadow: 0 0 14px var(--accent);
-  padding: 8px 0 4px;
-}
-html[data-shell="mobile"][data-title="show"] #mobileTitle { display: block; }

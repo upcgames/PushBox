@@ -14,16 +14,6 @@ canvas { display: block; image-rendering: pixelated; width: 100%; max-width: 378
 @media (max-width: 760px) { .studies { grid-template-columns: 1fr; } }
 
 .section-title { margin: 36px 0 16px; padding-top: 20px; border-top: 1px solid #34313f; color: #b7b3c9; font-size: 15px; }
-.hud { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #080914; border-bottom: 4px solid #334155; padding: 18px 20px; max-width: 378px; min-height: 94px; font-family: Px437, monospace; }
-.lives { color: #ef4444; font-size: 23px; white-space: nowrap; }
-.lost { color: #334155; }
-.steps { display: flex; align-items: center; gap: 12px; color: #fff0ba; }
-.steps small { font-size: 10px; }
-.steps strong { font-size: 27px; font-weight: normal; }
-.critical { border-color: #991b1b; }
-.critical .steps { color: #ef4444; }
-.jolt .steps { animation: jolt 420ms steps(1); }
-@keyframes jolt { 0%, 40% { transform: translate(-3px, 2px); color: #fff0ba; } 20%, 60% { transform: translate(3px, -2px); } 80% { transform: translate(-1px, 0); } 100% { transform: none; } }
 .sample-action { margin-top: 12px; background: #24212e; color: #e9e7ef; border: 1px solid #514b64; padding: 10px 14px; cursor: pointer; }
 .controls-study { max-width: 500px; }
 .controls-preview { background: #080914; width: 100%; max-width: 378px; padding: 14px; }
@@ -68,32 +58,17 @@ canvas { display: block; image-rendering: pixelated; width: 100%; max-width: 378
 .scene-card { background: #080914; padding: 26px 22px; border: 3px solid #334155; font-family: Px437, monospace; text-align: center; }
 .scene-kicker { color: #eab308; font-size: 11px; letter-spacing: 2px; }
 .scene-card h3 { font-size: 20px; font-weight: normal; line-height: 1.6; margin: 18px 0 28px; }
-.lesson { border-top: 2px solid #334155; padding: 16px 0; }
-.lesson > span { display: block; text-align: left; color: #94a3b8; font-size: 10px; }
-.lesson canvas, .tip-card canvas { width: 252px; max-width: 100%; margin: 0 auto; }
-.lesson h4 { font-size: 12px; font-weight: normal; margin: 10px 0 0; }
-.continue-button { font-size: 13px; padding: 17px 24px; flex-shrink: 0; }
+.tip-card canvas { width: 252px; max-width: 100%; margin: 0 auto; }
 .tip-card { padding-block: 40px; }
 .tip-card > p:not(.scene-kicker) { font-size: 11px; color: #b7b3c9; line-height: 1.7; margin: 24px 0; }
 
 .lesson-options canvas { width: 280px; max-width: 100%; height: auto; background: #080914; }
 
-.lore-card { min-height: 360px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 26px 20px; }
-.lore-card canvas { width: 280px; max-width: 100%; height: auto; margin: 10px auto; }
-.lore-card h3 { font-size: 17px; line-height: 1.7; margin: 18px 0 10px; min-height: 87px; display: flex; align-items: center; }
 .lore-studies { align-items: start; }
 
 .pause-icon { display: inline-block; width: 14px; height: 18px; border-left: 5px solid currentColor; border-right: 5px solid currentColor; }
 .button-sample { min-height: 150px; display: flex; align-items: center; justify-content: center; gap: 18px; background: #080914; }
 .button-sample > span { font: 10px Px437, monospace; color: #b7b3c9; }
-.candidate { width: 76px; height: 76px; display: grid; place-items: center; }
-.candidate svg { width: 36px; height: 36px; fill: currentColor; shape-rendering: crispEdges; }
-.candidate.clock { color: #67e8f9; background: #164e63; }
-.candidate.hourglass { color: #eab308; }
-.candidate.face { color: #fff0ba; }
-.candidate.gift { color: #d6c2ff; background: #443359; }
-.candidate.bolt { color: #67e8f9; }
-
 canvas[data-kind^="move"] { width: 392px; max-width: 100%; height: auto; }
 
 [hidden] { display: none !important; }
@@ -105,88 +80,13 @@ canvas[data-kind^="move"] { width: 392px; max-width: 100%; height: auto; }
 .hint-pair > div { display: grid; justify-items: center; gap: 18px; }
 .hint-pair small { font: 9px Px437, monospace; color: #94a3b8; }
 .button-studies article > span { display: block; margin-top: 12px; font: 10px Px437, monospace; color: #b7b3c9; }
-.candidate.hinted { position: relative; animation: candidate-hint 6s steps(1) infinite; }
-.candidate.hinted svg { transform-origin: center; }
-.hinted.rewind svg { overflow: hidden; }
-.hinted.rewind .rewind-flow { animation: rewind-conveyor 650ms steps(6) infinite; }
-.hinted.clock svg { animation: hint-clock 6s steps(3) infinite; }
-.hinted.hourglass svg { animation: hint-hourglass 6s steps(4) infinite; }
-.hinted.face svg, .hinted.gift svg { animation: hint-curiosity 6s steps(2) infinite; }
-.hinted.face::after, .hinted.gift::after { content: ''; position: absolute; width: 12px; height: 12px; right: -12px; top: -10px; background: #fff0ba; clip-path: polygon(40% 0, 60% 0, 60% 40%, 100% 40%, 100% 60%, 60% 60%, 60% 100%, 40% 100%, 40% 60%, 0 60%, 0 40%, 40% 40%); animation: hint-spark 6s steps(1) infinite; }
-@keyframes candidate-hint { 0%, 10%, 22%, 34%, 46%, 100% { outline: none; } 16%, 28%, 40% { outline: 3px solid currentColor; outline-offset: 4px; } }
-@keyframes hint-rewind { 0%, 10%, 22%, 34%, 46%, 100% { transform: none; } 16%, 28%, 40% { transform: translateX(-4px); } }
-@keyframes hint-clock { 0%, 10%, 46%, 100% { transform: rotate(0deg); } 20%, 32% { transform: rotate(-25deg); } 26%, 38% { transform: rotate(10deg); } }
-@keyframes hint-hourglass { 0%, 10%, 46%, 100% { transform: rotate(0deg); } 22%, 34% { transform: rotate(180deg); } }
-@keyframes hint-curiosity { 0%, 10%, 46%, 100% { transform: none; } 16%, 28%, 40% { transform: rotate(-8deg) translateY(-2px); } 22%, 34% { transform: rotate(8deg); } }
-@keyframes hint-spark { 0%, 10%, 22%, 34%, 46%, 100% { opacity: 0; } 16%, 28%, 40% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .candidate.hinted, .candidate.hinted svg, .candidate.hinted::after { animation: none; } .candidate.hinted { outline: 2px solid currentColor; outline-offset: 4px; } }
-
-@keyframes rewind-conveyor { from { transform: translateX(0); } to { transform: translateX(-10px); } }
-.activated.rewind svg { overflow: hidden; }
-.activated.rewind .rewind-flow { animation: rewind-conveyor 320ms steps(6) infinite; }
-.candidate.activated.rewind, .candidate.activated.hourglass { color: #67e8f9; outline: 2px solid #67e8f9; outline-offset: 3px; }
-.activated.hourglass svg { animation: active-hourglass 1200ms steps(8) infinite; }
-@keyframes active-hourglass { 0%, 20% { transform: rotate(0deg); } 50%, 70% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
-.candidate.activated.face, .candidate.activated.gift { animation: party-colors 1600ms steps(1) infinite; }
-.activated.face svg { animation: party-dance 650ms steps(2) infinite; }
-.activated.gift .gift-lid { animation: gift-open 900ms steps(3) infinite; }
-.hinted.gift .gift-lid { animation: gift-rattle 6s steps(1) infinite; }
-@keyframes party-colors { 0%, 100% { background: #701a75; color: #67e8f9; outline: 2px solid #67e8f9; outline-offset: 3px; } 25% { background: #155e75; color: #fff0ba; outline-color: #fff0ba; } 50% { background: #854d0e; color: #d6c2ff; outline-color: #d6c2ff; } 75% { background: #1e3a8a; color: #a4f0bf; outline-color: #a4f0bf; } }
-@keyframes party-dance { 0%, 100% { transform: rotate(-8deg) translateY(-2px); } 50% { transform: rotate(8deg) translateY(2px); } }
-@keyframes gift-open { 0%, 100% { transform: translateY(0); } 40%, 70% { transform: translateY(-3px); } }
-@keyframes gift-rattle { 0%, 10%, 46%, 100% { transform: none; } 16%, 28%, 40% { transform: translateY(-1px); } }
-@media (max-width: 400px) { .hint-pair { gap: 14px; } .hint-pair .candidate { width: 68px; height: 68px; } }
-@media (prefers-reduced-motion: reduce) { .candidate.activated, .candidate.activated svg, .rewind-flow, .gift-lid { animation: none !important; } }
-
-.candidate.rewind-cue svg { width: 44px; overflow: visible; }
-.rewind-cue.hinted .cue-chevron { animation: cue-travel 900ms steps(6) infinite; }
-.rewind-cue.activated .cue-chevron { animation: cue-travel 420ms steps(6) infinite; }
-.rewind-cue.hinted .second { animation-delay: -450ms; }
-.rewind-cue.activated .second { animation-delay: -210ms; }
-.candidate.rewind-cue.activated { color: #67e8f9; outline: 2px solid currentColor; outline-offset: 3px; }
-@keyframes cue-travel { 0% { transform: translateX(3px); opacity: 0.2; } 25%, 65% { opacity: 1; } 100% { transform: translateX(-3px); opacity: 0.2; } }
-@media (prefers-reduced-motion: reduce) { .cue-chevron { animation: none !important; } }
-
 .instruction-devices { display: flex; gap: 24px; align-items: flex-start; overflow-x: auto; padding: 6px 3px 24px; }
 .instruction-device { flex: none; }
 .instruction-device .web-viewport { overflow: hidden; }
 .instruction-view { height: 100%; display: flex; flex-direction: column; --font: Px437, monospace; --accent: #eab308; --border: #334155; --text: #e9e7ef; }
-.instruction-sheet { flex: 1; min-height: 0; padding: 16px 20px; border: 0; display: flex; flex-direction: column; }
-.instruction-sheet h3 { margin: 4px 0 12px; font-size: 18px; }
-.instruction-sheet .lesson { flex: 1; min-height: 0; padding: 8px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-.instruction-sheet .lesson > span { align-self: flex-start; flex-shrink: 0; }
-.instruction-sheet .lesson canvas { width: 252px; max-width: 100%; max-height: 126px; object-fit: contain; min-height: 0; }
-.instruction-sheet .lesson h4 { margin: 4px 0; font-size: 11px; flex-shrink: 0; }
 .viewport-size { font-size: 11px; color: #98a8bd; margin-top: 10px; }
 
-/* Flash continuously for as long as the rewind remains hinted. */
-.candidate.hinted.rewind,
-.candidate.hinted.rewind-cue {
-  animation: hinted-rewind-halo 700ms steps(1) infinite;
-  outline: 3px solid currentColor;
-  outline-offset: 4px;
-}
 
-@keyframes hinted-rewind-halo {
-  0%, 100% { outline-color: currentColor; }
-  50% { outline-color: transparent; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .candidate.hinted.rewind, .candidate.hinted.rewind-cue { animation: none; outline-color: currentColor; }
-}
-
-.instruction-continue { align-self: center; flex-shrink: 0; margin: 16px 0 4px; }
-
-.lore-troll-art { width: 280px; max-width: 100%; position: relative; margin: 10px auto; }
-.lore-troll-art canvas { width: 100%; margin: 0; }
-.lore-troll-art .candidate.hinted.face { position: absolute; left: calc(50% - 38px); top: calc(50% - 38px); }
-
-/* Center each illustration/caption pair; trim the canvas's empty lower space. */
-.instruction-sheet .lesson { position: relative; }
-.instruction-sheet .lesson > span { position: absolute; top: 8px; left: 0; }
-.instruction-sheet .lesson-content { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.instruction-sheet .lesson-content canvas { flex: none; margin-bottom: -36px; }
-.instruction-sheet .lesson-content h4 { margin: 0; }
 
 .opening-studies { display: flex; gap: 24px; overflow-x: auto; align-items: flex-start; padding: 6px 3px 24px; }
 .opening-device { flex: none; }
@@ -272,25 +172,21 @@ canvas[data-kind^="move"] { width: 392px; max-width: 100%; height: auto; }
 
 .control-study { width: 360px; max-width: 100%; background: #080914; padding: 16px; }
 .control-topbar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-bottom: 14px; border-bottom: 2px solid #334155; }
-.control-topbar > span { margin-right: auto; color: #94a3b8; font: 11px Px437, monospace; }
+.control-topbar > span:first-child { margin-right: auto; color: #94a3b8; font: 11px Px437, monospace; }
 .control-topbar .utility { width: 44px; height: 44px; }
-.control-study svg { width: 24px; height: 24px; fill: currentColor; shape-rendering: crispEdges; }
+.control-action svg { width: 24px; height: 24px; fill: currentColor; shape-rendering: crispEdges; }
 .control-study .sample-dpad button { display: grid; place-items: center; }
-.control-study .sample-dpad svg, .control-study .sample-menu-pad svg { width: 28px; height: 28px; }
+.control-study .sample-dpad svg { width: 28px; height: 28px; }
 .control-study .left svg { transform: rotate(-90deg); }
 .control-study .right svg { transform: rotate(90deg); }
 .control-study .down svg { transform: rotate(180deg); }
 .control-study .secondary-actions { gap: 20px; }
-.control-study .candidate { margin: 0; }
-.control-study .candidate svg { width: 36px; height: 36px; }
-.control-study .rewind-cue svg { width: 44px; }
 .control-readout { font-size: 11px; margin: 16px 0 0; color: #94a3b8; min-height: 18px; }
-.menu-controls { min-height: 222px; display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; }
-.sample-menu-pad { display: flex; flex-direction: column; }
-.sample-menu-pad > * { width: 62px; height: 62px; }
-.sample-menu-pad button { display: grid; place-items: center; }
 .control-action { min-height: 56px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; font-size: 10px; }
 .simple-controls { min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .winner-actions { width: 100%; display: flex; justify-content: center; gap: 16px; }
 .winner-actions button { flex: 1; }
 .sound-control.muted { color: #64748b; }
+
+/* Preview layout stays local; promoted controls and HUD are web-owned. */
+.opening-preview { height: 100%; }

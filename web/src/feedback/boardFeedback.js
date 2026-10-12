@@ -7,7 +7,7 @@ import { drawWallImpact, WALL_IMPACT_DURATION } from './wallImpact.js';
 const PREFERENCE = 'pushboxBoardHints';
 const FRAME_INTERVAL = 1000 / 24;
 
-export function setupBoardFeedback(baseCanvas, button, store = GameState) {
+export function setupBoardFeedback(baseCanvas, button, store = GameState, { mobile = () => false } = {}) {
   const canvas = document.createElement('canvas');
   canvas.className = 'board-feedback';
   canvas.setAttribute('aria-hidden', 'true');
@@ -51,7 +51,7 @@ export function setupBoardFeedback(baseCanvas, button, store = GameState) {
     const smooth = !!impact || scene.cues.some(cue => cue.kind === 'danger');
     if (smooth || time - lastPaint >= FRAME_INTERVAL) {
       clear();
-      drawFeedback(ctx, scene, time, { motion: !reducedMotion.matches, completedAt });
+      drawFeedback(ctx, scene, time, { motion: !reducedMotion.matches, completedAt, strongPush: mobile(), showPortal: !mobile() });
       if (impact) drawWallImpact(ctx, scene.grid, impact, time, !reducedMotion.matches);
       lastPaint = time;
     }
@@ -98,17 +98,19 @@ export function setupBoardFeedback(baseCanvas, button, store = GameState) {
     update(feedbackInputs(store.getSnapshot()));
   }
   const stop = store.select(feedbackInputs, update, sameFeedbackInputs);
-  const stopImpacts = store.on('pushBlocked', event => {
-    if (!enabled || !scene || document.hidden || event.level !== scene.level || event.obstacle.kind !== 'wall') return;
+  function wallImpact(event) {
+    if (!enabled || !scene || document.hidden || event.level !== scene.level || event.obstacle?.kind !== 'wall') return;
     impact = { ...event.obstacle, direction: event.direction, level: event.level,
       contrast: sampleTileContrast(baseCanvas, scene.grid, event.obstacle), startedAt: performance.now() };
     redraw();
-  });
+  }
+  const stopImpacts = store.on('pushBlocked', event => { if (!mobile()) wallImpact(event); });
+  const stopMovement = store.on('movementBlocked', event => { if (mobile()) wallImpact(event); });
   button.addEventListener('click', toggle);
   reducedMotion.addEventListener('change', redraw);
   document.addEventListener('visibilitychange', redraw);
   const dispose = () => {
-    disposed = true; cancel(); stop(); stopImpacts(); canvas.remove(); button.hidden = true;
+    disposed = true; cancel(); stop(); stopImpacts(); stopMovement(); canvas.remove(); button.hidden = true;
     button.removeEventListener('click', toggle);
     reducedMotion.removeEventListener('change', redraw);
     document.removeEventListener('visibilitychange', redraw);

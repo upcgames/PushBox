@@ -12,9 +12,25 @@ const maps = [null, map1, map2, map3, map4, map5];
 export function setupMobileBoardView(root, store, enabled = () => true) {
   const frame = root.querySelector('.console-frame');
   const wrap = frame.querySelector('.canvas-wrap');
+  const pauseSoundCover = document.createElement('div');
+  pauseSoundCover.className = 'mobile-pause-sound-cover';
+  pauseSoundCover.setAttribute('aria-hidden', 'true');
+  pauseSoundCover.hidden = true;
+  wrap.append(pauseSoundCover);
   const boundsByLevel = new Map();
   let state = store.getSnapshot(), active = false, framing = 'walls';
   function layout() {
+    // Original InterfazPausa writes its sound caption at (15, 45), 52 cells.
+    // Cover only that mobile region; canonical cells and desktop stay intact.
+    const canvas = wrap.querySelector('canvas');
+    pauseSoundCover.hidden = !enabled() || state.screen?.id !== 'InterfazPausa';
+    if (!pauseSoundCover.hidden) {
+      const cols = canvas.width / 14, rows = canvas.height / 14;
+      pauseSoundCover.style.left = `${15 / cols * 100}%`;
+      pauseSoundCover.style.top = `${45 / rows * 100}%`;
+      pauseSoundCover.style.width = `${52 / cols * 100}%`;
+      pauseSoundCover.style.height = `${1 / rows * 100}%`;
+    }
     const game = state.game;
     if (!game) boundsByLevel.clear();
     if (game && !boundsByLevel.has(game.level)) {
@@ -53,6 +69,7 @@ export function setupMobileBoardView(root, store, enabled = () => true) {
     },
     dispose() {
       stop(); observer.disconnect();
+      pauseSoundCover.remove();
       delete frame.dataset.boardZoom; delete root.dataset.mobileBoard;
       for (const name of ['board-width', 'board-height', 'console-width', 'console-height', 'console-left', 'console-top']) {
         wrap.style.removeProperty(`--${name}`);

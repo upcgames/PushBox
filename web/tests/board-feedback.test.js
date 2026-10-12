@@ -161,7 +161,7 @@ test('overlay follows the store, stops when hidden or disabled and releases subs
   const original = { window: globalThis.window, document: globalThis.document,
     requestAnimationFrame: globalThis.requestAnimationFrame };
   const frames = new Map(), preferences = new Map(), context = recordingContext();
-  let frameId = 0, removed = false, samples = 0;
+  let frameId = 0, removed = false, samples = 0, mobile = false;
   const motion = Object.assign(new EventTarget(), { matches: false });
   const canvas = { width: 0, height: 0, setAttribute() {}, getContext: () => context,
     remove() { removed = true; } };
@@ -178,7 +178,7 @@ test('overlay follows the store, stops when hidden or disabled and releases subs
   const tick = time => { const [id, callback] = frames.entries().next().value; frames.delete(id); callback(time); };
   let dispose;
   try {
-    dispose = setupBoardFeedback(base, button, store.api);
+    dispose = setupBoardFeedback(base, button, store.api, { mobile: () => mobile });
     assert.equal(frames.size, 0);
     store.publish(state()); tick(0);
     assert.equal(canvas.width, 1120); assert.equal(canvas.height, 882);
@@ -212,6 +212,13 @@ test('overlay follows the store, stops when hidden or disabled and releases subs
     assert.equal(wallRipples().length, 2);
     tick(performance.now() + 400);
     assert.equal(wallRipples().length, 0);
+    mobile = true;
+    store.event('movementBlocked', hit);
+    assert.equal(wallRipples().length, 2, 'mobile walk into a wall uses the shared ripple');
+    store.event('movementBlocked', { ...hit, obstacle: null });
+    tick(performance.now() + 400);
+    assert.equal(wallRipples().length, 0);
+
     button.dispatchEvent(new Event('click'));
     assert.equal(frames.size, 0); assert.equal(context.rectangles.length, 0);
     assert.equal(preferences.get('pushboxBoardHints'), 'off');

@@ -1,3 +1,4 @@
+import { drawPushCue } from './pushCue.js';
 import { drawLava } from './lava.js';
 
 export const FEEDBACK_COLORS = Object.freeze({
@@ -54,7 +55,7 @@ function pushNudges(ctx, cx, cy, size, direction, time, motion, secondary) {
   }
 }
 
-export function drawFeedback(ctx, scene, time = 0, { motion = true, completedAt = new Map() } = {}) {
+export function drawFeedback(ctx, scene, time = 0, { motion = true, completedAt = new Map(), strongPush = false, showPortal = true } = {}) {
   const { cellSize, objectSize } = scene.grid;
   const size = cellSize * objectSize;
   for (const cue of scene.cues) {
@@ -66,12 +67,14 @@ export function drawFeedback(ctx, scene, time = 0, { motion = true, completedAt 
     const secondary = scene.portalActive ? 0.65 : 1;
     if (FEEDBACK_COLORS[cue.kind]) ctx.fillStyle = FEEDBACK_COLORS[cue.kind];
     if (cue.kind === 'box') {
-      if (cue.nearby) pushNudges(ctx, cx, cy, size, cue.direction, time, motion, secondary);
+      if (strongPush && motion && cue.idle !== false) glare(ctx, x, y, size, time, phase, secondary);
+      if (cue.nearby && strongPush) drawPushCue(ctx, x, y, size, cue.direction, time, motion);
+      else if (cue.nearby) pushNudges(ctx, cx, cy, size, cue.direction, time, motion, secondary);
       else if (!motion && cue.idle !== false) {
         ctx.globalAlpha = 0.65 * secondary;
         corners(ctx, x + 2, y + 2, size - 4, 4);
       }
-      if (motion && cue.idle !== false) glare(ctx, x, y, size, time, phase, secondary);
+      if (!strongPush && motion && cue.idle !== false) glare(ctx, x, y, size, time, phase, secondary);
     } else if (cue.kind === 'target') {
       // Keep contrast constant; only the marker geometry breathes.
       breathingCorners(ctx, x, y, size, breath, 1);
@@ -94,7 +97,7 @@ export function drawFeedback(ctx, scene, time = 0, { motion = true, completedAt 
           ctx.fillRect(x + 2, y + 2, size - 4, size - 4);
         }
       }
-    } else if (cue.kind === 'portal') {
+    } else if (cue.kind === 'portal' && showPortal) {
       ctx.globalAlpha = 0.12 + pulse * 0.08;
       ctx.fillRect(x + 2, y + 2, size - 4, size - 4);
       ctx.globalAlpha = 0.8;

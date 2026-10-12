@@ -1,9 +1,7 @@
 /* Give the camera a bounded area above the existing thumb controls. */
+.mobile-pause-sound-cover { position: absolute; background: #000; pointer-events: none; }
 body[data-mobile-board="on"] { height: 100dvh; min-height: 0; }
 .mobile-session[data-mobile-board="on"] { height: 100%; min-height: 0; }
-.mobile-session[data-mobile-board="on"] .mobile-title,
-.mobile-session[data-mobile-board="on"][data-title="show"] .mobile-title,
-body[data-mobile-board="on"] #mobileTitle { display: none; }
 .mobile-session[data-mobile-board="on"] .controller-area,
 html[data-shell="mobile"] body[data-mobile-board="on"] .controller-area {
   flex: none;

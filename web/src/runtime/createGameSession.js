@@ -1,3 +1,5 @@
+import { runMobileRuntime } from './runMobileRuntime.js';
+import { preloadAudioAssets } from '../audio/preloadAudio.js';
 import { VirtualConsole } from '../shims/consoleSurface.js';
 import { ConsoleColor } from '../shims/consoleColor.js';
 import { createGameState } from '../state/gameState.js';
@@ -16,20 +18,26 @@ export function createGameSession(canvas, runtimeFactory, options = {}) {
   const audio = options.audioFactory ? options.audioFactory(store) : createSessionAudio(store, options.baseUrl || '/');
   const config = { skipIntro: true, startLevel: 1, skipLore: true };
   platform = createSessionShims(surface, bridge, { ...options.clock, config, audio, signal: controller.signal });
+  const runAnim = createSessionAnimation(platform);
   const runtime = runtimeFactory({ console: surface, consoleColor: ConsoleColor, bridge,
-    shims: platform.shims, window: platform.window, runAnim: createSessionAnimation(platform) });
+    shims: platform.shims, window: platform.window, runAnim });
   const stopConsole = observeConsole(surface, options.scheduleTranscript || requestAnimationFrame, store);
   const leaveLauncher = bridge.enterScreen('launcher');
-  let done = null;
+  let done = null, opening = null;
   return Object.freeze({
     state: store.api, console: surface, audio,
-    loadAssets: () => surface.loadFonts(),
+    setOpening: value => opening = value,
+    async loadAssets(onProgress = () => {}) {
+      onProgress(0); await surface.loadFonts(); onProgress(2);
+      await preloadAudioAssets(options.baseUrl || '/', (loaded, total) => onProgress(Math.round((loaded + 1) / (total + 1) * 100)));
+    },
     sendInput: key => store.api.sendInput(key),
     start(settings = {}) {
       if (disposed) throw new Error('Session disposed');
       if (started) return done;
       started = true; Object.assign(config, settings); leaveLauncher();
-      done = runtime.main().catch(error => {
+      done = runMobileRuntime(runtime, { settings: { ...config, entry: settings.entry || 'main' }, opening, setPlayerNames: store.api.setPlayerNames,
+        configure: patch => Object.assign(config, patch), runAnim }).catch(error => {
         if (error.name !== 'AbortError') {
           store.event('runtimeError', { message: String(error.message || error) });
           throw error;

@@ -32,9 +32,10 @@ not a simulation of legal pushes or box consumption. The resulting bounds,
 plus a one-cell margin, stay fixed for the run, including after bridge creation.
 All five levels use the same algorithm; there are no per-level rectangles.
 
-Quick level in the toolbar resets and starts all previews at the chosen level in
+Quick start point in the toolbar uses the desktop launcher’s start-point list
+and resets and starts all previews at the chosen entry in
 one action, independently of input linking. It preserves crop framing and each
-preview's skip-lore setting. Selecting the same level again restarts that level.
+preview's skip-lore setting. Selecting the same start point again restarts it.
 
 Inputs are linked initially. Click a preview to select keyboard focus. With
 Link inputs enabled, keyboard and controller keys fan out once to all running
@@ -81,3 +82,40 @@ current session objects for inspection; each provides `state`, `console`,
 `pnpm run test:web` includes tests that run three actual compiled runtimes with
 test canvas/audio/clock backends. They exercise isolation, pause, command
 fan-out, unlinking, disposal, and replacement alongside legacy regression tests.
+
+Mobile instructions share `presentation/InstructionSheet.svelte` and its drawing
+helpers with the actual mobile page and portal-lab. The sheet follows the original
+`InterfazInstructions` screen; its in-screen Continue is enabled only for the
+original confirmation request and routes that request's key through existing
+input services. The original scene still runs behind the presentation. Reset
+disposes the sheet and its animation. Desktop retains original console instructions.
+
+Mobile lore shares LoreSheet and its illustrations/curtains with the actual
+phone page and portal-lab. It reads screen.level from the original Lore argument.
+Continue sends the original confirmation key and the exit curtain covers the
+handoff to gameplay. Uncheck Skip lore to review these screens.
+
+Start-point options are shared with the real launcher. Menu and Instructions
+invoke original routines directly through runtime/startRuntime.js; the selected
+level then goes through original main initialization. The menu matrix is cloned
+from its canonical asset. No auto-navigation keys or copied gameplay initializer
+are used. Skip entering name retains the original startup sequence without its
+name-entry block.
+
+The **Seen conditions** section above the phones shows saved-game browser flags
+and each preview's local flags. Clear a flag or use Clear all for that column.
+Clearing Carita unlocked also clears Carita used. Preview clearing resets that
+phone to its launcher; ordinary Reset retains its seen flags. Saved-game clearing
+applies to real browser progress and synchronizes with other open game tabs.
+New recorded flag names appear automatically as persistence grows.
+
+Use **Quick start point → Standard intro** to review real loading, Warning/alien typing
+and native name entry. Start-point and Skip lore controls now sit below each
+phone. Warning completion appears in Seen conditions. Preview profiles remain
+local across resets; direct Congratulations uses the submitted preview name.
+The lab and actual mobile game consume the same OpeningSheet and flow.
+
+Fresh previews default to Standard intro with lore enabled, matching the mobile
+game. Enter follows the shared warning/name path. Selecting a level, Menu or
+Instructions explicitly overrides the entry for inspection. Both pages compose
+the same original game via runMobileRuntime; each phone owns an isolated session.

@@ -1,3 +1,6 @@
+import { createSeenProgress } from '../state/seenProgress.js';
+import { populateStartPoints } from '../shell/startPoints.js';
+import { mountSeenConditions } from './seenConditions.js';
 import { INSPECTOR_DEVICES, deviceViewportMarkup, sizeDevicePreview } from './deviceViewport.js';
 import { createRuntime } from 'virtual:pushbox-session-runtime';
 import { createInputRouter } from './inputRouter.js';
@@ -18,7 +21,7 @@ devices.forEach(([width, height], index) => {
   card.innerHTML = `
     <div class="preview-heading"><button class="select-preview" aria-pressed="${index === 0}">${width} × ${height}</button><button class="reset-preview">Reset</button></div>
     ${deviceViewportMarkup('<div class="mobile-session"></div>')}
-    <div class="viewport-size"></div><div class="session-status" role="status">Launcher</div>`;
+    <div class="preview-launch-settings"></div><div class="viewport-size"></div><div class="session-status" role="status">Launcher</div>`;
   container.append(card);
   const status = card.querySelector('.session-status');
   const panel = mountSessionPanel(card.querySelector('.mobile-session'), createRuntime,
@@ -38,6 +41,14 @@ devices.forEach(([width, height], index) => {
   card.querySelector('.select-preview').addEventListener('click', () => select(index));
   card.querySelector('.phone-screen').addEventListener('pointerdown', () => select(index));
 });
+const savedProgress = createSeenProgress();
+const stopSeen = mountSeenConditions(document.getElementById('seenConditions'), [
+  { label: 'Saved game', progress: savedProgress, clear: names => savedProgress.clear(names) },
+  ...panels.map(({ panel }, index) => ({ label: `${devices[index][0]} × ${devices[index][1]}`,
+    progress: panel.seenProgress, clear: names => panel.clearSeen(names) })),
+]);
+cleanups.push(stopSeen);
+
 function select(index) {
   selected = index;
   panels.forEach(({ card }, i) => {
@@ -64,9 +75,8 @@ function layout() {
   const top = Math.max(0, Math.min(100, Number(topInput.value) || 0));
   const bottom = Math.max(0, Math.min(100, Number(bottomInput.value) || 0));
   const scale = Number(scaleInput.value) / 100;
-  panels.forEach(({ card, panel }, i) => {
+  panels.forEach(({ card }, i) => {
     sizeDevicePreview(card, devices[i], { top, bottom, scale });
-    panel.measure();
   });
   document.getElementById('scaleValue').textContent = `${scaleInput.value}%`;
 }
@@ -75,6 +85,12 @@ router.setLinked(linkInput.checked);
 linkInput.addEventListener('change', () => router.setLinked(linkInput.checked));
 document.getElementById('resetAll').addEventListener('click', () => { panels.forEach(({ panel }) => panel.reset()); compare(); });
 const quickLevelInput = document.getElementById('quickLevel');
+populateStartPoints(quickLevelInput);
+const jumpPlaceholder = document.createElement('option');
+jumpPlaceholder.value = '';
+jumpPlaceholder.textContent = 'Jump to…';
+quickLevelInput.prepend(jumpPlaceholder);
+quickLevelInput.value = '';
 function jumpToLevel() {
   const startPoint = quickLevelInput.value;
   if (!startPoint) return;
@@ -83,7 +99,7 @@ function jumpToLevel() {
     panel.reset();
     panel.start();
   });
-  quickLevelInput.value = ''; // Allow choosing the same level again to restart it.
+  quickLevelInput.value = ''; // Allow choosing the same start point again to restart it.
 }
 quickLevelInput.addEventListener('change', jumpToLevel);
 for (const input of [topInput, bottomInput, scaleInput]) input.addEventListener('input', layout);

@@ -1,0 +1,8 @@
+/* A gameplay toolbar replaces the old floating mute only on mobile gameplay. */
+html[data-shell="mobile"] body[data-mobile-gameplay="on"] .console-frame > .mute-btn,
+.mobile-session[data-mobile-gameplay="on"] .console-frame > .mute-btn { display: none; }
+html[data-shell="mobile"] body[data-mobile-gameplay="on"] .feedback-button,
+.mobile-session[data-mobile-gameplay="on"] .feedback-button { right: 8px; }
+.mobile-gameplay-hud-host { display: none; }
+html[data-shell="mobile"] .mobile-gameplay-hud-host:not([hidden]),
+.mobile-session .mobile-gameplay-hud-host:not([hidden]) { display: block; flex: none; }

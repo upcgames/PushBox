@@ -65,7 +65,7 @@ function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1 } = {}) {
       try { option.v = pauseOption; } finally { leaveInput(); leave(); }
     },
     Fondo01: noop, mapa01: noop,
-    Console: { Write: noop },
+    Console: { Write: noop, enterDrawScope: () => noop },
   };
   const sandbox = vm.createContext(globals);
   vm.runInContext(executable(read('world_logic')), sandbox);
@@ -206,4 +206,23 @@ test('runtime exceptions detach observation and restore screen context', async (
   await assert.rejects(runtime([], board()), /exhausted/);
   assert.equal(GameState.getSnapshot().game, null);
   assert.equal(GameState.getSnapshot().screen, null);
+});
+
+
+test('rejected walking emits structured blocked feedback once, independently of sound', async () => {
+  const arrays = board();
+  arrays.Paredes[1] = [[36, 32]]; arrays.Cantidades[1][1] = 1;
+  const { events } = await runtime(['f', 'w', 'w', 'c', 'c', 'c'], arrays);
+  const blocked = events.filter(event => event.type === 'movementBlocked');
+  assert.equal(blocked.length, 2);
+  for (const { payload } of blocked) {
+    assert.deepEqual(payload.player, { x: 36, y: 34 });
+    assert.deepEqual(payload.direction, { x: 0, y: -1 });
+    assert.deepEqual(payload.obstacle, { x: 36, y: 32, kind: 'wall' });
+  }
+  assert.equal(events.filter(event => event.type === 'pushBlocked').length, 0);
+  const push = board();
+  push.Paredes[1] = [[40, 34]]; push.Cantidades[1][1] = 1;
+  const pushed = await runtime(['f', 'd', 'c', 'c', 'c'], push);
+  assert.equal(pushed.events.filter(event => event.type === 'movementBlocked').length, 1);
 });

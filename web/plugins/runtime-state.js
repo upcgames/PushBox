@@ -1,5 +1,5 @@
 // Web-only adapter. Runtime observation is independent of the C++ pipeline.
-const MODULES = /\/(main|game_logic|interfaces|gui)\.js$/;
+const MODULES = /\/(main|game_logic|interfaces|gui|world_objects|world_logic)\.js$/;
 const LOOP_TYPES = new Set(['WhileStatement', 'DoWhileStatement', 'ForStatement', 'ForOfStatement', 'ForInStatement']);
 
 function walk(node, visit, ancestors = []) {
@@ -40,12 +40,37 @@ export function runtimeStatePlugin() {
       if (!/\/src\/generated(?:_anim)?\//.test(path) || !MODULES.test(path)) return;
       const ast = this.parse(source), edits = [];
       const insert = (position, text) => edits.push({ start: position, end: position, text });
-      let movementFound = false, blockedPushFound = false, bridgeUsed = false, scopeId = 0;
+      const playerHooks = new Set();
+      let movementFound = false, blockedPushFound = false, blockedWalkFound = false, bridgeUsed = false, scopeId = 0;
 
       for (const entry of ast.body) {
         const fn = entry.type === 'ExportNamedDeclaration' && entry.declaration;
         if (fn?.type !== 'FunctionDeclaration') continue;
         const name = fn.id.name;
+        if (name === 'ControlDeNiveles') {
+          if (!fn.params.some(parameter => parameter.name === 'Cantidades')) throw new Error('Runtime adapter: identity argument changed');
+          bridgeUsed = true; insert(fn.body.start + 1, '\nbindPlayerIdentity(Cantidades);\n');
+        }
+        if (name === 'PintarMovil') {
+          const parameters = fn.params.map(parameter => parameter.name || parameter.left?.name);
+          if (parameters.join(',') !== 'nivel,x,y,cf,cl') throw new Error('Runtime adapter: player drawing arguments changed');
+          playerHooks.add(name);
+          bridgeUsed = true;
+          insert(fn.body.start + 1, "\nconst _webDraw = Console.enterDrawScope('player'); try {\n");
+          insert(fn.body.end - 1, '\n} finally { _webDraw(); reportPlayerDraw(nivel, x, y, cf, cl); }\n');
+        } else if (['PintarMuerte', 'Teletransporte', 'Regresar', 'TeclasOcultas', 'Endurecimiento'].includes(name)) {
+          playerHooks.add(name);
+          bridgeUsed = true;
+          insert(fn.body.start + 1, `\nconst _webAnimation = enterPlayerAnimation('${name}'); try {\n`);
+          insert(fn.body.end - 1, '\n} finally { _webAnimation(); }\n');
+        }
+        // Keep terrain drawn by the original routines beneath a traveling player.
+        // Actors and animation effects never replace this presentation backdrop.
+        if (name === 'ColocarEscenario' || ['PBorrar', 'PintarHueco', 'PintarPuente', 'PintarPortal', 'DestruirPuente'].includes(name)) {
+          const scope = name === 'ColocarEscenario' ? 'board' : 'terrain';
+          insert(fn.body.start + 1, `\nconst _webTerrain = Console.enterDrawScope('${scope}'); try {\n`);
+          insert(fn.body.end - 1, '\n} finally { _webTerrain(); }\n');
+        }
         if (name === 'ControlDeMovimiento' || name === 'InterfazPausa') {
           if (!fn.params.some(parameter => parameter.name === 'sonido')) throw new Error('Runtime adapter: sound reference changed');
           bridgeUsed = true;
@@ -87,13 +112,27 @@ try {`);
               insert(node.consequent.start + 1, '\nreportBlockedPush(mov, caja);\n');
               blockedPushFound = true;
             }
+            if (node.type === 'IfStatement' && node.test.type === 'CallExpression' &&
+                node.test.callee.name === 'MovilDentroDeMapa') {
+              if (node.alternate?.type !== 'BlockStatement') throw new Error('Runtime adapter: rejected-walk branch changed');
+              insert(node.alternate.start + 1, '\nreportBlockedMove(mov);\n');
+              blockedWalkFound = true;
+            }
+            if (node.type === 'IfStatement' && node.test.type === 'BinaryExpression' &&
+                node.test.operator === '<' && node.test.left.name === 'caja' && node.test.right.value === 10) {
+              if (node.alternate?.type !== 'BlockStatement') throw new Error('Runtime adapter: hardened-caja rejection changed');
+              insert(node.alternate.start + 1, '\nreportBlockedPush(mov, caja);\n');
+            }
             if (node.type === 'AwaitExpression') {
               insert(node.argument.start, 'observeAwait('); insert(node.argument.end, ')');
             }
           });
         } else if (/^(Interfaz|MenuPrincipal$|Lore$|main$)/.test(name)) {
           bridgeUsed = true;
-          insert(fn.body.start + 1, `\nconst _webLeave = enterScreen('${name}'); try {\n`);
+          // Structured facts from original scene arguments, independent of UI.
+          const hasLevel = fn.params.some(parameter => parameter.type === 'Identifier' && parameter.name === 'nivel');
+          const context = hasLevel ? ', { level: nivel }' : '';
+          insert(fn.body.start + 1, `\nconst _webLeave = enterScreen('${name}'${context}); try {\n`);
           insert(fn.body.end - 1, '\n} finally { _webLeave(); }\n');
         }
 
@@ -135,12 +174,19 @@ try {`);
       if (movementFound && !blockedPushFound) {
         throw new Error('Runtime adapter: rejected-push branch is missing');
       }
+      if (movementFound && !blockedWalkFound) throw new Error('Runtime adapter: rejected-walk branch is missing');
+      const requiredPlayerHooks = path.endsWith('/world_objects.js')
+        ? ['PintarMovil', 'PintarMuerte', 'Teletransporte', 'TeclasOcultas', 'Endurecimiento']
+        : path.endsWith('/world_logic.js') ? ['Regresar'] : [];
+      for (const name of requiredPlayerHooks) {
+        if (!playerHooks.has(name)) throw new Error(`Runtime adapter: player routine ${name} is missing`);
+      }
       if (!edits.length) return;
       // Apply source insertions from right to left to preserve AST offsets.
       for (const edit of edits.sort((a, b) => b.start - a.start || b.end - a.end)) {
         source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
       }
-      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, reportBlockedPush, bindSound } from '../state/runtimeBridge.js';\n" : '';
+      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, reportBlockedPush, reportBlockedMove, bindSound, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity } from '../state/runtimeBridge.js';\n" : '';
       return { code: imports + source, map: null };
     },
   };

@@ -60,6 +60,8 @@ export class VirtualConsole {
     this.canvas.width = cols * tileSize;
     this.canvas.height = rows * tileSize;
 
+    this.drawScope = null;
+    this.hidePlayer = false;
     this.Clear();
   }
 
@@ -117,34 +119,14 @@ export class VirtualConsole {
 
       const char = decodeCp437(rawChar);
       this.observer?.write(this.cursorX, this.cursorY, char, this.fgColor, this.bgColor);
-      const px = this.cursorX * this.tileSize;
-      const py = this.cursorY * this.tileSize;
-      if (this.transparent) {
-        this.ctx.clearRect(px, py, this.tileSize, this.tileSize);
-        if (this.bgColor !== DOS_PALETTE[9]) {
-          this.ctx.fillStyle = this.bgColor;
-          this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+      const cell = { char, foreground: this.fgColor, background: this.bgColor, scope: this.drawScope };
+      if (this.cursorY < this.rows) {
+        this.cells[this.cursorY][this.cursorX] = cell;
+        if (this.drawScope === 'board' || this.drawScope === 'terrain') {
+          this.terrainCells[this.cursorY][this.cursorX] = cell;
         }
-      } else {
-        this.ctx.fillStyle = this.bgColor;
-        this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
       }
-
-      this.ctx.fillStyle = this.fgColor;
-      if (char === '█') {
-        // Full blocks paint the entire cell without font edge antialiasing.
-        this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
-      } else {
-        this.ctx.font = `${this.tileSize}px "Px437", monospace`;
-        this.ctx.textBaseline = 'top';
-        // Keep glyph overflow inside the cell that subsequent writes repaint.
-        this.ctx.save();
-        this.ctx.beginPath();
-        this.ctx.rect(px, py, this.tileSize, this.tileSize);
-        this.ctx.clip();
-        this.ctx.fillText(char, px, py);
-        this.ctx.restore();
-      }
+      this.paintCell(this.cursorX, this.cursorY, cell);
 
       this.cursorX++;
       if (this.cursorX >= this.cols) {
@@ -155,7 +137,62 @@ export class VirtualConsole {
     return this;
   }
 
+  // Keep canonical drawing data even when presentation hides the player glyphs.
+  // No pixel sampling: switching ownership repaints the original tagged cells.
+  enterDrawScope(scope) {
+    const previous = this.drawScope;
+    this.drawScope = scope;
+    if (scope === 'board') this.terrainCells = Array.from({ length: this.rows }, () => Array(this.cols).fill(null));
+    return () => { this.drawScope = previous; };
+  }
+
+  setPlayerHidden(hidden) {
+    if (this.hidePlayer === hidden) return;
+    this.hidePlayer = hidden;
+    for (let y = 0; y < this.rows; y++) for (let x = 0; x < this.cols; x++) {
+      const cell = this.cells[y][x];
+      if (cell?.scope === 'player') this.paintCell(x, y, cell);
+    }
+  }
+
+  paintCell(x, y, cell) {
+    const hidden = this.hidePlayer && cell.scope === 'player';
+    const terrain = hidden && this.terrainCells[y]?.[x];
+    const { foreground, background } = terrain || cell;
+    const char = terrain ? terrain.char : hidden ? ' ' : cell.char;
+    const px = x * this.tileSize;
+    const py = y * this.tileSize;
+    if (this.transparent) {
+      this.ctx.clearRect(px, py, this.tileSize, this.tileSize);
+      if (background !== DOS_PALETTE[9]) {
+        this.ctx.fillStyle = background;
+        this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+      }
+    } else {
+      this.ctx.fillStyle = background;
+      this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+    }
+
+    this.ctx.fillStyle = foreground;
+    if (char === '█') {
+      // Full blocks paint the entire cell without font edge antialiasing.
+      this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+    } else {
+      this.ctx.font = `${this.tileSize}px "Px437", monospace`;
+      this.ctx.textBaseline = 'top';
+      // Keep glyph overflow inside the cell that subsequent writes repaint.
+      this.ctx.save();
+      this.ctx.beginPath();
+      this.ctx.rect(px, py, this.tileSize, this.tileSize);
+      this.ctx.clip();
+      this.ctx.fillText(char, px, py);
+      this.ctx.restore();
+    }
+  }
+
   Clear() {
+    this.cells = Array.from({ length: this.rows }, () => Array(this.cols).fill(null));
+    this.terrainCells = Array.from({ length: this.rows }, () => Array(this.cols).fill(null));
     this.observer?.clear(this.cols, this.rows, this.tileSize);
     if (this.transparent) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

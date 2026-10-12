@@ -1,0 +1,10 @@
+.canvas-wrap > .exit-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+  image-rendering: pixelated;
+  z-index: 1;
+}

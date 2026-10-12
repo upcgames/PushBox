@@ -2,7 +2,7 @@ import { build } from 'vite-plus';
 import { resolve } from 'node:path';
 import { runtimeStatePlugin } from './runtime-state.js';
 
-const BRIDGE = ['observeGame', 'boardSnapshot', 'enterScreen', 'observeAwait', 'enterInput', 'withInput', 'reportBlockedPush', 'bindSound'];
+const BRIDGE = ['observeGame', 'boardSnapshot', 'enterScreen', 'observeAwait', 'enterInput', 'withInput', 'reportBlockedPush', 'reportBlockedMove', 'bindSound', 'reportPlayerDraw', 'enterPlayerAnimation', 'bindPlayerIdentity'];
 const GLOBALS = ['Ref', 'Random', 'CONSOLE_SCREEN_BUFFER_INFO', 'SetConsoleTextAttribute',
   'GetStdHandle', 'system', 'FlushConsoleInputBuffer', 'fflush', 'STD_OUTPUT_HANDLE',
   'STD_INPUT_HANDLE', 'stdin', 'toupper', 'Convert', '_kbhit', '_getch', 'scanf', 'strlen',
@@ -18,7 +18,7 @@ export async function compileSessionRuntime(root, parse) {
   const output = await build({
     configFile: false, root, publicDir: false, logLevel: 'silent',
     build: { write: false, minify: false, emptyOutDir: false,
-      lib: { entry: resolve(root, 'src/generated/main.js'), name: 'PushBoxRuntime', formats: ['iife'] },
+      lib: { entry: resolve(root, 'src/runtime/originalRuntime.js'), name: 'PushBoxRuntime', formats: ['iife'] },
     },
     plugins: [{
       name: 'pushbox-session-bindings',
