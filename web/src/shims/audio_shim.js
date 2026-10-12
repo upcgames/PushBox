@@ -1,4 +1,5 @@
 import { GameState, runtimeState } from '../state/gameState.js';
+import { createAudioChannel } from '../audio/audioChannel.js';
 
 // Win32 Multimedia API Shims (1-Channel Audio Architecture)
 window.TEXT = (str) => str;
@@ -9,8 +10,6 @@ window.SND_MEMORY = 4;
 window.SND_LOOP = 8;
 window.SND_NOSTOP = 16;
 
-let currentAudio = null;
-let webMuted = false;
 
 // All wav assets in public/audio (copied via scripts/copy_resources.py)
 const AUDIO_FILES = [
@@ -124,96 +123,27 @@ export function getAudioCacheSize() {
   return audioCache.size;
 }
 
-export function setWebMuted(v) {
-  webMuted = !!v;
-  if (GameState.getSnapshot().audio.muted !== webMuted) {
-    runtimeState.publish({ audio: { muted: webMuted } }, 'audioChanged');
-  }
-  if (currentAudio) {
-    try { currentAudio.volume = webMuted ? 0 : 1; } catch {}
-    // Keep loop playing at volume 0 so unmute resumes seamlessly (no restart)
-  }
-  try { window.dispatchEvent(new window.CustomEvent('webMuteChanged', { detail: webMuted })); } catch {}
-}
-export function isWebMuted() { return webMuted; }
-export function getCurrentAudio() { return currentAudio; }
-
-let lastTrollMode = null;
-const TROLL_MAP = { 1: 'Sabe.wav', 2: 'Terroristas.wav', 3: 'Despierta.wav', 4: 'Rbr.wav' };
-const TROLL_FILES = new Set(Object.values(TROLL_MAP));
-
-function isTrollPlaying() {
-  if (!currentAudio) return false;
-  try {
-    if (currentAudio.paused || currentAudio.ended) return false;
-    const file = currentAudio.src.split('/').pop();
-    return TROLL_FILES.has(file);
-  } catch { return false; }
-}
-
-export function playTrollSound() {
-  // If a troll sound is already playing, stutter restart same
-  if (isTrollPlaying()) {
-    try { currentAudio.currentTime = 0; } catch {}
-    return;
-  }
-  // Otherwise pick random among remaining 3 (or 4 if first)
-  let candidates = [1,2,3,4];
-  if (lastTrollMode !== null) candidates = candidates.filter(m => m !== lastTrollMode);
-  const mode = candidates[Math.floor(Math.random() * candidates.length)];
-  lastTrollMode = mode;
-  PlaySound(TROLL_MAP[mode], null, window.SND_ASYNC);
-}
-
-export function PlaySound(soundFile, reserved, flags) {
-  // Stop any currently playing 1-channel audio track immediately
-  if (currentAudio) {
-    try { currentAudio.pause(); } catch (e) { console.warn('[Audio] pause failed:', e); }
-    currentAudio = null;
-  }
-
-  // PlaySound(null) or null filename stops audio playback
-  if (!soundFile) return;
-
-  try {
-    const filename = (typeof soundFile === 'string') ? soundFile.split('/').pop() : '';
-    if (!filename) return;
-
-    let audio = null;
+const channel = createAudioChannel({ api: GameState, ...runtimeState }, {
+  baseUrl: import.meta.env.BASE_URL,
+  createAudio(path) {
+    const filename = path.split('/').pop();
     const cached = audioCache.get(filename.toLowerCase());
-    if (cached) {
-      // Clone cached element so SND_LOOP flag can be set per-play without mutating cache
-      audio = cached.cloneNode();
-      // cloneNode loses src in some browsers if not set explicitly
-      if (!audio.src) audio.src = cached.src;
-      audio.currentTime = 0;
-    } else {
-      audio = new Audio(getAudioPath(filename));
-    }
-    
-    if ((flags & window.SND_LOOP) !== 0) {
-      audio.loop = true;
-    }
-    try { audio.volume = webMuted ? 0 : 1; } catch {}
-
-    currentAudio = audio;
-    const playPromise = audio.play();
-    if (playPromise && typeof playPromise.catch === 'function') {
-      playPromise.catch((err) => {
-        console.warn(`[Audio] PlaySound play() rejected for ${filename}:`, err);
-      });
-    }
-  } catch (err) {
-    console.warn(`[Audio] Audio playback warning for ${soundFile}:`, err);
-  }
-}
-
-export function StopSound() {
-  if (currentAudio) {
-    try { currentAudio.pause(); } catch (e) { console.warn('[Audio] pause failed:', e); }
-    currentAudio = null;
-  }
-}
+    if (!cached) return new Audio(path);
+    const audio = cached.cloneNode();
+    if (!audio.src) audio.src = cached.src;
+    return audio;
+  },
+  onMutedChange(muted) {
+    window.dispatchEvent(new window.CustomEvent('webMuteChanged', { detail: muted }));
+  },
+});
+export const setWebMuted = channel.setWebMuted;
+export const isWebMuted = channel.isWebMuted;
+export const getCurrentAudio = channel.getCurrentAudio;
+export const playTrollSound = channel.playTrollSound;
+export const PlaySound = channel.play;
+export const StopSound = channel.stop;
+if (import.meta.hot) import.meta.hot.dispose(() => channel.dispose());
 
 window.PlaySound = PlaySound;
 window.StopSound = StopSound;

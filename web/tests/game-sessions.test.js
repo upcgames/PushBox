@@ -1,3 +1,4 @@
+import { setAudioMuted } from '../src/audio/audioState.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -28,8 +29,8 @@ function session() {
   let time = 0;
   const audioFactory = store => {
     let muted = true;
-    store.publish({ audio: { muted } }, 'audioChanged');
-    return { play() {}, stop() {}, setWebMuted(value) { muted = value; store.publish({ audio: { muted } }, 'audioChanged'); } };
+    setAudioMuted(store, muted);
+    return { play() {}, stop() {}, setWebMuted(value) { muted = value; setAudioMuted(store, muted); } };
   };
   const game = createGameSession(canvas, createRuntime, {
     audioFactory, scheduleTranscript: callback => queueMicrotask(callback),
@@ -127,4 +128,29 @@ test('linked inputs fan out exactly once; unlinking preserves independent progre
   await waitFor(() => waiting(replacement.game));
   assert.equal(replacement.game.state.getSnapshot().game.steps, 0);
   assert.equal(previews[0].game.state.getSnapshot().game.steps, 1);
+});
+
+
+test('compiled runtime shares mute with F and UI, including pause without double toggles', async () => {
+  const { game } = session();
+  const done = game.start();
+  try {
+    await waitFor(() => waiting(game));
+    assert.equal(game.state.getSnapshot().audio.muted, true);
+    assert.equal(game.state.getSnapshot().game.sound, false);
+    game.sendInput('f');
+    assert.equal(game.state.getSnapshot().audio.muted, false);
+    assert.equal(game.state.getSnapshot().game.sound, true);
+    game.audio.setWebMuted(true);
+    assert.equal(game.state.getSnapshot().game.sound, false);
+    game.sendInput('p');
+    await waitFor(() => game.state.getSnapshot().inputRequest?.consumer === 'InterfazPausa' && game.state.getSnapshot().input?.stage === 'waiting');
+    game.sendInput('f');
+    await waitFor(() => game.state.getSnapshot().input?.stage === 'waiting');
+    assert.equal(game.state.getSnapshot().audio.muted, false);
+    assert.equal(game.state.getSnapshot().game.sound, true);
+    game.sendInput('p');
+    await waitFor(() => waiting(game));
+    assert.equal(game.state.getSnapshot().audio.muted, false);
+  } finally { game.dispose(); await done; }
 });

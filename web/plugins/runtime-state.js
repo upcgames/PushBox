@@ -46,6 +46,23 @@ export function runtimeStatePlugin() {
         const fn = entry.type === 'ExportNamedDeclaration' && entry.declaration;
         if (fn?.type !== 'FunctionDeclaration') continue;
         const name = fn.id.name;
+        if (name === 'ControlDeMovimiento' || name === 'InterfazPausa') {
+          if (!fn.params.some(parameter => parameter.name === 'sonido')) throw new Error('Runtime adapter: sound reference changed');
+          bridgeUsed = true;
+          insert(fn.body.start + 1, '\nbindSound(sonido);\n');
+          // F is applied immediately by the platform input adapter. The pause
+          // loop may still receive F to repaint its sound label, without retoggling.
+          let toggleFound = false;
+          walk(fn.body, (node, ancestors) => {
+            if (node.type !== 'IfStatement' || !ancestors.some(parent => parent.type === 'SwitchCase' && parent.test?.value === 'F')) return;
+            const assignments = [];
+            walk(node, child => { if (child.type === 'AssignmentExpression' && child.left.type === 'MemberExpression' && child.left.object.name === 'sonido') assignments.push(child); });
+            if (!assignments.length) return;
+            edits.push({ start: node.start, end: node.end, text: '/* F already updated shared audio state. */' });
+            toggleFound = true; return false;
+          });
+          if (!toggleFound) throw new Error('Runtime adapter: sound toggle changed');
+        }
         if (name === 'ControlDeMovimiento') {
           movementFound = true; bridgeUsed = true;
           const initialization = fn.body.body.find(node => node.type === 'VariableDeclaration' &&
@@ -123,7 +140,7 @@ try {`);
       for (const edit of edits.sort((a, b) => b.start - a.start || b.end - a.end)) {
         source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
       }
-      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, reportBlockedPush } from '../state/runtimeBridge.js';\n" : '';
+      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, reportBlockedPush, bindSound } from '../state/runtimeBridge.js';\n" : '';
       return { code: imports + source, map: null };
     },
   };

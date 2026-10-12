@@ -56,10 +56,6 @@ The [mobile inspector](src/inspector/README.md) at `mobile-inspector.html`
 runs three independent original-runtime sessions, with simulated phone
 viewports and optional linked input. It preserves the console rendering and hints.
 
-The separate [level 1 POC](src/level1-poc/README.md) is at
-`level1-poc.html`: headless gameplay rules with a Phaser renderer and converted
-Tiled assets. It stops at portal completion and excludes scene animations.
-
 The [shared web-state API](src/state/README.md) supports controls and future QOL
 consumers (board overlays, lives/steps UI, input events, and console text).
 Run `pnpm run test:web` for its web-only tests; it does not run generation.

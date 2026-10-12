@@ -1,3 +1,4 @@
+import { INSPECTOR_DEVICES, deviceViewportMarkup, sizeDevicePreview } from './deviceViewport.js';
 import { createRuntime } from 'virtual:pushbox-session-runtime';
 import { createInputRouter } from './inputRouter.js';
 import { mountSessionPanel } from './sessionPanel.js';
@@ -6,7 +7,7 @@ import '../styles/launcher.css';
 import '../styles/mute.css';
 import './page.css';
 
-const devices = [[360, 800], [393, 852], [430, 932]];
+const devices = INSPECTOR_DEVICES;
 const router = createInputRouter(), panels = [], cleanups = [];
 const container = document.getElementById('previews');
 let selected = 0;
@@ -16,12 +17,7 @@ devices.forEach(([width, height], index) => {
   card.style.setProperty('--device-height', `${height}px`);
   card.innerHTML = `
     <div class="preview-heading"><button class="select-preview" aria-pressed="${index === 0}">${width} × ${height}</button><button class="reset-preview">Reset</button></div>
-    <div class="phone-scale"><div class="phone-screen">
-      <div class="status-bar"><span>9:41</span><span>▂▄▆ ▰</span></div>
-      <div class="browser-top"><span>⌂</span><span class="address">▣ pushbox.local</span><span>⋮</span></div>
-      <div class="web-viewport"><div class="mobile-session"></div></div>
-      <div class="browser-bottom"><span>◁</span><span>○</span><span>▢</span></div>
-    </div></div>
+    ${deviceViewportMarkup('<div class="mobile-session"></div>')}
     <div class="viewport-size"></div><div class="session-status" role="status">Launcher</div>`;
   container.append(card);
   const status = card.querySelector('.session-status');
@@ -69,12 +65,7 @@ function layout() {
   const bottom = Math.max(0, Math.min(100, Number(bottomInput.value) || 0));
   const scale = Number(scaleInput.value) / 100;
   panels.forEach(({ card, panel }, i) => {
-    card.style.setProperty('--top-height', `${top}px`); card.style.setProperty('--bottom-height', `${bottom}px`);
-    card.style.setProperty('--preview-scale', scale);
-    const [width, height] = devices[i];
-    card.style.width = `${width * scale}px`;
-    card.querySelector('.phone-scale').style.height = `${height * scale}px`;
-    card.querySelector('.viewport-size').textContent = `Web viewport: ${width} × ${height - 24 - top - bottom}`;
+    sizeDevicePreview(card, devices[i], { top, bottom, scale });
     panel.measure();
   });
   document.getElementById('scaleValue').textContent = `${scaleInput.value}%`;

@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
 import { runtimeStatePlugin } from '../plugins/runtime-state.js';
-import { GameState } from '../src/state/gameState.js';
+import { setAudioMuted } from '../src/audio/audioState.js';
+import { GameState, runtimeState } from '../src/state/gameState.js';
 import { selectControlMode } from '../src/shell/controlPolicy.js';
 import * as bridge from '../src/state/runtimeBridge.js';
 
@@ -32,6 +33,7 @@ test('adapter produces valid JavaScript for each runtime module without editing 
 });
 
 function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1 } = {}) {
+  setAudioMuted({ api: GameState, ...runtimeState }, false);
   const snapshots = [], events = [];
   const off = GameState.subscribe(state => { if (state.game) snapshots.push(state); });
   const offEvents = GameState.on('*', event => events.push(event));
@@ -41,7 +43,7 @@ function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1 } = {}) {
     _getch: async () => {
       bridge.recordInput(null, 'waiting');
       assert.ok(keys.length, 'test exhausted its input before gameplay exited');
-      const key = keys.shift(); bridge.recordInput(key, 'consumed'); return key;
+      const key = keys.shift(); bridge.handleAudioInput(key); bridge.recordInput(key, 'consumed'); return key;
     },
     toupper: key => typeof key === 'string' ? key.toUpperCase() : key,
     movi: (a, b, direction) => { if (direction === 1) b.v -= 2; if (direction === 2) b.v += 2;

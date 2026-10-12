@@ -20,6 +20,12 @@ export function createSessionShims(surface, bridge, { config, audio, signal,
     if (typeof key !== 'string' || !key) throw new TypeError('Input key must be a nonempty string');
     const value = key === 'Enter' ? 13 : key === 'Escape' ? 27 : key;
     bridge.recordInput(value, 'received');
+    if (bridge.handleAudioInput(value)) {
+      // Only pause needs the original F branch to redraw its console label.
+      if (waiters.length && bridge.inputConsumer() === 'InterfazPausa') waiters.shift().resolve(value);
+      else bridge.recordInput(value, 'consumed');
+      return;
+    }
     if (waiters.length) waiters.shift().resolve(value);
     else queue.push(value);
   }

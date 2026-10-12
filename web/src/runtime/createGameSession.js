@@ -39,7 +39,7 @@ export function createGameSession(canvas, runtimeFactory, options = {}) {
     },
     dispose() {
       if (disposed) return;
-      disposed = true; stopConsole(); controller.abort(); audio.stop(); leaveLauncher();
+      disposed = true; stopConsole(); controller.abort(); if (audio.dispose) audio.dispose(); else audio.stop(); leaveLauncher();
     },
   });
 }

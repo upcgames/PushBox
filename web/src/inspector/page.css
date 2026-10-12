@@ -18,14 +18,7 @@ body { display: block; padding: 24px; font-family: system-ui, sans-serif; }
 .preview-card { flex: none; }
 .preview-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; font-size: 12px; }
 .selected .select-preview { border-color: #38bdf8; color: #7dd3fc; }
-.phone-scale { position: relative; width: 100%; }
-.phone-screen { width: var(--device-width); height: var(--device-height); transform: scale(var(--preview-scale)); transform-origin: top left; display: flex; flex-direction: column; background: #090d16; border-radius: 20px; overflow: hidden; outline: 2px solid #36435a; }
 .selected .phone-screen { outline-color: #38bdf8; }
-.status-bar { height: 24px; flex: none; padding: 4px 18px; display: flex; justify-content: space-between; font-size: 12px; background: #242832; }
-.browser-top { height: var(--top-height); flex: none; display: flex; align-items: center; gap: 14px; padding: 0 12px; background: #242832; overflow: hidden; }
-.address { flex: 1; padding: 9px 12px; border-radius: 24px; background: #383e49; font-size: 14px; }
-.browser-bottom { height: var(--bottom-height); flex: none; display: flex; align-items: center; justify-content: space-around; background: #242832; overflow: hidden; }
-.web-viewport { flex: 1; min-height: 0; overflow: auto; }
 .viewport-size, .session-status { font-size: 12px; color: #98a8bd; margin-top: 10px; line-height: 1.5; overflow-wrap: anywhere; }
 .mobile-session { min-height: 100%; display: flex; flex-direction: column; justify-content: flex-start; position: relative; --font: system-ui, sans-serif; }
 .mobile-session .mobile-title { display: none; text-align: center; font-family: 'Px437', monospace; font-size: 1.6rem; font-weight: 700; letter-spacing: .08em; color: var(--text); text-shadow: 0 0 14px var(--accent); padding: 8px 0 4px; }

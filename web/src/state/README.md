@@ -68,13 +68,13 @@ Prompt typing and transitions outside those loops have no active request.
 | `game` | Null outside an active movement session; retained while paused |
 | `game.level`, `nextLevel` | Board's level and runtime's current level (may differ during exit) |
 | `game.player` | Current `{ x, y }` |
-| `game.steps`, `lives`, `sound`, `undoAvailable` | Actual movement counter, lives, canonical audio flag, available undo |
+| `game.steps`, `lives`, `sound`, `undoAvailable` | Actual movement counter, lives, compatibility audio flag derived from shared mute, available undo |
 | `game.board` | `boxes` with `index` and `onTarget`; `targets` with `covered`; `gaps`; `walls` |
 | `game.portal` | `{ x, y, active }`, using canonical `PortalVisible`, including level 5 |
 | `game.grid` | Coordinate grid and object dimensions |
 | `screen` | Current `{ id }`, or null; nested screens restore their parent |
 | `input` | Last `{ key, stage, request }`; stages: received, waiting, consumed |
-| `audio.muted` | Web audio mute flag, distinct from canonical `game.sound` |
+| `audio.muted` | Single session mute state; canonical `game.sound` reads its inverse |
 | `console` | `cols`, `rows`, `tileSize`, current `lines`, and `cells` with character and foreground/background colors |
 
 Coordinates use the original **80 × 63 console cells**, not logical tile
@@ -126,3 +126,13 @@ previous/next snapshots instead of assuming an input succeeded.
 Run `npm run test:web` from `web/` for store contracts, console/input integration,
 and tests against fresh generated browser code. Regenerate artifacts through
 the existing host pipeline before running adapter integration tests.
+
+
+Audio ownership: the shared store's `audio.muted` is authoritative. The main
+page and inspector use the same one-channel playback implementation. The web
+adapter binds canonical `sonido` references to shared mute state; it does not
+keep a separate gameplay sound toggle. F changes shared mute immediately,
+including during animation, and is not buffered as a gameplay command. During
+text input, F is a literal character. Pause may receive F to redraw its sound
+label, but its old toggle is suppressed. UI mute controls update the same state
+directly, without dispatching F. Changes also update retained `game.sound`.

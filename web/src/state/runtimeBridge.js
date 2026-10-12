@@ -1,3 +1,4 @@
+import { bindSoundReference, handleAudioInput as handleAudioKey } from '../audio/audioState.js';
 import { runtimeState, GameState } from './gameState.js';
 
 export function createRuntimeBridge(store) {
@@ -94,11 +95,13 @@ function reportBlockedPush(movement, boxIndex) {
     obstacle: { x, y, kind: wall ? 'wall' : 'box' } });
 }
 
-return { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush };
+function bindSound(reference) { bindSoundReference(store, reference); }
+function handleAudioInput(key) { return handleAudioKey(store, key); }
+return { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, bindSound, handleAudioInput, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
 }
 
 const defaultBridge = createRuntimeBridge({ api: GameState, ...runtimeState });
-export const { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush } = defaultBridge;
+export const { enterInput, withInput, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, bindSound, handleAudioInput, inputConsumer } = defaultBridge;
 
 export function boardSnapshot(level, player, steps, lives, sound, arrays, portal, nextLevel, undoPosition) {
   const { Cajas, Paredes, Vacios, Huecos, Cantidades } = arrays;

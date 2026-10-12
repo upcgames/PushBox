@@ -39,7 +39,7 @@ for (const host of ['127.0.0.1', '::1']) {
     assert.ok(address.port > port);
     assert.ok(['::', '0.0.0.0'].includes(address.address), address.address);
     assert.equal(vite.config.server.host, true);
-    const response = await fetch(`http://127.0.0.1:${address.port}/level1-poc.html`);
+    const response = await fetch(`http://127.0.0.1:${address.port}/index.html`);
     assert.equal(response.status, 200);
   });
 }

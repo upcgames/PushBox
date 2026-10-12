@@ -2,7 +2,7 @@ import { build } from 'vite-plus';
 import { resolve } from 'node:path';
 import { runtimeStatePlugin } from './runtime-state.js';
 
-const BRIDGE = ['observeGame', 'boardSnapshot', 'enterScreen', 'observeAwait', 'enterInput', 'withInput', 'reportBlockedPush'];
+const BRIDGE = ['observeGame', 'boardSnapshot', 'enterScreen', 'observeAwait', 'enterInput', 'withInput', 'reportBlockedPush', 'bindSound'];
 const GLOBALS = ['Ref', 'Random', 'CONSOLE_SCREEN_BUFFER_INFO', 'SetConsoleTextAttribute',
   'GetStdHandle', 'system', 'FlushConsoleInputBuffer', 'fflush', 'STD_OUTPUT_HANDLE',
   'STD_INPUT_HANDLE', 'stdin', 'toupper', 'Convert', '_kbhit', '_getch', 'scanf', 'strlen',

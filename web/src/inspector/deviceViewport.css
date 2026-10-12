@@ -1,0 +1,7 @@
+.device-frame { position: relative; width: 100%; }
+.device-frame .phone-screen { width: var(--device-width); height: var(--device-height); transform: scale(var(--preview-scale)); transform-origin: top left; display: flex; flex-direction: column; background: #090d16; border-radius: 20px; overflow: hidden; outline: 2px solid #36435a; }
+.device-frame .status-bar { height: 24px; flex: none; padding: 4px 18px; display: flex; justify-content: space-between; font-size: 12px; background: #242832; }
+.device-frame .browser-top { height: var(--top-height); flex: none; display: flex; align-items: center; gap: 14px; padding: 0 12px; background: #242832; overflow: hidden; }
+.device-frame .address { flex: 1; padding: 9px 12px; border-radius: 24px; background: #383e49; font-size: 14px; }
+.device-frame .browser-bottom { height: var(--bottom-height); flex: none; display: flex; align-items: center; justify-content: space-around; background: #242832; overflow: hidden; }
+.device-frame .web-viewport { flex: 1; min-height: 0; overflow: auto; }

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PushBox · Design studies</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">PUSHBOX / DESIGN STUDIES</p>
+        <h1>First-pass ideas</h1>
+        <p class="intro">Independent previews. Each shows just enough context to judge the idea.</p>
+      </header>
+      <p id="status" role="status">Loading…</p>
+      <nav class="review-tabs" role="tablist" aria-label="Design status">
+        <button id="review-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="review-panel" data-panel="review-panel">Review</button>
+        <button id="agreed-tab" role="tab" aria-selected="true" aria-controls="agreed-panel" data-panel="agreed-panel">Agreed</button>
+      </nav>
+      <div id="review-panel" role="tabpanel" aria-labelledby="review-tab" hidden>
+        <p class="intro">No pending design previews. Accepted artifacts are in Agreed.</p>
+      </div>
+      <div id="agreed-panel" role="tabpanel" aria-labelledby="agreed-tab">
+                <h2 class="section-title">Controls / Accepted facelift</h2><p class="intro">Isolated control areas. Press feedback and button states only; no game input or audio.</p><div id="control-studies"></div>
+<h2 class="section-title">Accepted Startup flow</h2>
+        <p class="intro">Loading → Enter → warning → name. Continue skips typing first, then opens the name field. Uses the original typewriter sound; no game runtime.</p>
+        <div class="opening-studies"><article id="opening-simulation" class="opening-device"></article></div>
+<h2 class="section-title">11 / Accepted slug motion</h2>
+      <p class="intro">One shared animation: strength 1 for UI, 0.4 for gameplay. Both show all four push directions.</p>
+      <section class="studies lesson-options" aria-label="Movement alternatives">
+        <article><h2>UI · Slug stretch + settle</h2><canvas data-kind="moveSlug" width="392" height="280" aria-label="Player stretches forward then compresses on landing"></canvas><p>Lengthen toward the next tile, then compress and settle.</p></article>
+        <article><h2>In-game · Subtle slug</h2><canvas data-kind="moveSubtle" width="392" height="280" aria-label="Subtle body stretch during movement"></canvas><p>Same stretch and settle as A, with smaller deformation.</p></article>
+      </section>
+      <h2 class="section-title">13 / Accepted undo button</h2><p class="intro">Normal, continuously hinted, and active states.</p><section class="studies button-studies" aria-label="Accepted undo button"><article><h2>Chosen · Traveling chevrons</h2><div class="button-sample hint-pair"><div><small>NORMAL</small><button class="pixel-button candidate rewind-cue " aria-label="RETROCEDE"><svg viewBox="0 0 32 24" aria-hidden="true"><path class="cue-chevron" d="M12 5h4l-7 7 7 7h-4L5 12l7-7Z"/><g transform="translate(12 0)"><path class="cue-chevron second" d="M12 5h4l-7 7 7 7h-4L5 12l7-7Z"/></g></svg></button></div><div><small>HINTED</small><button class="pixel-button candidate rewind-cue hinted" aria-label="RETROCEDE"><svg viewBox="0 0 32 24" aria-hidden="true"><path class="cue-chevron" d="M12 5h4l-7 7 7 7h-4L5 12l7-7Z"/><g transform="translate(12 0)"><path class="cue-chevron second" d="M12 5h4l-7 7 7 7h-4L5 12l7-7Z"/></g></svg></button></div><div><small>ACTIVE</small><button class="pixel-button candidate rewind-cue activated" aria-label="RETROCEDE"><svg viewBox="0 0 32 24" aria-hidden="true"><path class="cue-chevron" d="M12 5h4l-7 7 7 7h-4L5 12l7-7Z"/><g transform="translate(12 0)"><path class="cue-chevron second" d="M12 5h4l-7 7 7 7h-4L5 12l7-7Z"/></g></svg></button></div></div><span>RETROCEDE</span><p>Two fixed pixel chevrons travel left and fade between passes. Same shape in every state; active runs faster.</p></article></section>
+<h2 class="section-title">10 / Lore · All levels accepted</h2><section class="studies lore-studies" aria-label="Accepted lore screens"><article class="scene-study"><div class="scene-card lore-card">
+          <p class="scene-kicker">NIVEL 01</p>
+          <canvas data-kind="lore1" width="224" height="112" aria-label="Mysterious level 1 illustration"></canvas>
+          <h3>Haz que cada movimiento cuente</h3>
+        </div></article><article class="scene-study"><div class="scene-card lore-card">
+          <p class="scene-kicker">NIVEL 02</p>
+          <canvas data-kind="lore2" width="224" height="112" aria-label="Mysterious level 2 illustration"></canvas>
+          <h3>Te reto a pisar la casilla blanca</h3>
+        </div></article><article class="scene-study"><div class="scene-card lore-card">
+          <p class="scene-kicker">NIVEL 03</p>
+          <canvas data-kind="lore3" width="224" height="112" aria-label="Mysterious level 3 illustration"></canvas>
+          <h3>¿Y si esa caja sirve para algo más?</h3>
+        </div></article><article class="scene-study"><div class="scene-card lore-card">
+          <p class="scene-kicker">NIVEL 04</p>
+          <div class="lore-troll-art"><canvas data-kind="lore4" width="224" height="112" aria-label="Mysterious level 4 illustration"></canvas><button class="pixel-button candidate hinted face" aria-label="¿PREMIO?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v3h3v12h-3v3H5v-3H2V6h3V3Zm3 4v3h3V7H8Zm6 0v3h3V7h-3Zm-7 7v3h3v2h5v-2h3v-3h-3v2h-5v-2H7Z"/></svg></button></div>
+          <h3>Presiona la carita si necesitas ayuda</h3>
+        </div></article><article class="scene-study"><div class="scene-card lore-card">
+          <p class="scene-kicker">NIVEL 05</p>
+          <canvas data-kind="lore5" width="280" height="224" aria-label="Mysterious level 5 illustration"></canvas>
+          <h3>Hay paredes que esconden un secreto</h3>
+        </div></article></section>
+<h2 class="section-title">06 / Instrucciones · Accepted</h2>
+      <p class="intro">The same three device frames as Mobile Inspector, at its default 85% preview scale. Instructions fill the web viewport, with Continue inside the screen.</p>
+      <div id="instruction-devices" class="instruction-devices"></div>
+<h2 class="section-title">02 / Box-push cue</h2><label class="background-choice">Background for box cues <select id="review-level"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option></select></label><section class="studies" aria-label="Selected box push cue"><article><h2>Chosen · Traveling chevrons</h2><div class="preview"><canvas data-kind="boxTravel" width="168" height="140" aria-label="Two large chevrons moving in the push direction"></canvas></div><p>Two arrows move toward the push direction. More active, same box footprint.</p></article></section>
+<h2 class="section-title">14 / Troll button</h2><p class="intro">Pixel grin: normal, hinted, and active party states.</p><section class="studies button-studies" aria-label="Selected troll button"><article><h2>Chosen · Pixel grin</h2><div class="button-sample hint-pair"><div><small>NORMAL</small><button class="pixel-button candidate face" aria-label="¿PREMIO?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v3h3v12h-3v3H5v-3H2V6h3V3Zm3 4v3h3V7H8Zm6 0v3h3V7h-3Zm-7 7v3h3v2h5v-2h3v-3h-3v2h-5v-2H7Z"/></svg></button></div><div><small>HINTED</small><button class="pixel-button candidate hinted face" aria-label="¿PREMIO?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v3h3v12h-3v3H5v-3H2V6h3V3Zm3 4v3h3V7H8Zm6 0v3h3V7h-3Zm-7 7v3h3v2h5v-2h3v-3h-3v2h-5v-2H7Z"/></svg></button></div><div><small>ACTIVE</small><button class="pixel-button candidate activated face" aria-label="¿PREMIO?"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v3h3v12h-3v3H5v-3H2V6h3V3Zm3 4v3h3V7H8Zm6 0v3h3V7h-3Zm-7 7v3h3v2h5v-2h3v-3h-3v2h-5v-2H7Z"/></svg></button></div></div><span>¿PREMIO?</span><p>A mischievous face, drawn as pixels rather than a font glyph.</p></article></section>
+<h2 class="section-title">03 / Lives + steps</h2>
+      <section class="studies" aria-label="Mobile stats proposal">
+        <article><h2>Normal</h2><div class="hud"><span class="lives" aria-label="Three lives">♥ ♥ ♥</span><span class="steps"><small>STEPS</small><strong>024</strong></span></div><p>A compact strip; no level label. Hearts and a readable counter.</p></article>
+        <article><h2>Critical</h2><div class="hud critical"><span class="lives" aria-label="One life">♥ <span class="lost">♥ ♥</span></span><span class="steps"><small>STEPS</small><strong id="critical-count">008</strong></span></div><button id="take-step" class="sample-action">Take a step</button><p>The counter jolts on each step. Tap to see the reaction; it stays still between steps.</p></article>
+      </section>
+      <h2 class="section-title">05 / Bobby</h2>
+      <p class="intro">Idle only. Original player glyphs, with small motion extending beyond the tile.</p>
+      <section class="studies" aria-label="Bobby idle alternatives">
+        <article><h2>A · Vertical stretch + rebound</h2><div class="preview"><canvas data-kind="bobbyBreathe" width="168" height="140" aria-label="Bobby stretching and rebounding"></canvas></div><p>Quicker, smaller stretch and rebound. Feet stay anchored.</p></article>
+      </section>
+      <h2 class="section-title">12 / Blocked movement</h2>
+      <section class="studies lesson-options" aria-label="Blocked movement alternatives">
+        <article><h2>Contained tremble</h2><canvas data-kind="blockContained" width="224" height="140" aria-label="Contained tremble against one wall blocker"></canvas><p>The inner body shakes; the outer frame stays fixed. No overflow or floor gaps.</p></article>
+      </section>
+      </div>
+      <footer>Isolated visual proposals. Static level 1 crops; no game integration or audio.</footer>
+    </main>
+    <script type="module" src="/src/portal-lab/main.js"></script>
+  </body>
+</html>

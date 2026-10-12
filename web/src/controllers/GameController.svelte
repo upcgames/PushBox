@@ -10,7 +10,6 @@
   function dispatchTroll() {
     if (muted) {
       audio.setWebMuted(false);
-      dispatch('f');
       return;
     }
     audio.playTrollSound();

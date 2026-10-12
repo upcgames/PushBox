@@ -6,15 +6,10 @@ JS_STAMP = src/generated/.stamp
 ANIM_STAMP = src/generated_anim/.stamp
 PUBLIC_MODULES_STAMP = public/pushbox_modules/.stamp
 AUDIO_STAMP = public/audio/.stamp
-POC_STAMP = public/level1-poc/.stamp
 
 .PHONY: generate test
 
-generate: $(JS_STAMP) $(ANIM_STAMP) $(PUBLIC_MODULES_STAMP) $(AUDIO_STAMP) $(POC_STAMP)
-
-$(POC_STAMP): $(MODULES_STAMP) scripts/export_level1_poc.mjs
-	node scripts/export_level1_poc.mjs
-	touch $(POC_STAMP)
+generate: $(JS_STAMP) $(ANIM_STAMP) $(PUBLIC_MODULES_STAMP) $(AUDIO_STAMP)
 
 $(MODULES_STAMP): $(MANIFEST) $(SOURCE_CPP) scripts/build_pushbox_modules.py
 	$(PYTHON) scripts/build_pushbox_modules.py

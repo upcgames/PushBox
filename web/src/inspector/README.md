@@ -1,7 +1,6 @@
 # Mobile inspector
 
-Open `/mobile-inspector.html` on the normal dev server. The original game page
-and the parked Phaser level-one experiment remain separate.
+Open `/mobile-inspector.html` on the normal dev server. Each device runs an independent session of the original game.
 
 Three previews use 360 × 800, 393 × 852, and 430 × 932 CSS-pixel screens.
 The simulated status bar uses 24px; browser top and bottom bars default to
@@ -47,7 +46,7 @@ running. Linking does not copy state or reset games. Reset all remains an explic
 control; each preview also has its own start point and reset.
 The comparison label reports differing screen/input/game snapshots. Async
 scenes can reach input at different times, so shared keys are not a lockstep
-simulation. Audio is muted initially and controlled per preview.
+simulation. Audio is muted initially and controlled per preview through the same shared mute/channel implementation as the main game; F and UI controls agree within each session.
 
 ## Runtime boundary
 
