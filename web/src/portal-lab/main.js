@@ -11,10 +11,10 @@ import { drawWallImpact } from '../feedback/wallImpact.js';
 import { drawBlockedBobby } from '../presentation/blockedBobby.js';
 import { drawFeedback } from '../feedback/draw.js';
 import { drawLava } from '../feedback/lava.js';
-import { sampleSlugMotion } from '../presentation/slugMotion.js';
 import { drawBobby, sampleBobby } from '../presentation/bobby.js';
 import { mountOpeningSimulation } from './openingSimulation.js';
 import { mountControlStudies } from './controlStudies.js';
+import RewindEntrancePreview from './RewindEntrancePreview.svelte';
 
 import { INSPECTOR_DEVICES, deviceViewportMarkup, sizeDevicePreview } from '../inspector/deviceViewport.js';
 
@@ -22,6 +22,9 @@ import { INSPECTOR_DEVICES, deviceViewportMarkup, sizeDevicePreview } from '../i
 const stopSharedPreviews = mountSharedPreviews(document.querySelector('#agreed-panel'));
 const stopControlStudies = mountControlStudies(document.querySelector('#control-studies'));
 if (import.meta.hot) import.meta.hot.dispose(() => { stopSharedPreviews(); stopControlStudies(); });
+const rewindEntrances = [...document.querySelectorAll('[data-rewind-entrance]')].map(host =>
+  mount(RewindEntrancePreview, { target: host }));
+if (import.meta.hot) import.meta.hot.dispose(() => rewindEntrances.forEach(instance => unmount(instance)));
 
 const lorePreviews = [];
 for (const host of document.querySelectorAll('[data-lore-preview]')) {
@@ -144,26 +147,6 @@ function boxStrong(ctx, x, y, t, conveyor) {
 
 
 
-function moveStudy(ctx, t, mode) {
-  rect(ctx, '#080914', 0, 0, 392, 280);
-  const elapsed = (t % 900) - 120;
-  const { travel: eased, longitudinal, transverse } = sampleSlugMotion(elapsed, { strength: mode === 'subtle' ? 0.4 : 1 });
-  for (const [i, dx, dy, label] of [[0, 1, 0, 'RIGHT'], [1, -1, 0, 'LEFT'], [2, 0, 1, 'DOWN'], [3, 0, -1, 'UP']]) {
-    ctx.save(); ctx.translate(i % 2 * 196, Math.floor(i / 2) * 140);
-    rect(ctx, palette[6], 14, 28, 168, 98);
-    const sx = dx < 0 ? 98 : dx > 0 ? 56 : 84;
-    const sy = dy > 0 ? 28 : dy < 0 ? 84 : 56;
-    const bx = sx + dx * (28 + eased * 28), by = sy + dy * (28 + eased * 28);
-    rect(ctx, palette[14], bx, by, 28, 28);
-    const width = dx ? longitudinal : transverse, height = dy ? longitudinal : transverse;
-    const px = dx > 0 ? bx - width : dx < 0 ? bx + 28 : sx + (28 - width) / 2;
-    const py = dy > 0 ? by - height : dy < 0 ? by + 28 : sy + 28 - height;
-    drawBobby(ctx, px, py, { width, height });
-    ctx.font = '10px Px437'; ctx.fillStyle = '#b7b3c9'; ctx.textBaseline = 'top'; ctx.fillText(label, 14, 8);
-    ctx.restore();
-  }
-}
-
 function blockedStudy(ctx, t) {
   rect(ctx, '#080914', 0, 0, 224, 140);
   rect(ctx, palette[6], 14, 56, 196, 28);
@@ -186,8 +169,6 @@ const painters = { ladder, current,
   lessonExit: (ctx, x, y, t) => lesson(ctx, t, 'exit'),
   lessonPushBurst: (ctx, x, y, t) => lesson(ctx, t, 'push', true),
   lessonDangerSink: (ctx, x, y, t) => lesson(ctx, t, 'danger', true),
-  moveSlug: (ctx, x, y, t) => moveStudy(ctx, t, 'slug'),
-  moveSubtle: (ctx, x, y, t) => moveStudy(ctx, t, 'subtle'),
   blockContained: (ctx, x, y, t) => blockedStudy(ctx, t),
   boxCurrent: (ctx, x, y, t) => boxCue(ctx, x, y, t, false),
   boxArrow: (ctx, x, y, t) => boxStrong(ctx, x, y, t, false),

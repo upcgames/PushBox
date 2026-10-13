@@ -2,10 +2,12 @@
   import { onMount } from 'svelte';
   import { controllerServices } from './services.js';
   import PixelButton from '../components/PixelButton.svelte';
-  import Dpad from '../components/Dpad.svelte';
+  import GameplayDeck from '../presentation/GameplayDeck.svelte';
   const { store: GameState, sendInput: dispatch, audio } = controllerServices();
   let reward = $state(GameState.getSnapshot().trollReward);
   let undoHint = $state(GameState.getSnapshot().undoHint);
+  let entranceActive = $state(!!GameState.getSnapshot().rewindEntranceActive);
+  let rewindDiscovery = $state(GameState.getSnapshot().rewindDiscovery);
   let trolling = $state(false);
   let undoing = $state(false);
   let undoTimer;
@@ -43,6 +45,8 @@
   }
   onMount(() => {
     const stopReward = GameState.select(state => state.trollReward, next => reward = next);
+    const stopEntrance = GameState.select(state => !!state.rewindEntranceActive, next => entranceActive = next);
+    const stopDiscovery = GameState.select(state => state.rewindDiscovery, next => rewindDiscovery = next);
     const stopUndoHint = GameState.select(state => state.undoHint, next => undoHint = next);
     const off = GameState.on('input:consumed', ({ key }) => {
       if (key.toLowerCase() !== 'r' || !GameState.getSnapshot().game?.undoAvailable) return;
@@ -50,31 +54,15 @@
       clearTimeout(undoTimer);
       undoTimer = setTimeout(() => undoing = false, 1800);
     });
-    return () => { stopReward(); stopUndoHint(); GameState.setTrollActive(false); disposed = true; off(); clearTimeout(undoTimer); stopTroll(); };
+    return () => { stopReward(); stopUndoHint(); stopDiscovery(); stopEntrance(); GameState.setTrollActive(false); disposed = true; off(); clearTimeout(undoTimer); stopTroll(); };
   });
 </script>
 
-<div class="gameplay-deck">
-  <Dpad facelift onDir={dispatch} />
-  <div class="secondary-actions">
-    <PixelButton icon="undo" label="Retroceder" variant="rewind-cue" hinted={undoHint} active={undoing} onclick={dispatchUndo} />
-    {#if reward.unlocked}
+<GameplayDeck onDir={dispatch} rewindVisible={rewindDiscovery.visible && !entranceActive} trollVisible={reward.unlocked}>
+  {#snippet rewind()}
+      <PixelButton icon="hourglass" label="Retroceder" variant="rewind-hourglass" hinted={undoHint} active={undoing} onclick={dispatchUndo} />
+  {/snippet}
+  {#snippet troll()}
       <PixelButton icon="troll" label="¿Premio?" variant="face" hinted={reward.hinted} active={trolling} onclick={dispatchTroll} />
-    {/if}
-  </div>
-</div>
-
-<style>
-  .gameplay-deck {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 10px 24px;
-    box-sizing: border-box;
-    background: #080914;
-  }
-  .secondary-actions { display: grid; justify-items: center; gap: 20px; }
-  @media (max-width: 370px) { .gameplay-deck { padding-inline: 16px; gap: 8px; } }
-</style>
+  {/snippet}
+</GameplayDeck>

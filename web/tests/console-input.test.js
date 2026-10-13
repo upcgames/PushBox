@@ -36,16 +36,16 @@ test('real console mirrors visible cells and shared input reaches the canonical 
     assert.equal(GameState.getSnapshot().input.stage, 'waiting');
     sendInput('Enter');
     assert.equal(await waiting, 13);
-    GameState.setWinnerContinueBlocked(true);
+    GameState.setWinnerActionsBlocked(true);
     sendInput('e'); sendInput('Enter');
     assert.equal(window._kbhit(), 0, 'Production input discards blocked confirmations');
-    GameState.setWinnerContinueBlocked(false);
+    GameState.setWinnerActionsBlocked(false);
     sendInput('e'); assert.equal(await window._getch(), 'e');
     assert.ok(events.some(event => event.type === 'input:received' && event.payload.key === 'd'));
     assert.ok(events.some(event => event.type === 'input:consumed' && event.payload.key === 13));
     assert.throws(() => sendInput(''), TypeError);
   } finally {
-    GameState.setWinnerContinueBlocked(false);
+    GameState.setWinnerActionsBlocked(false);
     stop?.(); leaveInput?.(); off();
     if (windowBefore === undefined) delete globalThis.window; else globalThis.window = windowBefore;
     if (documentBefore === undefined) delete globalThis.document; else globalThis.document = documentBefore;

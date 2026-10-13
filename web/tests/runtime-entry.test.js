@@ -79,6 +79,45 @@ test('Instructions enters directly and hands gameplay initialization back to ori
   } finally { off(); game.dispose(); await done; }
 });
 
+test('mobile Instructions preserves original drawing and confirmation while omitting presentation delays', async () => {
+  async function inspect(mobile) {
+    const writes = [], delays = [], animations = [];
+    const game = session(environment => {
+      environment.shims.Sleep = async ms => delays.push(ms);
+      environment.runAnim = async (generator, ...args) => {
+        animations.push(generator.name);
+        const drawing = generator(...args);
+        try { while (!(await drawing.next()).done) {} }
+        finally { await drawing.return(); }
+      };
+      return createRuntime(environment);
+    });
+    const observer = game.console.observer, write = observer.write;
+    observer.write = (...args) => { writes.push(args); write(...args); };
+    let enabled = mobile;
+    const stop = game.state.registerPresentationOverride('InterfazInstructions', () => enabled);
+    const done = game.start(startPointSettings('instructions', true));
+    try {
+      await waitFor(() => waiting(game, 'InterfazInstructions', 'confirmation'));
+      const result = { writes: writes.slice(), delays: delays.slice(), animations: animations.slice() };
+      assert.equal(game.state.getSnapshot().inputRequest.key, 'E');
+      enabled = false;
+      assert.equal(game.state.hasPresentationOverride('InterfazInstructions'), false);
+      game.sendInput('E');
+      await waitFor(() => waiting(game, 'ControlDeMovimiento', 'key'));
+      assert.equal(game.state.getSnapshot().game.level, 1);
+      return result;
+    } finally { stop(); game.dispose(); await done; }
+  }
+  const desktop = await inspect(false), mobile = await inspect(true);
+  assert.deepEqual(mobile.writes, desktop.writes, 'Identical original console writes and positions');
+  assert.ok(desktop.delays.includes(500));
+  assert.ok(desktop.delays.includes(20));
+  assert.deepEqual(mobile.delays, [], 'Mobile does not run hidden typing or decorative pauses');
+  assert.deepEqual(desktop.animations, ['GIF']);
+  assert.deepEqual(mobile.animations, [], 'Mobile draws the original GIF without animation pacing');
+});
+
 test('Lore exposes its original level before its heading is painted', async () => {
   const game = session();
   let captured;
@@ -140,29 +179,44 @@ test('original winner changes names through native reads, then redraws and exits
   const profile = createPlayerProfile({ storage: null });
   const flow = createWinnerIdentity({ profile, store: game.state });
   const stopReader = game.state.registerNativeTextReader(flow.read, flow.accepts);
+  const winnerRequests = [], winnerInputs = [];
+  const stopRequests = game.state.select(state => state.inputRequest, request => {
+    if (request?.consumer === 'InterfazCongratulations') winnerRequests.push(request.kind);
+  });
+  const stopInputs = game.state.on('input:consumed', ({ key, request }) => {
+    if (request?.consumer === 'InterfazCongratulations') winnerInputs.push(key);
+  });
   game.state.setPlayerNames(['Ana']);
   const done = game.start(startPointSettings('6', true));
   try {
-    await waitFor(() => waiting(game, 'InterfazCongratulations', 'confirmation'));
-    game.sendInput('E');
     await waitFor(() => waiting(game, 'InterfazCongratulations', 'key'));
     assert.ok(game.console.cells.flat().some(cell => cell?.scope === 'winner-prompts' && cell.char !== ' '));
-    game.sendInput('K');
-    await waitFor(() => flow.getSnapshot().visible);
-    assert.equal(game.state.getSnapshot().inputRequest.native, true);
-    flow.submit('José Ñina');
-    await waitFor(() => counts[8][0] === '2' && counts[6][3] === -126 && counts[7][0] === -91);
-    assert.deepEqual(profile.getNames(), ['José', 'Ñina']);
-    assert.ok(paintedPrompts.length > 0);
-    assert.ok(paintedPrompts.every(character => character === ' '), 'Mobile hides prompts while retaining canonical writes');
-    await waitFor(() => waiting(game, 'InterfazCongratulations', 'confirmation'));
-    game.sendInput('E');
-    await waitFor(() => waiting(game, 'InterfazCongratulations', 'key'));
+    const { parsePlayerNames, encodePlayerName } = await import('../src/presentation/playerIdentity.js');
+    for (const input of ['José Ñina', '32132asda fafds', '01234567 98765432', '32132asda']) {
+      game.sendInput('K');
+      await waitFor(() => flow.getSnapshot().visible);
+      assert.equal(game.state.getSnapshot().inputRequest.native, true);
+      assert.equal(flow.submit('$$$$$$$$$'), false);
+      assert.equal(flow.getSnapshot().visible, true);
+      assert.equal(flow.submit(input), true);
+      const names = parsePlayerNames(input);
+      await waitFor(() => waiting(game, 'InterfazCongratulations', 'key'));
+      assert.equal(counts[8][0], String(names.length));
+      for (let index = 0; index < names.length; index++) {
+        assert.deepEqual(counts[6 + index].slice(0, names[index].length), encodePlayerName(names[index]));
+      }
+      assert.deepEqual(profile.getNames(), names);
+      assert.equal(flow.getSnapshot().visible, false, 'Valid names replay the original celebration without a validation retry');
+      assert.ok(paintedPrompts.length > 0);
+      assert.ok(paintedPrompts.every(character => character === ' '), 'Mobile hides prompts while retaining canonical writes');
+    }
     game.sendInput('E');
     await waitFor(() => game.state.getSnapshot().screen?.id === 'InterfazCreditos');
     assert.equal(flow.getSnapshot().visible, false);
     assert.equal(game.console.drawScope, null);
-  } finally { stopReader(); flow.dispose(); game.dispose(); await done; }
+    assert.equal(winnerRequests.includes('confirmation'), false, 'Ending never requests the intermediate Continue');
+    assert.deepEqual(winnerInputs, ['K', 'K', 'K', 'K', 'E'], 'Only explicit name changes and one Exit key are consumed');
+  } finally { stopInputs(); stopRequests(); stopReader(); flow.dispose(); game.dispose(); await done; }
 });
 
 test('saved selector choices reach original Game Over and Credits through main initialization', async () => {

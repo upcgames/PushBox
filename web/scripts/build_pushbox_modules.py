@@ -21,6 +21,9 @@ def strip_comments(code_text):
     )
     def replacer(match):
         s = match.group(0)
+        # Preserve explicit web contracts; ordinary comments still disappear.
+        if re.fullmatch(r'// @web:(?:begin|end) [a-z][a-z0-9-]*[ \t]*', s):
+            return s
         if s.startswith('/'):
             return ''
         return s

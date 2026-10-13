@@ -107,13 +107,13 @@ test('animation observation releases nested scopes on errors and stays session-l
 test('shared mobile layer yields to canonical phases, pause and disposal', () => {
   const store = createGameState();
   const bridge = createRuntimeBridge(store);
-  const drawn = [], hidden = [], scheduled = new Map(), listeners = new Map();
+  const drawn = [], images = [], hidden = [], scheduled = new Map(), listeners = new Map();
   const ctx = { clearRect() {}, fillRect() {}, save() {}, restore() {}, beginPath() {}, rect() {}, clip() {},
     translate() {}, scale() {}, fillText: glyph => drawn.push(glyph) };
   const sprite = { width: 28, height: 28, getContext: () => ctx };
   const canvas = { width: 1120, height: 882, ownerDocument: { createElement: () => sprite }, getContext: () => ctx, setAttribute() {}, remove() { this.removed = true; } };
   ctx.canvas = canvas;
-  ctx.drawImage = () => {};
+  ctx.drawImage = (_sprite, x, y, width, height) => images.push({ x, y, width, height });
   const surface = { tileSize: 14, canvas: { width: 1120, height: 882, parentElement: { append() {} } },
     setPlayerHidden: value => hidden.push(value) };
   let sequence = 0;
@@ -133,6 +133,20 @@ test('shared mobile layer yields to canonical phases, pause and disposal', () =>
   const leaveGame = bridge.enterScreen('gameplay');
   assert.equal(hidden.at(-1), true);
   assert.deepEqual(drawn.slice(-4), ['╔', '╗', '╚', '╝']);
+  bridge.reportPlayerDraw(1, 38, 32, 9, 1);
+  const tick = time => {
+    const [id, paint] = scheduled.entries().next().value;
+    scheduled.delete(id);
+    paint(time);
+  };
+  tick(545);
+  assert.ok(images.at(-1).x < 38 * 14, 'Bobby still travels halfway through A');
+  tick(590);
+  assert.deepEqual(images.at(-1), { x: 38 * 14, y: 32 * 14, width: 28, height: 28 }, 'A arrives after 90 ms');
+  tick(625);
+  assert.equal(images.at(-1).width, 26, 'A still contracts during its 70 ms settle');
+  tick(660);
+  assert.equal(images.at(-1).height, sampleBobby(660).height, 'A resumes the shared idle after 160 ms');
   for (const name of ['Regresar', 'Teletransporte', 'PintarMuerte']) {
     const leave = bridge.enterPlayerAnimation(name);
     assert.equal(hidden.at(-1), false);

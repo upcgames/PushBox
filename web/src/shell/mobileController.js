@@ -1,4 +1,6 @@
 import { mountTrollReward } from '../presentation/trollReward.js';
+import { mountRewindEntrance } from '../presentation/mountRewindEntrance.js';
+import { mountRewindDiscovery } from '../presentation/rewindDiscovery.js';
 import { mountUndoHint } from '../presentation/undoHint.js';
 import { mountExitCue } from '../presentation/mountExitCue.js';
 import { mountBobby } from '../presentation/mountBobby.js';
@@ -58,6 +60,8 @@ export function setupMobileShell({ progress } = {}) {
   if (!controllerArea) return;
 
   syncShellAttrs();
+  const rewindDiscovery = mountRewindDiscovery(GameState, { enabled: isMobile, progress });
+  mobileMQ.addEventListener('change', rewindDiscovery.refresh);
   const undoHint = mountUndoHint(GameState, { enabled: isMobile });
   mobileMQ.addEventListener('change', undoHint.refresh);
   const trollReward = mountTrollReward(GameState, { enabled: isMobile, progress });
@@ -71,11 +75,15 @@ export function setupMobileShell({ progress } = {}) {
   const loreView = mountMobileLore(document.body, GameState, GameState.sendInput, isMobile);
   mobileMQ.addEventListener('change', loreView.refresh);
   mobileMQ.addEventListener('change', instructions.refresh);
+  const rewindEntrance = mountRewindEntrance(document.body, gameConsole, GameState, isMobile);
   const boardView = setupMobileBoardView(document.body, GameState, isMobile, { surface: gameConsole });
   mobileMQ.addEventListener('change', boardView.refresh);
   if (import.meta.hot) import.meta.hot.dispose(() => {
     mobileMQ.removeEventListener('change', undoHint.refresh);
     undoHint.dispose();
+    mobileMQ.removeEventListener('change', rewindDiscovery.refresh);
+    rewindDiscovery.dispose();
+    rewindEntrance.dispose();
     mobileMQ.removeEventListener('change', trollReward.refresh);
     trollReward.dispose();
     mobileMQ.removeEventListener('change', exitCue.refresh);

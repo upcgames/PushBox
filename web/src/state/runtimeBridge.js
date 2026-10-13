@@ -53,6 +53,19 @@ async function presentPrompt(consumer, type, write) {
   return GameState.hasNativeTextReader(consumer) ? write() : type();
 }
 
+// Mobile sheets explicitly replace presentation for their named routine.
+// Input, clearing, validation, and scene transitions stay in the original code.
+async function presentScene(consumer, original, immediate) {
+  return GameState.hasPresentationOverride(consumer) ? immediate() : original();
+}
+
+async function drawImmediately(generatorFn, ...args) {
+  const drawing = generatorFn(...args);
+  try {
+    while (!(await drawing.next()).done) { /* Keep writes; omit visual pacing. */ }
+  } finally { await drawing.return(); }
+}
+
 function refreshGame(reason = 'gameChanged') {
   if (!readGame) return;
   const next = readGame();
@@ -165,20 +178,21 @@ function bindPlayerIdentity(counts) { writePlayerIdentity(counts, GameState.getS
 
 function bindSound(reference) { bindSoundReference(store, reference); }
 function handleAudioInput(key) { return handleAudioKey(store, key); }
-return { enterInput, withInput, readPauseKey, presentPrompt, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked: () => GameState.getSnapshot().winnerContinueBlocked, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
+return { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked: () => GameState.getSnapshot().winnerActionsBlocked, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
 }
 
 const defaultBridge = createRuntimeBridge({ api: GameState, ...runtimeState });
-export const { enterInput, withInput, readPauseKey, presentPrompt, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked, inputConsumer } = defaultBridge;
+export const { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked, inputConsumer } = defaultBridge;
 
-export function boardSnapshot(level, player, steps, lives, sound, arrays, portal, nextLevel, undoPosition) {
+export function boardSnapshot(level, player, steps, lives, sound, arrays, portal, nextLevel, undoPosition, undoPolicy = null) {
   const { Cajas, Paredes, Vacios, Huecos, Cantidades } = arrays;
   const coordinates = (data, count) => data[level].slice(0, count).map(([x, y]) => ({ x, y }));
   const counts = Cantidades[level];
   const targets = coordinates(Huecos, counts[3]);
   const boxes = coordinates(Cajas, counts[0]).map((box, index) => ({ ...box, index,
     onTarget: targets.some(target => target.x === box.x && target.y === box.y) }));
-  return { level, nextLevel, player, steps, lives, sound: !!sound, undoAvailable: undoPosition > 1, undoDepth: undoPosition - 1,
+  return { level, nextLevel, player, steps, lives, sound: !!sound, undoAvailable: undoPosition > 1 && (!undoPolicy || undoPolicy.remaining > 1), undoDepth: undoPosition - 1,
+    ...(undoPolicy ? { remainingMoves: undoPolicy.remaining, nextUndoCost: undoPolicy.nextCost, undoCharge: undoPolicy.charge, undoAffordableDepth: undoPolicy.affordableDepth } : {}),
     grid: { cols: 80, rows: 63, cellSize: 14, objectSize: 2,
       walkBounds: { minX: 0, maxX: 79, minY: 0, maxY: 59 } },
     board: { boxes, targets: targets.map(target => ({ ...target,

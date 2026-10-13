@@ -4,7 +4,8 @@ import { createGameState } from '../src/state/gameState.js';
 import { createRuntimeBridge } from '../src/state/runtimeBridge.js';
 import { createSessionShims } from '../src/runtime/sessionShims.js';
 import { createAudioChannel } from '../src/audio/audioChannel.js';
-import { mountWinnerContinue } from '../src/presentation/winnerContinue.js';
+import { mountWinnerActions } from '../src/presentation/winnerActions.js';
+import { selectControlMode } from '../src/shell/controlPolicy.js';
 
 function fixture({ muted = false, createAudio } = {}) {
   const store = createGameState(), bridge = createRuntimeBridge(store), tracks = [], abort = new AbortController();
@@ -15,31 +16,33 @@ function fixture({ muted = false, createAudio } = {}) {
       pause() { this.paused = true; this.dispatchEvent(new Event('pause')); } });
     tracks.push(track); return track;
   }) });
-  const gate = mountWinnerContinue(store.api, { enabled: () => enabled });
+  const gate = mountWinnerActions(store.api, { enabled: () => enabled });
   const platform = createSessionShims({}, bridge, { config: {}, audio, signal: abort.signal,
     requestFrame: callback => setTimeout(callback, 0), cancelFrame: clearTimeout });
   const leaveScreen = bridge.enterScreen('InterfazCongratulations');
   let leaveInput;
   return { store, bridge, audio, tracks, platform, gate,
-    blocked: () => store.api.getSnapshot().winnerContinueBlocked,
-    ready() { leaveInput = bridge.enterInput({ consumer: 'InterfazCongratulations', kind: 'confirmation', key: 'E' }); },
+    blocked: () => store.api.getSnapshot().winnerActionsBlocked,
+    ready() { leaveInput = bridge.enterInput({ consumer: 'InterfazCongratulations', kind: 'key' }); },
     enable(value) { enabled = value; gate.refresh(); },
     dispose() { leaveInput?.(); leaveScreen(); gate.dispose(); audio.dispose(); abort.abort(); } };
 }
 
-test('Continue waits for animation and music; early keyboard/UI commands are discarded', async () => {
+test('Winner actions wait for animation and music; early keyboard/UI commands are discarded', async () => {
   const view = fixture();
   try {
     view.audio.play('YouWinMetal.wav'); view.platform.sendInput('e');
     assert.equal(view.platform.shims._kbhit(), 0);
     view.ready(); assert.equal(view.blocked(), true);
-    const confirmation = view.platform.shims._getch();
-    let resolved = false; confirmation.then(() => { resolved = true; });
-    view.platform.sendInput('Enter'); view.platform.sendInput('e');
+    assert.equal(selectControlMode(view.store.api.getSnapshot()), 'none', 'Actions stay hidden while music plays');
+    const choice = view.platform.shims._getch();
+    let resolved = false; choice.then(() => { resolved = true; });
+    view.platform.sendInput('Enter'); view.platform.sendInput('e'); view.platform.sendInput('k');
     await Promise.resolve(); assert.equal(resolved, false);
     view.tracks[0].dispatchEvent(new Event('ended')); assert.equal(view.blocked(), false);
+    assert.equal(selectControlMode(view.store.api.getSnapshot()), 'congrats', 'Name and Exit appear directly when ready');
     await Promise.resolve(); assert.equal(resolved, false, 'No replay of blocked presses');
-    view.platform.sendInput('e'); assert.equal(await confirmation, 'e');
+    view.platform.sendInput('k'); assert.equal(await choice, 'k');
   } finally { view.dispose(); }
 });
 
@@ -87,13 +90,13 @@ test('autoplay rejection releases the wait; a stale rejection cannot settle a ne
   } finally { console.warn = warn; view.dispose(); }
 });
 
-test('desktop, Change name/Exit requests, runtime errors and disposal do not retain the gate', () => {
+test('desktop, native name entry, runtime errors and disposal do not retain the gate', () => {
   const view = fixture();
   try {
     view.audio.play('YouWinMetal.wav'); view.ready(); view.enable(false); assert.equal(view.blocked(), false);
     view.enable(true); assert.equal(view.blocked(), true);
-    const leaveKeys = view.bridge.enterInput({ consumer: 'InterfazCongratulations', kind: 'key' });
-    assert.equal(view.blocked(), false); leaveKeys(); assert.equal(view.blocked(), true);
+    const leaveNames = view.bridge.enterInput({ consumer: 'InterfazCongratulations', kind: 'text', native: true });
+    assert.equal(view.blocked(), false); leaveNames(); assert.equal(view.blocked(), true);
     view.store.event('runtimeError', {}); assert.equal(view.blocked(), false);
     view.store.publish({ screen: { id: 'launcher' }, inputRequest: null }); assert.equal(view.blocked(), false);
     view.store.publish({ screen: { id: 'InterfazCongratulations' }, inputRequest: null }); assert.equal(view.blocked(), true);

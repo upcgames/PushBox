@@ -69,7 +69,7 @@ canvas { display: block; image-rendering: pixelated; width: 100%; max-width: 378
 .pause-icon { display: inline-block; width: 14px; height: 18px; border-left: 5px solid currentColor; border-right: 5px solid currentColor; }
 .button-sample { min-height: 150px; display: flex; align-items: center; justify-content: center; gap: 18px; background: #080914; }
 .button-sample > span { font: 10px Px437, monospace; color: #b7b3c9; }
-canvas[data-kind^="move"] { width: 392px; max-width: 100%; height: auto; }
+
 
 [hidden] { display: none !important; }
 .review-tabs { display: flex; gap: 8px; margin: 24px 0; }

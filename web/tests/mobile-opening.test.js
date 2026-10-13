@@ -52,6 +52,18 @@ test('opening reset cancels typing and cannot mark an unfinished warning seen', 
   assert.equal(one.progress.has('warning'), false);
 });
 
+test('startup rejects unsupported-only input and accepts the same digit-containing identity as Congratulations', async () => {
+  const one = fixture(), done = one.flow.begin();
+  one.finish(); one.flow.continue();
+  assert.equal(one.flow.submit('$$$$$$$$$'), false);
+  assert.equal(one.flow.getSnapshot().phase, 'name');
+  assert.deepEqual(one.profile.getNames(), []);
+  assert.equal(one.flow.submit('32132asda fafds'), true);
+  assert.deepEqual(await done, ['32132asd', 'fafds']);
+  assert.deepEqual(one.profile.getNames(), ['32132asd', 'fafds']);
+  one.flow.dispose();
+});
+
 test('native names feed every supported accent to the original BuscarLetra renderer', () => {
   const source = readFileSync(new URL('../src/generated/math.js', import.meta.url), 'utf8');
   const sandbox = vm.createContext({});
@@ -64,6 +76,11 @@ test('native names feed every supported accent to the original BuscarLetra rende
     const coordinates = Array.from({ length: 4 }, () => ({ v: undefined }));
     sandbox.BuscarLetra(character, ...coordinates);
     assert.ok(coordinates.every(value => Number.isFinite(value.v)), `Original renderer recognizes ${character}`);
+  }
+  for (const character of '0123456789') {
+    const coordinates = Array.from({ length: 4 }, () => ({ v: undefined }));
+    sandbox.BuscarLetra(character, ...coordinates);
+    assert.ok(coordinates.every(value => Number.isFinite(value.v)), `Original renderer recognizes digit ${character}`);
   }
 });
 

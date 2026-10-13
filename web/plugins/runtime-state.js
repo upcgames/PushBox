@@ -11,6 +11,29 @@ function walk(node, visit, ancestors = []) {
   }
 }
 
+// Canonical markers delimit intent without depending on copy or input layout.
+function markedSection(source, ast, fn, name) {
+  const literals = [];
+  walk(ast, node => { if (node.type === 'Literal' || node.type === 'TemplateLiteral') literals.push(node); });
+  const markers = [...source.matchAll(/^\s*\/\/ @web:(begin|end) ([a-z][a-z0-9-]*)[ \t]*$/gm)]
+    .filter(match => match[2] === name && !literals.some(node => match.index >= node.start && match.index < node.end));
+  const [begin, end] = markers;
+  if (markers.length !== 2 || begin[1] !== 'begin' || end[1] !== 'end' ||
+      begin.index <= fn.body.start || end.index >= fn.body.end) {
+    throw new Error(`Runtime adapter: invalid or missing @web section ${name}`);
+  }
+  const start = begin.index + begin[0].length, finish = end.index;
+  let block;
+  walk(fn.body, node => {
+    if (node.type === 'BlockStatement' && node.start < start && node.end > finish) block = node;
+  });
+  if (!block || block.body.some(node =>
+    (node.start < start && node.end > start) || (node.start < finish && node.end > finish))) {
+    throw new Error(`Runtime adapter: @web section ${name} must delimit complete statements in one block`);
+  }
+  return { start, end: finish };
+}
+
 // Extract actual single-character choices from scanf's validation loop, rather
 // than treating every one-character text input as a UI-specific numeric choice.
 function textChoices(call, ancestors) {
@@ -53,25 +76,32 @@ export function runtimeStatePlugin() {
         }
         if (name === 'InterfazCongratulations') {
           // Observe the original prompt section; no copied name-entry logic.
-          const statements = [];
-          walk(fn.body, node => { if (node.type === 'ExpressionStatement') statements.push(node); });
-          const prompt = statements.find(node => node.expression.type === 'AwaitExpression' &&
-            node.expression.argument.callee?.name === 'Escribir' &&
-            node.expression.argument.arguments[0]?.value?.startsWith("Presiona 'K'"));
-          const assignments = statements.filter(node => node.expression.type === 'AssignmentExpression' &&
-            node.expression.left.type === 'MemberExpression' && node.expression.left.object.type === 'MemberExpression' &&
-            node.expression.left.object.object.name === 'Cantidades');
-          const end = assignments.find(node => prompt && node.start > prompt.end);
-          if (!prompt || !end) throw new Error('Runtime adapter: winner prompt boundary changed');
-          insert(prompt.start, "const _webPrompts = Console.enterDrawScope('winner-prompts'); try {\n");
-          insert(end.start, '\n} finally { _webPrompts(); }\n');
+          const section = markedSection(source, ast, fn, 'congratulations-prompts');
+          insert(section.start, "\nconst _webPrompts = Console.enterDrawScope('winner-prompts'); try {\n");
+          insert(section.end, '\n} finally { _webPrompts(); }\n');
           bridgeUsed = true;
           walk(fn.body, node => {
             if (node.type !== 'CallExpression' || node.callee.name !== 'Escribir' ||
-                node.start < prompt.start || node.end > end.start) return;
+                node.start < section.start || node.end > section.end) return;
             const text = source.slice(node.arguments[0].start, node.arguments[0].end);
             insert(node.start, "presentPrompt('InterfazCongratulations', () => ");
             insert(node.end, `, () => Console.Write(${text}))`);
+          });
+        }
+        if (name === 'InterfazInstructions') {
+          bridgeUsed = true;
+          walk(fn.body, node => {
+            if (/Function/.test(node.type || '')) return false;
+            if (node.type !== 'CallExpression') return;
+            const callee = node.callee.name;
+            if (!['Escribir', 'Sleep', 'runAnim'].includes(callee)) return;
+            let immediate;
+            if (callee === 'Escribir') {
+              immediate = `Console.Write(${source.slice(node.arguments[0].start, node.arguments[0].end)})`;
+            } else if (callee === 'Sleep') immediate = 'undefined';
+            else immediate = `drawImmediately(${node.arguments.map(arg => source.slice(arg.start, arg.end)).join(', ')})`;
+            insert(node.start, "presentScene('InterfazInstructions', () => ");
+            insert(node.end, `, () => ${immediate})`);
           });
         }
         if (name === 'ControlDeNiveles') {
@@ -124,7 +154,10 @@ export function runtimeStatePlugin() {
 const _webLevel = nivel.v;
 const _webStop = observeGame(() => boardSnapshot(_webLevel, { x, y }, cantmovs, vidas.v, sonido.v,
   { Cajas, Paredes, Vacios, Huecos, Cantidades },
-  { x: xportal, y: yportal, active: PortalVisible(_webLevel, Cajas, Huecos, Cantidades) }, nivel.v, posicion));
+  { x: xportal, y: yportal, active: PortalVisible(_webLevel, Cajas, Huecos, Cantidades) }, nivel.v, posicion,
+  { remaining: limiteMovimientos - cantmovs, nextCost: costoRegreso,
+    charge: posicion > 1 ? CostoDeRegreso(limiteMovimientos - cantmovs, costoRegreso) : 0,
+    affordableDepth: RegresosDisponibles(limiteMovimientos - cantmovs, costoRegreso, posicion) }));
 const _webLeave = enterScreen('gameplay');
 try {`);
           insert(fn.body.end - 1, '\n} finally { _webStop(); _webLeave(); }\n');
@@ -219,8 +252,9 @@ try {`);
       for (const edit of edits.sort((a, b) => b.start - a.start || b.end - a.end)) {
         source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
       }
-      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, readPauseKey, presentPrompt, reportBlockedPush, reportBlockedMove, bindSound, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity } from '../state/runtimeBridge.js';\n" : '';
-      return { code: imports + source, map: null };
+      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, reportBlockedPush, reportBlockedMove, bindSound, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity } from '../state/runtimeBridge.js';\n" : '';
+      const undoImport = movementFound ? "import { RegresosDisponibles } from './world_logic.js';\n" : '';
+      return { code: imports + undoImport + source, map: null };
     },
   };
 }

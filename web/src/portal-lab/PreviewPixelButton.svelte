@@ -7,7 +7,7 @@
   let timer;
   function press() {
     if (icon === 'sound') muted = !muted;
-    if (icon === 'undo' || icon === 'troll') {
+    if (icon === 'undo' || icon === 'hourglass' || icon === 'troll') {
       activated = true;
       clearTimeout(timer);
       timer = setTimeout(() => activated = false, 1800);

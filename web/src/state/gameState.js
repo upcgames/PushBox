@@ -10,10 +10,11 @@ function immutable(value) {
 }
 
 export function createGameState(inputCommand = sendInput) {
+  const presentationOverrides = new Map();
   let nativeTextReader = null;
   let acceptsNativeText = () => false;
   let state = immutable({ version: 0, inputRequest: null, screen: null, game: null,
-    input: null, playerNames: [], playerDrawing: null, playerAnimation: null, undoHint: false, winnerContinueBlocked: false, trollActive: false, trollReward: { unlocked: false, hinted: false }, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
+    input: null, playerNames: [], playerDrawing: null, playerAnimation: null, undoHint: false, undoHintSource: null, rewindEntranceActive: false, rewindDiscovery: { visible: false, entrancePending: false }, winnerActionsBlocked: false, trollActive: false, trollReward: { unlocked: false, hinted: false }, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
   const listeners = new Map(), subscribers = new Set();
   let sequence = 0;
   const notifications = [];
@@ -75,8 +76,29 @@ export function createGameState(inputCommand = sendInput) {
     publish({ trollReward: { unlocked: true, hinted: false } }, 'trollRewardUsed');
   }
   const api = Object.freeze({ getSnapshot: () => state, subscribe, select, on,
-    setUndoHint(hinted) { if (state.undoHint !== !!hinted) publish({ undoHint: !!hinted }, 'undoHintChanged'); },
-    setWinnerContinueBlocked(blocked) { if (state.winnerContinueBlocked !== !!blocked) publish({ winnerContinueBlocked: !!blocked }, 'winnerContinueChanged'); },
+    setUndoHint(hinted, source = null) {
+      const undoHintSource = hinted ? source : null;
+      if (state.undoHint !== !!hinted || JSON.stringify(state.undoHintSource ?? null) !== JSON.stringify(undoHintSource)) {
+        publish({ undoHint: !!hinted, undoHintSource }, 'undoHintChanged');
+      }
+    },
+    setRewindEntranceActive(active) {
+      if (!!state.rewindEntranceActive !== !!active) publish({ rewindEntranceActive: !!active }, 'rewindEntranceChanged');
+    },
+    reportRewindRecovery(detail) { event('rewindRecovered', detail); },
+    setRewindDiscovery(next) {
+      if (state.rewindDiscovery.visible !== next.visible || state.rewindDiscovery.entrancePending !== next.entrancePending) {
+        publish({ rewindDiscovery: next }, 'rewindDiscoveryChanged');
+      }
+    },
+    acknowledgeRewindEntrance() { event('rewindEntrancePlayed', {}); },
+    setWinnerActionsBlocked(blocked) { if (state.winnerActionsBlocked !== !!blocked) publish({ winnerActionsBlocked: !!blocked }, 'winnerActionsChanged'); },
+    registerPresentationOverride(consumer, enabled = () => true) {
+      const registration = { enabled };
+      presentationOverrides.set(consumer, registration);
+      return () => { if (presentationOverrides.get(consumer) === registration) presentationOverrides.delete(consumer); };
+    },
+    hasPresentationOverride: consumer => !!presentationOverrides.get(consumer)?.enabled(),
     registerNativeTextReader(reader, accepts = () => false) {
       nativeTextReader = reader; acceptsNativeText = accepts;
       return () => { if (nativeTextReader === reader) { nativeTextReader = null; acceptsNativeText = () => false; } };

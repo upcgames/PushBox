@@ -168,6 +168,10 @@ MovilyHueco
 CajayVacio
 CajaLugarPermitido
 MovilPuedeMoverse
+LimiteDeMovimientos
+CostoDeRegreso
+RegresosDisponibles
+CruzaAvisoDeMovimientos
 muerte
 ZonaEstable
 EsSitioDeParedDisfrazada

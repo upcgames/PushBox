@@ -1,14 +1,11 @@
 <script>
-  import { onMount } from 'svelte';
   import { controllerServices } from './services.js';
-  const { store: GameState, sendInput: dispatch, audio } = controllerServices();
+  const { store: GameState, sendInput: dispatch } = controllerServices();
   import Button from './Button.svelte';
-  let blocked = $state(GameState.getSnapshot().winnerContinueBlocked);
-  onMount(() => GameState.select(state => state.winnerContinueBlocked, value => { blocked = value; }));
 </script>
 
 <div class="ctrl continue-ctrl">
-  <Button icon="▶" label="Continue" disabled={blocked} onclick={() => dispatch(GameState.getSnapshot().inputRequest?.key || 'e')} />
+  <Button icon="▶" label="Continue" onclick={() => dispatch(GameState.getSnapshot().inputRequest?.key || 'e')} />
 </div>
 
 <style>

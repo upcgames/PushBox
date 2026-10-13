@@ -1,6 +1,8 @@
 import { DESTINATIONS } from '../presentation/seenDestinations.js';
+import { REWIND_RECOVERED } from '../presentation/rewindDiscovery.js';
 
-const CONDITIONS = { warning: 'Warning completed', carita: 'Carita unlocked', caritaUsed: 'Carita used' };
+const CONDITIONS = { warning: 'Warning completed', carita: 'Carita unlocked', caritaUsed: 'Carita used',
+  [REWIND_RECOVERED]: 'Rewind recovery learned' };
 const LABELS = { ...Object.fromEntries(DESTINATIONS.map(destination => [destination.flag, destination.label])), ...CONDITIONS };
 
 export function mountSeenConditions(root, sources) {

@@ -4,10 +4,9 @@ import { drawFeedback } from './draw.js';
 import { sampleLavaContrast, sampleTileContrast } from './contrast.js';
 import { drawWallImpact, WALL_IMPACT_DURATION } from './wallImpact.js';
 
-const PREFERENCE = 'pushboxBoardHints';
 const FRAME_INTERVAL = 1000 / 24;
 
-export function setupBoardFeedback(baseCanvas, button, store = GameState, { mobile = () => false } = {}) {
+export function setupBoardFeedback(baseCanvas, store = GameState, { mobile = () => false } = {}) {
   const canvas = document.createElement('canvas');
   canvas.className = 'board-feedback';
   canvas.setAttribute('aria-hidden', 'true');
@@ -16,11 +15,10 @@ export function setupBoardFeedback(baseCanvas, button, store = GameState, { mobi
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const completedAt = new Map();
   const contrastCache = new Map();
-  let enabled = true, scene = null, previousGame = null;
+  let scene = null, previousGame = null;
   let frame = null, lastPaint = -Infinity, disposed = false;
   let contrastPending = false;
   let impact = null;
-  try { enabled = window.localStorage.getItem(PREFERENCE) !== 'off'; } catch {}
 
   function clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
   function buildScene(inputs) {
@@ -36,7 +34,7 @@ export function setupBoardFeedback(baseCanvas, button, store = GameState, { mobi
   }
   function paint(time, sample = true) {
     frame = null;
-    if (disposed || !enabled || !scene || document.hidden) return;
+    if (disposed || !scene || document.hidden) return;
     if (impact && time - impact.startedAt >= WALL_IMPACT_DURATION) {
       impact = null; lastPaint = -Infinity;
     }
@@ -60,7 +58,7 @@ export function setupBoardFeedback(baseCanvas, button, store = GameState, { mobi
   function redraw() {
     cancel(); lastPaint = -Infinity;
     // Paint new coordinates immediately, without a blank frame between moves.
-    if (enabled && scene && !document.hidden && !disposed) paint(performance.now(), false);
+    if (scene && !document.hidden && !disposed) paint(performance.now(), false);
     else clear();
   }
   function update(inputs) {
@@ -86,32 +84,21 @@ export function setupBoardFeedback(baseCanvas, button, store = GameState, { mobi
     // Match the actual backing canvas as well as its shared responsive wrapper.
     if (canvas.width !== baseCanvas.width) canvas.width = baseCanvas.width;
     if (canvas.height !== baseCanvas.height) canvas.height = baseCanvas.height;
-    button.hidden = !game || inputs.screen?.id !== 'gameplay';
-    button.setAttribute('aria-pressed', String(enabled));
-    button.setAttribute('aria-label', enabled ? 'Hide board hints' : 'Show board hints');
-    button.textContent = enabled ? 'Hints on' : 'Hints off';
     redraw();
-  }
-  function toggle() {
-    enabled = !enabled;
-    try { window.localStorage.setItem(PREFERENCE, enabled ? 'on' : 'off'); } catch {}
-    update(feedbackInputs(store.getSnapshot()));
   }
   const stop = store.select(feedbackInputs, update, sameFeedbackInputs);
   function wallImpact(event) {
-    if (!enabled || !scene || document.hidden || event.level !== scene.level || event.obstacle?.kind !== 'wall') return;
+    if (!scene || document.hidden || event.level !== scene.level || event.obstacle?.kind !== 'wall') return;
     impact = { ...event.obstacle, direction: event.direction, level: event.level,
       contrast: sampleTileContrast(baseCanvas, scene.grid, event.obstacle), startedAt: performance.now() };
     redraw();
   }
   const stopImpacts = store.on('pushBlocked', event => { if (!mobile()) wallImpact(event); });
   const stopMovement = store.on('movementBlocked', event => { if (mobile()) wallImpact(event); });
-  button.addEventListener('click', toggle);
   reducedMotion.addEventListener('change', redraw);
   document.addEventListener('visibilitychange', redraw);
   const dispose = () => {
-    disposed = true; cancel(); stop(); stopImpacts(); stopMovement(); canvas.remove(); button.hidden = true;
-    button.removeEventListener('click', toggle);
+    disposed = true; cancel(); stop(); stopImpacts(); stopMovement(); canvas.remove();
     reducedMotion.removeEventListener('change', redraw);
     document.removeEventListener('visibilitychange', redraw);
   };

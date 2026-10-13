@@ -188,33 +188,31 @@ test('completed cues stay steady while unfinished boxes and the portal gently ch
   assert.notDeepEqual(e.rectangles.map(({ x, y }) => [x, y]), f.rectangles.map(({ x, y }) => [x, y]));
 });
 
-test('overlay follows the store, stops when hidden or disabled and releases subscriptions', () => {
+test('overlay keeps hints on despite a saved off preference, follows visibility, and releases subscriptions', () => {
   const original = { window: globalThis.window, document: globalThis.document,
     requestAnimationFrame: globalThis.requestAnimationFrame };
-  const frames = new Map(), preferences = new Map(), context = recordingContext();
-  let frameId = 0, removed = false, samples = 0, mobile = false;
+  const frames = new Map(), preferences = new Map([['pushboxBoardHints', 'off']]), context = recordingContext();
+  let frameId = 0, removed = false, samples = 0, mobile = false, preferenceReads = 0;
   const motion = Object.assign(new EventTarget(), { matches: false });
   const canvas = { width: 0, height: 0, setAttribute() {}, getContext: () => context,
     remove() { removed = true; } };
   const base = { width: 1120, height: 882, parentElement: { append() {} },
     getContext: () => ({ getImageData() { samples++; return { data: new Array(36).fill(255) }; } }) };
-  const button = Object.assign(new EventTarget(), { attrs: {},
-    setAttribute(key, value) { this.attrs[key] = value; } });
   globalThis.requestAnimationFrame = callback => { const id = ++frameId; frames.set(id, callback); return id; };
   globalThis.window = { matchMedia: () => motion,
     cancelAnimationFrame: id => frames.delete(id),
-    localStorage: { getItem: key => preferences.get(key), setItem: (key, value) => preferences.set(key, value) } };
+    localStorage: { getItem: key => { preferenceReads++; return preferences.get(key); }, setItem() { assert.fail("Hints must not write preferences"); } } };
   globalThis.document = Object.assign(new EventTarget(), { hidden: false, createElement: () => canvas });
   const store = createGameState();
   const tick = time => { const [id, callback] = frames.entries().next().value; frames.delete(id); callback(time); };
   let dispose;
   try {
-    dispose = setupBoardFeedback(base, button, store.api, { mobile: () => mobile });
+    dispose = setupBoardFeedback(base, store.api, { mobile: () => mobile });
     assert.equal(frames.size, 0);
     store.publish(state()); tick(0);
     assert.equal(canvas.width, 1120); assert.equal(canvas.height, 882);
     assert.ok(context.rectangles.length > 0);
-    assert.equal(button.hidden, false);
+    assert.equal(preferenceReads, 0, "The retired off preference cannot disable hints");
     assert.ok(context.paths.some(path => path[0] === 'clip'));
     assert.ok(context.paths.some(path => path[0] === 'arc'));
     assert.equal(context.stack.length, 0);
@@ -250,17 +248,13 @@ test('overlay follows the store, stops when hidden or disabled and releases subs
     tick(performance.now() + 400);
     assert.equal(wallRipples().length, 0);
 
-    button.dispatchEvent(new Event('click'));
-    assert.equal(frames.size, 0); assert.equal(context.rectangles.length, 0);
-    assert.equal(preferences.get('pushboxBoardHints'), 'off');
-    button.dispatchEvent(new Event('click')); tick(50);
     document.hidden = true; document.dispatchEvent(new Event('visibilitychange'));
     assert.equal(frames.size, 0);
     document.hidden = false; document.dispatchEvent(new Event('visibilitychange')); tick(100);
     motion.matches = true; motion.dispatchEvent(new Event('change'));
     assert.equal(frames.size, 0); assert.ok(context.rectangles.length > 0);
     store.publish({ screen: { id: 'InterfazPausa' } });
-    assert.equal(button.hidden, true); assert.equal(context.rectangles.length, 0);
+    assert.equal(context.rectangles.length, 0);
     dispose(); const clears = context.clears;
     store.publish(state()); assert.equal(context.clears, clears);
     store.event('pushBlocked', hit); assert.equal(context.clears, clears);

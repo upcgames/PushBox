@@ -5,6 +5,7 @@ import { createGameState } from '../src/state/gameState.js';
 import { createRuntimeBridge } from '../src/state/runtimeBridge.js';
 import { createSessionShims } from '../src/runtime/sessionShims.js';
 import { createAudioChannel } from '../src/audio/audioChannel.js';
+import { AUDIO_FILES, CONGRATULATIONS_MUSIC } from '../src/generated/audioAssets.js';
 
 function channel(store, options = {}) {
   const tracks = [];
@@ -16,13 +17,16 @@ function channel(store, options = {}) {
   return { audio, tracks };
 }
 
-test('ending music request, preload and served asset use exactly the same filename casing', () => {
+test('all canonical sound requests match the generated manifest and asset casing exactly', () => {
   const sounds = readFileSync(new URL('../src/generated/sounds.js', import.meta.url), 'utf8');
-  const filename = sounds.match(/function MusicaCongratulations\(\)[\s\S]*?TEXT\("([^"]+)"\)/)[1];
-  assert.ok(readdirSync(new URL('../../Retro Push Box/', import.meta.url)).includes(filename));
-  assert.ok(readdirSync(new URL('../public/audio/', import.meta.url)).includes(filename));
-  const preloads = readFileSync(new URL('../src/audio/preloadAudio.js', import.meta.url), 'utf8');
-  assert.ok(preloads.includes(`'${filename}'`));
+  const source = readdirSync(new URL('../../Retro Push Box/', import.meta.url));
+  const served = readdirSync(new URL('../public/audio/', import.meta.url));
+  for (const match of sounds.matchAll(/TEXT\("([^"]+\.wav)"\)/g)) {
+    assert.ok(AUDIO_FILES.includes(match[1]), match[1]);
+    assert.ok(source.includes(match[1]), match[1]);
+    assert.ok(served.includes(match[1]), match[1]);
+  }
+  assert.equal(CONGRATULATIONS_MUSIC, sounds.match(/function MusicaCongratulations\(\)[\s\S]*?TEXT\("([^"]+)"\)/)[1]);
 });
 
 test('endurecimiento replaces the final placement bell on the canonical single channel', () => {

@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState } from '../src/state/gameState.js';
 import { reachablePlayerPositions, boxHasLegalPush, recoverableBoxPositions, mountUndoHint } from '../src/presentation/undoHint.js';
+import { createSeenProgress } from '../src/state/seenProgress.js';
+import { mountRewindDiscovery } from '../src/presentation/rewindDiscovery.js';
 
 function board(patch = {}) {
   return { level: 1, nextLevel: 1, steps: 0, undoDepth: 0, undoAvailable: false,
@@ -33,6 +35,57 @@ function wallStrip(x = 2, y = 3, steps = 0) {
       walls: Array.from({ length: 7 }, (_, x) => ({ x, y: 1 })),
       targets: [{ x: 3, y: 5 }], gaps: [] } });
 }
+
+test('rewind is discovered by a hint and learned only when an actual undo recovers the hinted caja', () => {
+  const saved = new Map(), storage = { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) };
+  const progress = createSeenProgress({ storage });
+  const view = fixture(), discovery = mountRewindDiscovery(view.store.api, { progress });
+  try {
+    view.sample(wallStrip());
+    assert.equal(view.store.api.getSnapshot().rewindDiscovery.visible, false);
+    view.sample(wallStrip(2, 2, 1));
+    assert.equal(view.store.api.getSnapshot().rewindDiscovery.visible, true);
+    assert.equal(progress.has('rewind:recovered'), false);
+    view.sample(wallStrip(3, 2, 2));
+    view.sample({ ...wallStrip(2, 2, 5), undoDepth: 1 });
+    assert.equal(progress.has('rewind:recovered'), false, 'Undoing a sideways push has not recovered the caja');
+    view.sample({ ...wallStrip(2, 3, 8), undoDepth: 0 });
+    assert.equal(progress.has('rewind:recovered'), true);
+    assert.equal(view.store.api.getSnapshot().undoHint, false);
+    assert.equal(view.store.api.getSnapshot().rewindDiscovery.visible, true);
+    assert.deepEqual(progress.getSnapshot(), { 'rewind:recovered': true }, 'Only one milestone is persisted');
+    view.sample(wallStrip(), { game: null, screen: { id: 'launcher' }, inputRequest: null });
+    view.sample(wallStrip());
+    assert.equal(view.store.api.getSnapshot().rewindDiscovery.visible, true, 'New playthrough retains learning');
+    const reloaded = createSeenProgress({ storage });
+    assert.equal(reloaded.has('rewind:recovered'), true);
+  } finally { discovery.dispose(); view.hint.dispose(); }
+});
+
+test('reset, pause, failed rewind, expired history, errors and unseen traps cannot earn recovery', () => {
+  for (const action of ['reset', 'pause', 'failed', 'expired', 'error', 'unseen']) {
+    const progress = createSeenProgress({ storage: null });
+    const view = fixture(), discovery = mountRewindDiscovery(view.store.api, { progress });
+    try {
+      view.sample(wallStrip());
+      if (action === 'unseen') {
+        view.sample({ ...wallStrip(2, 2, 1), undoAffordableDepth: 0 });
+        view.sample({ ...wallStrip(2, 3, 4), undoDepth: 0 });
+      } else {
+        view.sample(wallStrip(2, 2, 1));
+        if (action === 'reset') view.sample(wallStrip());
+        if (action === 'pause') view.sample(wallStrip(2, 2, 1), { screen: { id: 'InterfazPausa' } });
+        if (action === 'failed') view.sample(wallStrip(2, 2, 1));
+        if (action === 'expired') {
+          for (let steps = 2; steps <= 7; steps++) view.sample(wallStrip(2, 2, steps));
+          view.sample({ ...wallStrip(2, 3, 10), undoDepth: 4 });
+        }
+        if (action === 'error') { view.store.event('runtimeError', {}); view.sample(wallStrip()); }
+      }
+      assert.equal(progress.has('rewind:recovered'), false, action);
+    } finally { discovery.dispose(); view.hint.dispose(); }
+  }
+});
 
 test('movable wall-strip caja has no recovery route; sideways pushes do not restart the undo window', () => {
   const before = wallStrip(), lost = wallStrip(2, 2, 1), view = fixture();
@@ -203,6 +256,8 @@ test('bridge sacrifices hint except for the two intended level-three destination
 
 test('sacrifice hints use the same three-undo horizon and clear when the original caja/gap are restored', () => {
   const view = fixture(), { before, after } = sacrifice(2, { x: 1, y: 2 }, { x: 1, y: 1 });
+  const progress = createSeenProgress({ storage: null });
+  const discovery = mountRewindDiscovery(view.store.api, { progress });
   view.sample(before); view.sample(after); assert.equal(view.store.api.getSnapshot().undoHint, true);
   view.sample(after); assert.equal(view.store.api.getSnapshot().undoHint, true, 'Failed use does not age a sacrifice');
   view.store.publish({ screen: { id: 'InterfazPausa' } });
@@ -214,7 +269,8 @@ test('sacrifice hints use the same three-undo horizon and clear when the origina
   view.sample({ ...after, steps: 10, undoDepth: 2 });
   view.sample({ ...after, steps: 13, undoDepth: 1 });
   view.sample({ ...before, steps: 16 }); assert.equal(view.store.api.getSnapshot().undoHint, false, 'Undo restores consumed caja and vacío');
-  view.hint.dispose();
+  assert.equal(progress.has('rewind:recovered'), true, 'Undoing a hinted sacrifice also demonstrates recovery');
+  discovery.dispose(); view.hint.dispose();
 });
 
 test('sacrifice markers expire with actual history and clear on reset/disposal', () => {
@@ -226,4 +282,17 @@ test('sacrifice markers expire with actual history and clear on reset/disposal',
   view.sample(before); view.sample(after); assert.equal(view.store.api.getSnapshot().undoHint, true);
   view.store.publish({ game: null }); assert.equal(view.store.api.getSnapshot().undoHint, false);
   view.sample(before); view.sample(after); view.hint.dispose(); assert.equal(view.store.api.getSnapshot().undoHint, false);
+});
+
+test('recovery hints respect canonical affordability as well as the three-undo horizon', () => {
+  const view = fixture(); view.sample(board());
+  view.sample(pushed({ undoAffordableDepth: 1 }));
+  assert.equal(view.store.api.getSnapshot().undoHint, true);
+  view.sample(pushed({ steps: 2, undoDepth: 2, undoAffordableDepth: 1 }));
+  assert.equal(view.store.api.getSnapshot().undoHint, false, 'Two undos cannot be recovered with budget for one');
+  view.sample(pushed({ steps: 2, undoDepth: 2, undoAffordableDepth: 2 }));
+  assert.equal(view.store.api.getSnapshot().undoHint, true);
+  view.sample(pushed({ steps: 2, undoDepth: 2, undoAvailable: false, undoAffordableDepth: 0 }));
+  assert.equal(view.store.api.getSnapshot().undoHint, false);
+  view.hint.dispose();
 });

@@ -32,7 +32,7 @@ test('mobile exit follows canonical activation, yields during teleport/undo and 
   store.publish({ game: active });
   assert.ok(rectangles.length > 0);
   assert.equal(frames.size, 1);
-  // No dependency on the optional board-hints preference or console pixels.
+  // No dependency on board feedback or console pixels.
   store.publish({ console: { lines: [] } });
   assert.ok(rectangles.length > 0);
   for (const playerAnimation of ['Teletransporte', 'Regresar', 'PintarMuerte']) {

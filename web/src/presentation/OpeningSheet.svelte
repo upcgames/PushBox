@@ -17,7 +17,7 @@
   for (const text of state.message.split(/(\s+)/u)) { parts.push({ text, offset }); offset += text.length; }
   const ready = $derived(state.phase === 'loading' ? state.ready : state.phase === 'complete' ? false : state.phase !== 'typing' || state.seen);
   function continueOpening() {
-    if (state.phase === 'name') { if (!flow.submit(name)) input?.focus(); }
+    if (state.phase === 'name') { if (!flow.submit(name)) input?.reject(); }
     else flow.continue();
   }
   function warningArt() {

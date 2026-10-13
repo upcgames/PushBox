@@ -96,20 +96,41 @@ export function recoverableBoxPositions(game) {
 // undo history identify successful undo; input characters are never guessed.
 export function mountUndoHint(store, { enabled = () => true } = {}) {
   let previous = null, trapped = new Map(), sacrifices = new Map(), disposed = false;
+  const shownTraps = new Set(), shownSacrifices = new Set();
+  function clearTracking() {
+    previous = null; trapped.clear(); sacrifices.clear(); shownTraps.clear(); shownSacrifices.clear();
+  }
   const stable = state => enabled() && state.screen?.id === 'gameplay' && !!state.game &&
     state.game.nextLevel === state.game.level && !state.playerAnimation &&
     state.inputRequest?.kind === 'key' && state.inputRequest.consumer === 'ControlDeMovimiento';
   const visible = state => stable(state) && state.game.undoAvailable;
   function refresh() {
     const state = store.getSnapshot();
-    if (!enabled() || !state.game) { previous = null; trapped.clear(); sacrifices.clear(); }
-    store.setUndoHint(visible(state) && [...trapped.values(), ...sacrifices.values()].some(distance => distance <= MAX_HINT_UNDOS));
+    let source = null;
+    if (!enabled() || !state.game) clearTracking();
+    if (visible(state)) {
+      const affordable = state.game.undoAffordableDepth ?? state.game.undoDepth;
+      for (const [position, distance] of trapped) {
+        const box = state.game.board.boxes.find(box => key(box) === position);
+        if (box && distance <= MAX_HINT_UNDOS && distance <= affordable) {
+          shownTraps.add(box.index); source ??= { level: state.game.level, x: box.x, y: box.y };
+        }
+      }
+      for (const [position, distance] of sacrifices) {
+        if (distance <= MAX_HINT_UNDOS && distance <= affordable) {
+          shownSacrifices.add(position);
+          const [x, y] = position.split(',').map(Number);
+          source ??= { level: state.game.level, x, y };
+        }
+      }
+    }
+    store.setUndoHint(!!source, source);
   }
   const stopWaiting = store.on('input:waiting', ({ request }) => {
     const state = store.getSnapshot(), game = state.game;
     if (disposed || !stable(state) || request?.consumer !== 'ControlDeMovimiento') return;
     if (!previous || previous.level !== game.level || game.steps < previous.steps) {
-      previous = game; trapped.clear(); sacrifices.clear(); refresh(); return;
+      clearTracking(); previous = game; refresh(); return;
     }
     const undo = game.undoDepth < previous.undoDepth;
     const moved = game.board.boxes.length === previous.board.boxes.length
@@ -126,14 +147,17 @@ export function mountUndoHint(store, { enabled = () => true } = {}) {
     const reachable = reachablePlayerPositions(game), recoverable = recoverableBoxPositions(game), nextTrapped = new Map();
     const isTrapped = box => !boxHasLegalPush(game, box, reachable) ||
       (recoverable !== null && !recoverable.has(key(box)));
+    let recovered = false;
     for (const [position, previousDistance] of trapped) {
       const distance = previousDistance + adjustment;
+      const old = previous.board.boxes.find(box => key(box) === position);
+      const box = old ? game.board.boxes.find(box => box.index === old.index) : null;
+      if (undo && old && box && shownTraps.has(old.index) &&
+          (box.x !== old.x || box.y !== old.y) && (box.onTarget || !isTrapped(box))) recovered = true;
       // Keep a suppressed marker while the bad push is still in real history:
       // undoing later walks can make recovery actionable again. Forget it once
       // the original history drops that push, so unrelated undos cannot revive it.
       if (distance < 1 || distance > game.undoDepth) continue;
-      const old = previous.board.boxes.find(box => key(box) === position);
-      const box = old ? game.board.boxes.find(box => box.index === old.index) : null;
       if (box && eligibleBox(game, box) && isTrapped(box)) nextTrapped.set(key(box), distance);
     }
     if (pushed) {
@@ -149,14 +173,23 @@ export function mountUndoHint(store, { enabled = () => true } = {}) {
     const gaps = new Set(game.board.gaps.filter(valid).map(key)), nextSacrifices = new Map();
     for (const [position, previousDistance] of sacrifices) {
       const distance = previousDistance + adjustment;
+      if (undo && shownSacrifices.has(position) && gaps.has(position)) {
+        const restored = game.board.boxes.filter(box => !previous.board.boxes.some(old => old.index === box.index));
+        if (restored.some(box => box.onTarget || !isTrapped(box))) recovered = true;
+      }
       if (distance >= 1 && distance <= game.undoDepth && !gaps.has(position)) nextSacrifices.set(position, distance);
     }
     if (bridge && !INTENDED_BRIDGES.some(intended => intended.level === game.level && key(intended.vacio) === key(bridge))) {
       nextSacrifices.set(key(bridge), 1);
     }
+    for (const index of shownTraps) {
+      if (!game.board.boxes.some(box => box.index === index && nextTrapped.has(key(box)))) shownTraps.delete(index);
+    }
+    for (const position of shownSacrifices) if (!nextSacrifices.has(position)) shownSacrifices.delete(position);
     previous = game; trapped = nextTrapped; sacrifices = nextSacrifices; refresh();
+    if (recovered) store.reportRewindRecovery({ level: game.level });
   });
   const stopState = store.subscribe(refresh);
-  const stopError = store.on('runtimeError', () => { previous = null; trapped.clear(); sacrifices.clear(); store.setUndoHint(false); });
-  return { refresh, dispose() { disposed = true; stopWaiting(); stopState(); stopError(); previous = null; trapped.clear(); sacrifices.clear(); store.setUndoHint(false); } };
+  const stopError = store.on('runtimeError', () => { clearTracking(); store.setUndoHint(false); });
+  return { refresh, dispose() { disposed = true; stopWaiting(); stopState(); stopError(); clearTracking(); store.setUndoHint(false); } };
 }

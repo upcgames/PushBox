@@ -32,9 +32,29 @@ test('adapter produces valid JavaScript for each runtime module without editing 
   assert.equal(runtimeStatePlugin().transform.call(context, '', '/src/generated/maps.js'), undefined);
 });
 
+test('winner prompt markers survive copy edits and reject invalid boundaries', () => {
+  const original = read('interfaces');
+  const begin = '// @web:begin congratulations-prompts';
+  const end = '// @web:end congratulations-prompts';
+  const changedCopy = original.replace("Presiona 'K' para cambiar de nombre o 'E' para salir.", 'Choose an action.');
+  const result = runtimeStatePlugin().transform.call(context, changedCopy, '/src/generated/interfaces.js');
+  context.parse(result.code);
+  assert.match(result.code, /presentPrompt\('InterfazCongratulations', \(\) => Escribir\("Choose an action\."/);
+  for (const invalid of [
+    original.replace(begin, ''), original.replace(end, ''),
+    original.replace(begin, `${begin}\n${begin}`),
+    original.replace(begin, '// SWAP').replace(end, begin).replace('// SWAP', end),
+    // A marker inside a quoted string does not define a section.
+    original.replace(begin, `const markerText = ${JSON.stringify(begin)};`),
+    original.replace(begin, '').replace('export async function* InterfazCongratulations', `${begin}\nexport async function* InterfazCongratulations`),
+  ]) {
+    assert.throws(() => runtimeStatePlugin().transform.call(context, invalid, '/src/generated/interfaces.js'), /@web section/);
+  }
+});
+
 function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1, startLevel = 1 } = {}) {
   setAudioMuted({ api: GameState, ...runtimeState }, false);
-  const snapshots = [], events = [], sounds = [];
+  const snapshots = [], events = [], sounds = [], huds = [];
   const off = GameState.subscribe(state => { if (state.game) snapshots.push(state); });
   const offEvents = GameState.on('*', event => events.push(event));
   const noop = () => {};
@@ -51,12 +71,12 @@ function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1, startLevel = 1
     mod: (box, direction) => { if (direction === 1) box[1] -= 2; if (direction === 2) box[1] += 2;
       if (direction === 3) box[0] += 2; if (direction === 4) box[0] -= 2; },
     movinv: direction => { direction.v = ({ 1: 2, 2: 1, 3: 4, 4: 3 })[direction.v]; },
-    limpiartecla: noop, CuadroDeVidas: noop, Sleep: noop,
+    limpiartecla: noop, CuadroDeVidas: (...args) => huds.push(args), Sleep: noop,
     PintarCaja: noop, PintarHueco: noop, PintarMovil: noop, PintarPortal: noop,
     PintarPuente: noop, ArmarPuente: noop, PBorrar: noop, PintarMuerte: noop, Retroceder: noop,
     ir: noop, colorfondo: noop, colorletra: noop,
     SonidoMovilSeMueve: kind => sounds.push(`move:${kind}`), SonidoMovilNoSeMueve: noop, SonidoCajaHueco: () => sounds.push('bell'),
-    SonidoCajaVacio: noop, Musicatiempo: noop, Teletransporte: noop, PortalInteractivo: noop,
+    SonidoCajaVacio: noop, Musicatiempo: kind => sounds.push(`undo:${kind}`), Teletransporte: noop, PortalInteractivo: noop,
     InterfazYouWin: noop, InterfazYouLose: noop,
     runAnim: noop, Endurecimiento: async () => sounds.push('hardening'),
     InterfazPausa: async (matrix, option) => {
@@ -80,7 +100,7 @@ function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1, startLevel = 1
   const matrix = Array.from({ length: 60 }, () => Array(80).fill(0));
   return sandbox.ControlDeMovimiento(level, lives, x, y,
     arrays.Cajas, arrays.Paredes, arrays.Vacios, arrays.Huecos, arrays.Cantidades, positions, matrix, sound)
-    .then(() => ({ snapshots, events, sounds, level, lives })).finally(() => { off(); offEvents(); });
+    .then(() => ({ snapshots, events, sounds, huds, level, lives })).finally(() => { off(); offEvents(); });
 }
 
 const board = () => ({ Cajas: [null, [[38, 34]]], Paredes: [null, []],
@@ -109,8 +129,8 @@ test('rejected pushes report the actual obstacle once per attempt even with soun
 test('real movement reports targets, portal activation, undo, pause, bridges and level exit', async () => {
   const { snapshots, level } = await runtime(['d', 'r', 'p', 'd', 'd', 'c', 'c', 'c'], board());
   assert.ok(snapshots.some(({ game }) => game.steps === 1 && game.portal.active && game.board.boxes[0].onTarget));
-  assert.ok(snapshots.some(({ game }) => game.steps === 4 && game.player.x === 36 && !game.portal.active));
-  assert.ok(snapshots.some(state => selectControlMode(state) === 'paused' && state.game.steps === 4));
+  assert.ok(snapshots.some(({ game }) => game.steps === 6 && game.player.x === 36 && !game.portal.active));
+  assert.ok(snapshots.some(state => selectControlMode(state) === 'paused' && state.game.steps === 6));
   assert.ok(snapshots.some(({ game }) => game.board.gaps.length === 0 && game.board.boxes.length === 0));
   assert.equal(level.v, 2);
   assert.equal(GameState.getSnapshot().game, null);
@@ -268,6 +288,10 @@ test('explicit toolbar Resume selects original option one without altering norma
 
 test('original push, pause and successful undo drive mobile hints from canonical board/history', async () => {
   const { mountUndoHint } = await import('../src/presentation/undoHint.js');
+  const { createSeenProgress } = await import('../src/state/seenProgress.js');
+  const { mountRewindDiscovery } = await import('../src/presentation/rewindDiscovery.js');
+  const progress = createSeenProgress({ storage: null });
+  const discovery = mountRewindDiscovery(GameState, { progress });
   const hint = mountUndoHint(GameState);
   const samples = [];
   const stop = GameState.on('input:waiting', ({ request }) => {
@@ -284,10 +308,12 @@ test('original push, pause and successful undo drive mobile hints from canonical
     await runtime(['d', 'p', 'r', 'c', 'c', 'c'], arrays);
     assert.equal(samples[0].hint, false);
     assert.ok(samples.some(sample => sample.hint && sample.game.board.boxes[0].x === 40 && sample.game.undoDepth === 1));
-    assert.ok(samples.some(sample => !sample.hint && sample.game.board.boxes[0].x === 38 && sample.game.steps === 4 && sample.game.undoDepth === 0));
+    assert.ok(samples.some(sample => !sample.hint && sample.game.board.boxes[0].x === 38 && sample.game.steps === 6 && sample.game.undoDepth === 0));
     assert.equal(GameState.getSnapshot().undoHint, false);
     assert.equal(GameState.getSnapshot().game, null);
-  } finally { stop(); hint.dispose(); }
+    assert.equal(progress.has('rewind:recovered'), true, 'Original Regresar earns the saved recovery milestone');
+    assert.equal(GameState.getSnapshot().rewindDiscovery.visible, true);
+  } finally { stop(); hint.dispose(); discovery.dispose(); }
 });
 
 test('level-one hints catch the earlier movable trap and persist until both cajas recover', async () => {
@@ -308,8 +334,8 @@ test('level-one hints catch the earlier movable trap and persist until both caja
     const earlier = samples.find(sample => sample.game.steps === 12);
     assert.equal(earlier.hint, true, 'Earlier caja at (36,12) is movable but lost');
     assert.equal(boxHasLegalPush(earlier.game, earlier.game.board.boxes[2]), true);
-    assert.equal(samples.find(sample => sample.game.steps === 17).hint, true, 'One undo recovers only the later corner trap');
-    const recovered = samples.find(sample => sample.game.steps === 23);
+    assert.equal(samples.find(sample => sample.game.steps === 19).hint, true, 'One undo recovers only the later corner trap');
+    const recovered = samples.find(sample => sample.game.steps === 44);
     assert.equal(recovered.hint, false);
   } finally { stop(); hint.dispose(); }
 });
@@ -330,7 +356,7 @@ test('original pushes hint for a movable wall-strip caja and undo recovers it', 
     const lost = samples.find(sample => sample.game.steps === 1);
     assert.equal(boxHasLegalPush(lost.game, lost.game.board.boxes[0]), true);
     assert.equal(lost.hint, true);
-    const recovered = samples.find(sample => sample.game.steps === 4);
+    const recovered = samples.find(sample => sample.game.steps === 6);
     assert.equal(recovered.hint, false);
   } finally { stop(); hint.dispose(); }
 });
@@ -357,7 +383,7 @@ test('original bridge creation/removal drives sacrifice hints and exempts the in
       assert.equal(created.game.board.boxes.length, 1);
       assert.equal(created.game.board.gaps.length, 0);
       assert.equal(created.hinted, expected);
-      const recovered = samples.find(sample => sample.game.steps === 4);
+      const recovered = samples.find(sample => sample.game.steps === 6);
       assert.equal(recovered.game.board.boxes.length, 2);
       assert.equal(recovered.game.board.gaps.length, 1);
       assert.equal(recovered.hinted, false);
@@ -426,4 +452,48 @@ test('level-five completion accepts interchangeable DP but still requires all se
     arrays.Cajas[5][0] = [...origins[shift]];
     assert.equal(rules.PortalVisible(5, arrays.Cajas, arrays.Huecos, arrays.Cantidades), false, 'Real cajas cannot substitute for DP');
   }
+});
+
+function undoBoard() {
+  return { Cajas: [null, [[20, 20]]], Paredes: [null, []], Vacios: [null, []],
+    Huecos: [null, [[22, 20]]], Cantidades: [null, [1, 0, 0, 1]] };
+}
+const walks = count => Array.from({ length: count }, (_, index) => index % 2 ? 'd' : 'a');
+
+test('canonical undo prices grow on successes only, survive pause, and reset on a fresh attempt', async () => {
+  const result = await runtime(['r', 'a', 'd', 'a', 'r', 'p', 'r', 'r', 'r', 'c', 'c', 'c'], undoBoard());
+  for (const [steps, nextCost, depth] of [[0, 5, 0], [3, 5, 3], [8, 10, 2], [18, 15, 1], [33, 20, 0]]) {
+    assert.ok(result.snapshots.some(({ game }) => game.steps === steps && game.nextUndoCost === nextCost && game.undoDepth === depth));
+  }
+  assert.equal(result.sounds.filter(sound => sound === 'undo:2').length, 2, 'Unavailable attempts do not consume steps or raise price');
+  assert.ok(result.snapshots.some(state => state.screen?.id === 'InterfazPausa' && state.game.nextUndoCost === 10));
+  const retry = await runtime(['a', 'r', 'p'], undoBoard(), { pauseOption: 2 });
+  assert.equal(retry.lives.v, 4);
+  assert.ok(retry.snapshots.some(({ game }) => game.nextUndoCost === 10));
+  const death = await runtime(['a', 'r', ...walks(144)], undoBoard());
+  assert.equal(death.lives.v, 4);
+  assert.ok(death.snapshots.some(({ game }) => game.nextUndoCost === 10));
+  const fresh = await runtime(['c', 'c', 'c'], undoBoard());
+  assert.ok(fresh.snapshots.some(({ game }) => game.steps === 0 && game.nextUndoCost === 5));
+});
+
+test('capped undo leaves one step, then blocks despite retained history without changing cost', async () => {
+  const result = await runtime([...walks(143), 'r', 'r', 'r', 'c', 'c', 'c'], undoBoard());
+  const twoLeft = result.snapshots.find(({ game }) => game.steps === 148).game;
+  assert.equal(twoLeft.remainingMoves, 2); assert.equal(twoLeft.nextUndoCost, 10);
+  assert.equal(twoLeft.undoCharge, 1); assert.equal(twoLeft.undoAffordableDepth, 1);
+  const last = result.snapshots.findLast(({ game }) => game.steps === 149).game;
+  assert.equal(last.remainingMoves, 1); assert.equal(last.nextUndoCost, 15);
+  assert.equal(last.undoDepth, 3); assert.equal(last.undoAvailable, false);
+  assert.equal(last.undoCharge, 0); assert.equal(last.undoAffordableDepth, 0);
+  assert.equal(result.sounds.filter(sound => sound === 'undo:2').length, 1);
+  assert.equal(result.lives.v, 5, 'Undo cannot spend the last step');
+});
+
+test('warning fires once when walking or undo crosses below twenty, never on pause redraw', async () => {
+  const walking = await runtime([...walks(131), 'p', 'c', 'c', 'c'], undoBoard());
+  assert.deepEqual(walking.huds.filter(args => args[4]).map(args => args[2]), [131]);
+  assert.ok(walking.huds.some(args => args[2] === 130 && !args[4]), 'Exactly twenty is not below twenty');
+  const undo = await runtime([...walks(126), 'r', 'p', 'r', 'c', 'c', 'c'], undoBoard());
+  assert.deepEqual(undo.huds.filter(args => args[4]).map(args => args[2]), [131]);
 });

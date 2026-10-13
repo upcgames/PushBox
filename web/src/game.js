@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   opening.setLoading(0);
   if (import.meta.hot) import.meta.hot.dispose(opening.dispose);
   setupMuteButton();
-  setupBoardFeedback(gameConsole.canvas, document.getElementById('feedbackBtn'), undefined, { mobile: isMobile });
+  setupBoardFeedback(gameConsole.canvas, undefined, { mobile: isMobile });
 
   // WEB loading state — preload all required assets before enabling START
   // Fonts (VirtualConsole) + audio (preloadAudio) — both are web shell concerns

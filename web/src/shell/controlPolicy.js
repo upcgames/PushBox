@@ -8,9 +8,10 @@ const KEY_CONTROLS = {
   main: 'continue',
 };
 
-export function selectControlMode({ inputRequest }) {
+export function selectControlMode({ inputRequest, winnerActionsBlocked }) {
   if (!inputRequest) return 'none';
   if (inputRequest.native) return 'none';
+  if (winnerActionsBlocked && inputRequest.consumer === 'InterfazCongratulations' && inputRequest.kind === 'key') return 'none';
   if (inputRequest.kind === 'confirmation') return 'continue';
   if (inputRequest.kind === 'text') {
     return inputRequest.choices?.join(',') === '1,2' ? '1v2' : 'qwerty';

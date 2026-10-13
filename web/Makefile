@@ -5,11 +5,10 @@ MODULES_STAMP = pushbox_modules/.stamp
 JS_STAMP = src/generated/.stamp
 ANIM_STAMP = src/generated_anim/.stamp
 PUBLIC_MODULES_STAMP = public/pushbox_modules/.stamp
-AUDIO_STAMP = public/audio/.stamp
 
-.PHONY: generate test
+.PHONY: generate test audio
 
-generate: $(JS_STAMP) $(ANIM_STAMP) $(PUBLIC_MODULES_STAMP) $(AUDIO_STAMP)
+generate: $(JS_STAMP) $(ANIM_STAMP) $(PUBLIC_MODULES_STAMP) audio
 
 $(MODULES_STAMP): $(MANIFEST) $(SOURCE_CPP) scripts/build_pushbox_modules.py
 	$(PYTHON) scripts/build_pushbox_modules.py
@@ -22,11 +21,15 @@ $(PUBLIC_MODULES_STAMP): $(MODULES_STAMP)
 
 test: scripts/test_transpiler.py scripts/dag.py scripts/ast_transpiler.py
 	$(PYTHON) scripts/test_transpiler.py
+	$(PYTHON) scripts/test_char_comparisons.py
+	$(PYTHON) scripts/test_web_markers.py
+	$(PYTHON) scripts/test_audio_resources.py
 	npx eslint src/
 
-$(AUDIO_STAMP): scripts/copy_resources.py
+# Always validate resources: additions, removals and case-only renames must not
+# be missed by a timestamp stamp. This also produces the preload manifest.
+audio:
 	$(PYTHON) scripts/copy_resources.py
-	touch $(AUDIO_STAMP)
 
 $(JS_STAMP): $(MODULES_STAMP) scripts/transpile_modules.py scripts/ast_transpiler.py scripts/dag.py
 	$(PYTHON) scripts/transpile_modules.py

@@ -2,6 +2,8 @@ import { mountMobileOpening } from '../presentation/mountMobileOpening.js';
 import { createPlayerProfile } from '../presentation/playerIdentity.js';
 import { createSeenProgress } from '../state/seenProgress.js';
 import { mountTrollReward } from '../presentation/trollReward.js';
+import { mountRewindEntrance } from '../presentation/mountRewindEntrance.js';
+import { mountRewindDiscovery } from '../presentation/rewindDiscovery.js';
 import { mountUndoHint } from '../presentation/undoHint.js';
 import { mountExitCue } from '../presentation/mountExitCue.js';
 import { mountBobby } from '../presentation/mountBobby.js';
@@ -27,7 +29,6 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
         <button class="start-btn" disabled>Loading fonts…</button>
       </div>
       <button class="mute-btn" aria-label="Unmute this preview">🔇</button>
-      <button class="feedback-button" aria-pressed="true" hidden>Hints on</button>
       <div class="canvas-wrap"><canvas width="1120" height="882"></canvas></div>
     </div>
     <div class="controller-area"></div>`;
@@ -46,7 +47,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
   const changeSkipLore = () => settingsChanged({ skipLore: skipLore.checked });
   startPoint.addEventListener('change', changeStartPoint);
   skipLore.addEventListener('change', changeSkipLore);
-  let session, stopState, stopAudio, stopControls, stopHints, stopHud, instructions, loreView, boardView, bobby, exitCue, trollReward, undoHint, opening, ready, running = false, disposed = false;
+  let session, stopState, stopAudio, stopControls, stopHints, stopHud, instructions, loreView, boardView, bobby, exitCue, trollReward, undoHint, rewindDiscovery, rewindEntrance, opening, ready, running = false, disposed = false;
   let framing = 'walls';
   function teardown() {
     instructions?.dispose();
@@ -56,6 +57,8 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     exitCue?.dispose();
     trollReward?.dispose();
     undoHint?.dispose();
+    rewindDiscovery?.dispose();
+    rewindEntrance?.dispose();
     opening?.dispose();
     stopHud?.(); stopState?.(); stopAudio?.(); stopControls?.(); stopHints?.(); session?.dispose();
   }
@@ -68,6 +71,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
       onEnter: destination => destination ? start() : requestStart ? requestStart() : start() });
     opening.setLoading(0); session.setOpening(opening);
     trollReward = mountTrollReward(session.state, { progress: previewProgress });
+    rewindDiscovery = mountRewindDiscovery(session.state, { progress: previewProgress });
     undoHint = mountUndoHint(session.state);
     exitCue = mountExitCue(session.console, session.state);
     bobby = mountBobby(session.console, session.state);
@@ -80,7 +84,8 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     instructions = mountMobileInstructions(root, session.state, routeInput);
     loreView = mountMobileLore(root, session.state, routeInput);
     stopControls = setupSessionControls(root.querySelector('.controller-area'), services);
-    stopHints = setupBoardFeedback(canvas, root.querySelector('.feedback-button'), session.state, { mobile: () => true });
+    stopHints = setupBoardFeedback(canvas, session.state, { mobile: () => true });
+    rewindEntrance = mountRewindEntrance(root, session.console, session.state);
     boardView = setupMobileBoardView(root, session.state, undefined, { surface: session.console });
     boardView.setFraming(framing);
     ready = session.loadAssets(percent => { if (session === current && !disposed) opening.setLoading(percent); }).then(() => {

@@ -6,14 +6,14 @@ import { createOpeningFlow } from './openingFlow.js';
 import { createSeenProgress } from '../state/seenProgress.js';
 import { createPlayerProfile } from './playerIdentity.js';
 import { mountSeenDestinations } from './seenDestinations.js';
-import { mountWinnerContinue } from './winnerContinue.js';
+import { mountWinnerActions } from './winnerActions.js';
 
 export function mountMobileOpening(root, store, audio, { enabled = () => true,
   surface, progress = createSeenProgress(), profile = createPlayerProfile(), onEnter = () => {} } = {}) {
   const host = document.createElement('div'); host.className = 'mobile-opening-host'; host.hidden = true; root.append(host);
   const acceptKeyboard = () => enabled() && (!root.closest('.preview-card') || root.closest('.preview-card').classList.contains('selected'));
   const winnerNames = createWinnerIdentity({ profile, store, enabled });
-  const winnerContinue = mountWinnerContinue(store, { enabled });
+  const winnerActions = mountWinnerActions(store, { enabled });
   const modalHost = document.createElement('div'); modalHost.className = 'mobile-name-modal-host'; modalHost.hidden = true; root.append(modalHost);
   const modal = mount(NativeNameModal, { target: modalHost, props: { flow: winnerNames, acceptKeyboard } });
   const stopModal = winnerNames.subscribe(state => {
@@ -30,7 +30,7 @@ export function mountMobileOpening(root, store, audio, { enabled = () => true,
   const instance = mount(OpeningSheet, { target: host, props: { flow, enabled, acceptKeyboard,
     onMute: () => audio.setWebMuted(!store.getSnapshot().audio.muted) } });
   function refresh() {
-    winnerContinue.refresh();
+    winnerActions.refresh();
     surface?.setDrawScopeHidden('winner-prompts', enabled());
     const visible = enabled() && !['hidden', 'complete'].includes(flow.getSnapshot().phase);
     host.hidden = !visible;
@@ -41,6 +41,6 @@ export function mountMobileOpening(root, store, audio, { enabled = () => true,
   pointer.addEventListener('change', refresh);
   return {
     enabled, refresh, getNames: profile.getNames, begin: flow.begin, hideLoading: flow.hideLoading, setLoading: flow.setLoading, takeDestination: flow.takeDestination,
-    dispose() { pointer.removeEventListener('change', refresh); winnerContinue.dispose(); stopVisits(); stopReader(); stopInput(); stopError(); winnerNames.dispose(); stopModal(); unmount(modal); modalHost.remove(); delete root.dataset.mobileNameModal; surface?.setDrawScopeHidden('winner-prompts', false); stop(); flow.dispose(); unmount(instance); host.remove(); delete root.dataset.mobileOpening; },
+    dispose() { pointer.removeEventListener('change', refresh); winnerActions.dispose(); stopVisits(); stopReader(); stopInput(); stopError(); winnerNames.dispose(); stopModal(); unmount(modal); modalHost.remove(); delete root.dataset.mobileNameModal; surface?.setDrawScopeHidden('winner-prompts', false); stop(); flow.dispose(); unmount(instance); host.remove(); delete root.dataset.mobileOpening; },
   };
 }

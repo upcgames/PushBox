@@ -73,6 +73,7 @@ class CppToJsAST:
         tree = self.parser.parse(code_bytes)
         
         edits = [] # list of (start_byte, end_byte, new_string)
+        self._char_comparison_edits(tree.root_node, code_bytes, edits, [{}])
         self._walk_for_edits(tree.root_node, code_bytes, edits, current_func_refs=set(), all_async_funcs=all_async_funcs, generator_funcs=generator_funcs)
         
         # Apply edits in reverse order so byte offsets remain valid
@@ -92,6 +93,66 @@ class CppToJsAST:
         final_str = re.sub(r'(?<=[(,\s])&([A-Za-z0-9_]+)', r'\1', final_str)
         
         return final_str
+
+    def _char_comparison_edits(self, node, code_bytes, edits, scopes):
+        """Promote declared char values to signed byte codes for numeric comparisons.
+
+        Browser character buffers contain strings for ASCII and numbers for signed
+        CP850. Character-literal comparisons keep that representation; comparing
+        with a number must use the byte value, as C++ integer promotion does.
+        """
+        def text(n):
+            return code_bytes[n.start_byte:n.end_byte].decode('utf-8')
+
+        def declaration(n, depth=0):
+            if n.type == 'identifier':
+                return text(n), depth
+            if n.type in ('pointer_declarator', 'array_declarator'):
+                depth += 1
+            child = n.child_by_field_name('declarator')
+            return declaration(child, depth) if child else (None, depth)
+
+        def char_depth(n):
+            if n.type == 'parenthesized_expression':
+                return char_depth(n.named_children[0])
+            if n.type == 'subscript_expression':
+                depth = char_depth(n.child_by_field_name('argument'))
+                return depth - 1 if depth is not None and depth > 0 else None
+            if n.type == 'identifier':
+                name = text(n)
+                for scope in reversed(scopes):
+                    if name in scope:
+                        return scope[name]
+            return None
+
+        def numeric_literal(n):
+            if n.type == 'number_literal':
+                return True
+            if n.type in ('unary_expression', 'parenthesized_expression'):
+                return len(n.named_children) == 1 and numeric_literal(n.named_children[0])
+            return False
+
+        scoped = node.type in ('function_definition', 'compound_statement', 'for_statement', 'for_range_loop')
+        if scoped:
+            scopes = scopes + [{}]
+        if node.type in ('declaration', 'parameter_declaration', 'optional_parameter_declaration'):
+            type_node = node.child_by_field_name('type')
+            is_char = type_node is not None and text(type_node) == 'char'
+            for declarator in node.children_by_field_name('declarator'):
+                name, depth = declaration(declarator)
+                if name:
+                    scopes[-1][name] = depth if is_char else None
+        if node.type == 'binary_expression':
+            left, op, right = node.children[:3]
+            if text(op) in ('==', '!=', '<', '<=', '>', '>='):
+                for value, other in ((left, right), (right, left)):
+                    if char_depth(value) == 0 and numeric_literal(other):
+                        # Evaluate the operand once, and preserve already-signed bytes.
+                        edits.append((value.start_byte, value.start_byte,
+                                      "((value) => typeof value === 'string' ? (value.charCodeAt(0) << 24 >> 24) : value)("))
+                        edits.append((value.end_byte, value.end_byte, ")"))
+        for child in node.children:
+            self._char_comparison_edits(child, code_bytes, edits, scopes)
 
     def _walk_for_edits(self, node, code_bytes, edits, current_func_refs, skip_node_ids=None, all_async_funcs=None, generator_funcs=None, is_inside_generator=False, is_current_async=False):
         if skip_node_ids is None:

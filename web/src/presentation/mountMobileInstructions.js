@@ -4,6 +4,7 @@ import './mobileInstructions.css';
 
 // Follow the original screen lifecycle; never skip or replace its function.
 export function mountMobileInstructions(root, store, sendInput = store.sendInput, enabled = () => true) {
+  const stopPresentation = store.registerPresentationOverride('InterfazInstructions', enabled);
   let host = null, instance = null, runtimeExited = false, curtainClosed = false;
   function hide() {
     if (instance) unmount(instance);
@@ -39,5 +40,5 @@ export function mountMobileInstructions(root, store, sendInput = store.sendInput
   }
   const stop = store.select(state => state.screen?.id, refresh);
   const stopErrors = store.on('runtimeError', hide);
-  return { refresh, dispose() { stop(); stopErrors(); hide(); } };
+  return { refresh, dispose() { stopPresentation(); stop(); stopErrors(); hide(); } };
 }

@@ -89,7 +89,7 @@ void MusicaMenu(){
 	PlaySound(TEXT("intro.wav"), NULL, SND_LOOP | SND_ASYNC);
 }
 void MusicaCreditos(){
-	PlaySound(TEXT("outro.wav"), NULL, SND_LOOP | SND_ASYNC);
+	PlaySound(TEXT("Outro.wav"), NULL, SND_LOOP | SND_ASYNC);
 }
 void MusicaAparecePortal()
 {
@@ -2665,10 +2665,10 @@ void InterfazCongratulations(int **matriz, int **Cantidades){
 		MusicaCongratulations();
 		if (c[0] == '2')emp = 42; else emp = 35;
 		UPC(matriz); GIF(matriz, 58, 75, 0, 58, 10, emp, 0, 0, 5, 78);
-		esperartecla();
 
 		colorfondo(3); colorletra(9);
 
+		// @web:begin congratulations-prompts
 		ir(0, 0); for (int i = 0; i <= 79; i++)cout << " ";
 		ir(0, 0); Escribir("Presiona 'K' para cambiar de nombre o 'E' para salir.", 10); do{
 			limpiartecla(3); teclac = _getch();
@@ -2709,6 +2709,7 @@ scanf("%8s", n2); limpiartecla(1);
 		} while (error);
 	ir(0, 5); Escribir("LISTO!!!!!!!", 100, 4);
 
+		// @web:end congratulations-prompts
 		Cantidades[8][0] = c[0]; Cantidades[8][1] = strlen(n1); if (c[0] == '2')Cantidades[8][2] = strlen(n2);
 		for (int i = 0; i <= Cantidades[8][1] - 1; i++)Cantidades[6][i] = n1[i];
 		if (c[0] == '2')for (int i = 0; i <= Cantidades[8][2] - 1; i++)Cantidades[7][i] = n2[i];
@@ -3279,15 +3280,38 @@ bool MovilPuedeMoverse(int *caja, int mov)//Verifica si al movil se le permite m
 	if (caja[0]<0 || caja[1]>59 || caja[1]<0 || caja[0]>79)return false;
 	return true;
 }
+// Presupuesto y precio de regreso canonicos; la web solo observa estos valores.
+int LimiteDeMovimientos(int nivel)
+{
+	if (nivel == 1 || nivel == 2)return 150;
+	if (nivel == 3)return 100;
+	if (nivel == 4)return 180;
+	if (nivel == 5)return 500;
+	return 0;
+}
+int CostoDeRegreso(int restantes, int costo)
+{
+	if (restantes <= 1)return 0;
+	if (costo >= restantes)return restantes - 1;
+	return costo;
+}
+int RegresosDisponibles(int restantes, int costo, int posicion)
+{
+	int disponibles = 0;
+	while (posicion > 1 && restantes > 1){
+		restantes -= CostoDeRegreso(restantes, costo);
+		costo += 5; posicion--; disponibles++;
+	}
+	return disponibles;
+}
+bool CruzaAvisoDeMovimientos(int nivel, int antes, int despues)
+{
+	int limite = LimiteDeMovimientos(nivel);
+	return limite - antes >= 20 && limite - despues < 20;
+}
 bool muerte(int nivel, int x, int y, int mov, int cantmovs, int ***vacio, int **Cantidades)//Verifica si el movil muere en su proximo movimiento
 {
-	int xsurreal = x; int ysurreal = y; int max;
-
-	if (nivel == 1)max = 150;
-	if (nivel == 2)max = 150;
-	if (nivel == 3)max = 100;
-	if (nivel == 4)max = 180;
-	if (nivel == 5)max = 500;
+	int xsurreal = x; int ysurreal = y; int max = LimiteDeMovimientos(nivel);
 
 	if (cantmovs >= max)return true;
 	for (int i = 0; i <= Cantidades[nivel][2] - 1; i++)if (xsurreal == vacio[nivel][i][0] && ysurreal == vacio[nivel][i][1])return true;
@@ -3452,20 +3476,20 @@ void Regresar(int nivel, int &posicion, int &x, int &y, int mov, int ***Cajas, i
 //--------------------------------------------------------------------------------------------------
 
 //----------------------------------------CUADROS DE TEXTO-----------------------------------------
-void CuadroDeVidas(int nivel, int vidas, int movimientos, bool cuadro = 0)
+void CuadroDeVidas(int nivel, int vidas, int movimientos, bool cuadro = 0, bool aviso = 0)
 {
-	int max; int a = 0;
-	if (nivel == 1)max = 150; if (nivel == 2)max = 150; if (nivel == 3)max = 100; if (nivel == 4)max = 180; if (nivel == 5)max = 500;
+	int max = LimiteDeMovimientos(nivel); int a = 0;
+	int restantes = max - movimientos; if (restantes < 0)restantes = 0;
 	if (cuadro)CuadroDeTexto(10, 59, 70, 61, 16, 0, 16); colorfondo(16);
 	if (vidas == 5){ ir(54, 60); colorletra(4); cout << "Vidas: X" << vidas; }
 	if (vidas == 4 || vidas == 3){ ir(54, 60); colorletra(7); cout << "Vidas: X" << vidas; }
 	if (vidas == 2 || vidas == 1){ ir(54, 60); colorletra(2); cout << "Vidas: X" << vidas; }
 	ir(15, 60); colorletra(9); cout << "NIVEl: " << nivel << "       MOVIMIENTOS: ";
-	if (movimientos == max - 20)
+	if (aviso)
 	{
-		SonidoHurryUp(); for (int i = 0; i <= 24; i++){ if (a == 0){ colorletra(9); a++; } else{ colorletra(2); a--; }ir(43, 60); cout << "20  "; Sleep(100); }
+		SonidoHurryUp(); for (int i = 0; i <= 24; i++){ if (a == 0){ colorletra(9); a++; } else{ colorletra(2); a--; }ir(43, 60); cout << restantes << "  "; Sleep(100); }
 	}
-	else{ if (movimientos >= max)cout << "0  "; else cout << max - movimientos << "  "; }
+	else cout << restantes << "  ";
 }
 void Lore(int nivel){
 
@@ -3985,6 +4009,8 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 	//cuando se mueva una caja.
 
 	int cantmovs = 0;//cantidad de movientos
+	int costoRegreso = 5;//Nuevo intento: se conserva al pausar, no se guarda en el historial.
+	int limiteMovimientos = LimiteDeMovimientos(nivel);
 
 	int opcionmenu;//opcion de menu
 
@@ -3998,6 +4024,7 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 
 	while (sigue){
 
+		int movimientosAntes = cantmovs;
 		int mov;//Variable importante que se usa en todo el programa, que asigna un valor a cada uno de los cuatro posibles movimientos
 
 		int caja;//Esta variable es asignada por la funcion QueCaja, que retorna la caja con la cual el movil esta interactuando
@@ -4039,9 +4066,12 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 		case 'F': {if (sonido == 0)sonido = 1; else sonido = 0; continue; break; }
 
 		case 'R':
-			if (posicion != 1){
-				Regresar(nivel, posicion, x, y, mov, Cajas, Vacios, Huecos, Cantidades, Posiciones, matriz);
-				cantmovs += 3; CuadroDeVidas(nivel, vidas, cantmovs);
+			if (posicion > 1 && limiteMovimientos - cantmovs > 1){
+				int posicionAntes = posicion;
+				int cobro = CostoDeRegreso(limiteMovimientos - cantmovs, costoRegreso);
+				Regresar(nivel, posicion, x, y, 0, Cajas, Vacios, Huecos, Cantidades, Posiciones, matriz);
+				if (posicion < posicionAntes){ cantmovs += cobro; costoRegreso += 5; }
+				CuadroDeVidas(nivel, vidas, cantmovs, 0, CruzaAvisoDeMovimientos(nivel, movimientosAntes, cantmovs));
 			}
 			else{ Musicatiempo(2); }continue; break;
 
@@ -4196,7 +4226,7 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 			//A diferencia de PortalVisible acá si se Colocan los Huecos, porque en PortalVisible y no es necesario y causa una especie de parpadeo
 		}//Fin if nivel==5
 
-		CuadroDeVidas(nivel, vidas, cantmovs);//En este punto se vuelve a imprimir el CuadrodeVidas(Recordando que este se imprime fuera del while)
+		CuadroDeVidas(nivel, vidas, cantmovs, 0, CruzaAvisoDeMovimientos(nivel, movimientosAntes, cantmovs));//En este punto se vuelve a imprimir el CuadrodeVidas(Recordando que este se imprime fuera del while)
 		if (muerte(nivel, x, y, mov, cantmovs, Vacios, Cantidades)){
 			PintarMuerte(x, y); if (vidas != 1)InterfazYouLose(matriz); vidas--;
 			if (vidas == 0)nivel = 7; sigue = no; continue;

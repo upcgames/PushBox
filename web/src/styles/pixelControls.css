@@ -62,3 +62,20 @@
 .pixel-control.direction.left svg { transform: rotate(-90deg); }
 .pixel-control.direction.right svg { transform: rotate(90deg); }
 .pixel-control.direction.down svg { transform: rotate(180deg); }
+
+/* Accepted rewind: quarter turns for a hint, smooth anticlockwise spin on use. */
+.pixel-control.rewind-hourglass svg { width: 40px; height: 40px; }
+.pixel-control.rewind-hourglass.hinted { animation: hourglass-halo 1000ms steps(2) infinite; outline: 3px solid #fff0ba; outline-offset: 4px; }
+.pixel-control.rewind-hourglass.hinted svg { animation: hourglass-quarter-turn 2400ms ease-in-out infinite; }
+.pixel-control.rewind-hourglass.activated { color: #67e8f9; outline: 3px solid currentColor; outline-offset: 4px; animation: none; }
+.pixel-control.rewind-hourglass.activated svg { animation: hourglass-spin 900ms linear infinite; }
+@keyframes hourglass-halo { 0%, 100% { outline-color: #fff0ba; } 50% { outline-color: #854d0e; } }
+@keyframes hourglass-quarter-turn {
+  0%, 15% { transform: rotate(0); } 25%, 40% { transform: rotate(-90deg); }
+  50%, 65% { transform: rotate(-180deg); } 75%, 90% { transform: rotate(-270deg); }
+  100% { transform: rotate(-360deg); }
+}
+@keyframes hourglass-spin { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .pixel-control.rewind-hourglass.hinted svg, .pixel-control.rewind-hourglass.activated svg { animation: none !important; }
+}

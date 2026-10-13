@@ -4,11 +4,12 @@ import { sampleSlugMotion } from './slugMotion.js';
 export const BOBBY_COLORS = ['#ffffff', '#ef4444', '#22c55e', '#3b82f6', '#06b6d4', '#d946ef', '#eab308'];
 export const BOBBY_PALETTE = ['#000000', ...BOBBY_COLORS, '#94a3b8', '#000000', '#991b1b', '#166534', '#1e3a8a', '#155e75', '#701a75', '#854d0e', '#334155'];
 
-export function sampleBobby(time, { size = 28, strength = 1, movement = null, trolling = false, reducedMotion = false } = {}) {
+export function sampleBobby(time, { size = 28, strength = 1, movement = null, moveDuration = 90, settleDuration = 70, trolling = false, reducedMotion = false } = {}) {
   let width = size, height = size, travel = 1;
   if (!reducedMotion) {
-    if (movement && movement.elapsed < 320) {
-      const motion = sampleSlugMotion(movement.elapsed, { size, strength });
+    // Approved gameplay A: 90 ms travel, then 70 ms settle.
+    if (movement && movement.elapsed < moveDuration + settleDuration) {
+      const motion = sampleSlugMotion(movement.elapsed, { size, strength, moveDuration, settleDuration });
       width = movement.dx ? motion.longitudinal : motion.transverse;
       height = movement.dy ? motion.longitudinal : motion.transverse;
       travel = motion.travel;

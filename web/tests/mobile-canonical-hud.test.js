@@ -31,6 +31,7 @@ function fixture(adapted, hidden = false) {
     runAnim: async (routine, ...args) => { for await (const delay of routine(...args)) waits.push(delay); },
   });
   vm.runInContext(executable(read('base')), sandbox);
+  vm.runInContext(executable(read('world_logic')), sandbox);
   const source = read('gui');
   vm.runInContext(executable(adapted ? runtimeStatePlugin().transform.call(parser, source, '/src/generated/gui.js').code : source), sandbox);
   return { surface, store, sandbox, painted, fills, waits, calls, flush() { tasks.splice(0).forEach(task => task()); } };
@@ -40,7 +41,7 @@ test('hidden mobile status panel retains original writes, delays, alarm and HUD 
   const desktop = fixture(false), mobile = fixture(true, true);
   for (const view of [desktop, mobile]) {
     await view.sandbox.CuadroDeVidas(1, 5, 0, 1);
-    await view.sandbox.CuadroDeVidas(1, 4, 130);
+    await view.sandbox.CuadroDeVidas(1, 4, 133, 0, true);
     view.flush();
   }
   assert.deepEqual(mobile.store.api.getSnapshot().console, desktop.store.api.getSnapshot().console);
@@ -49,8 +50,8 @@ test('hidden mobile status panel retains original writes, delays, alarm and HUD 
   assert.ok(mobile.painted.every(cell => cell.char === '.'), 'Board artwork replaces panel text');
   assert.ok(mobile.fills.every(cell => cell.color === '#22c55e'), 'Board artwork replaces panel background');
   assert.equal(mobile.surface.drawScope, null);
-  mobile.store.publish({ screen: { id: 'gameplay' }, game: { level: 1, lives: 4, steps: 130 } });
-  assert.equal(gameplayHudSnapshot(mobile.store.api.getSnapshot()).remaining, 20);
+  mobile.store.publish({ screen: { id: 'gameplay' }, game: { level: 1, lives: 4, steps: 133 } });
+  assert.equal(gameplayHudSnapshot(mobile.store.api.getSnapshot()).remaining, 17);
   mobile.painted.length = 0;
   mobile.surface.setDrawScopeHidden('canonical-hud', false);
   assert.ok(mobile.painted.some(cell => cell.char === 'N'), 'Desktop restores original HUD glyphs');

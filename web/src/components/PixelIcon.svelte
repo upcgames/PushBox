@@ -8,6 +8,9 @@
   {:else if name === 'undo'}
     <path class="cue-chevron" d="M12 5h4l-7 7 7 7h-4L5 12l7-7Z" />
     <g transform="translate(12 0)"><path class="cue-chevron second" d="M12 5h4l-7 7 7 7h-4L5 12l7-7Z" /></g>
+  {:else if name === 'hourglass'}
+    <path fill-rule="evenodd" d="M5 2H19V6L14 11V13L19 18V22H5V18L10 13V11L5 6V2ZM8 5V6L12 10L16 6V5H8ZM12 14L8 18V19H16V18L12 14Z" />
+    <path d="M9 6h6l-3 3-3-3Zm1 11h4v2h-4v-2Z" />
   {:else if name === 'troll'}
     <path d="M5 3h14v3h3v12h-3v3H5v-3H2V6h3V3Zm3 4v3h3V7H8Zm6 0v3h3V7h-3Zm-7 7v3h3v2h5v-2h3v-3h-3v2h-5v-2H7Z" />
   {:else if name === 'pause'}

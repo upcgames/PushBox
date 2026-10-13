@@ -1,0 +1,54 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createGameState } from '../src/state/gameState.js';
+import { createSeenProgress } from '../src/state/seenProgress.js';
+import { mountRewindDiscovery } from '../src/presentation/rewindDiscovery.js';
+
+test('entrance acknowledgement lasts for the page visit, including remounts and new playthroughs', () => {
+  const progress = createSeenProgress({ storage: null });
+  const store = createGameState();
+  let discovery = mountRewindDiscovery(store.api, { progress });
+  store.api.acknowledgeRewindEntrance();
+  store.api.setUndoHint(true);
+  assert.equal(store.api.getSnapshot().rewindDiscovery.entrancePending, true, 'Acknowledgement before a reveal is ignored');
+  store.api.acknowledgeRewindEntrance();
+  assert.equal(store.api.getSnapshot().rewindDiscovery.entrancePending, false);
+  assert.deepEqual(progress.getSnapshot(), {}, 'An entrance is never persisted');
+  store.api.setUndoHint(false);
+  assert.equal(store.api.getSnapshot().rewindDiscovery.visible, false);
+  store.publish({ screen: { id: 'launcher' }, game: null });
+  store.api.setUndoHint(true);
+  assert.equal(store.api.getSnapshot().rewindDiscovery.entrancePending, false);
+  discovery.dispose();
+  const restarted = createGameState();
+  discovery = mountRewindDiscovery(restarted.api, { progress });
+  restarted.api.setUndoHint(true);
+  assert.equal(restarted.api.getSnapshot().rewindDiscovery.entrancePending, false, 'Inspector reset keeps the same page visit');
+  discovery.dispose();
+  const refreshed = createGameState();
+  discovery = mountRewindDiscovery(refreshed.api, { progress: createSeenProgress({ storage: null }) });
+  refreshed.api.setUndoHint(true);
+  assert.equal(refreshed.api.getSnapshot().rewindDiscovery.entrancePending, true, 'A new page visit can play the entrance again');
+  discovery.dispose();
+});
+
+test('saved recovery shows rewind without an entrance and stays isolated between progression owners', () => {
+  const production = createSeenProgress({ storage: null }), preview = createSeenProgress({ storage: null });
+  production.mark('rewind:recovered');
+  const game = createGameState(), inspector = createGameState();
+  let enabled = false;
+  const live = mountRewindDiscovery(game.api, { progress: production });
+  const study = mountRewindDiscovery(inspector.api, { progress: preview, enabled: () => enabled });
+  assert.deepEqual(game.api.getSnapshot().rewindDiscovery, { visible: true, entrancePending: false });
+  assert.equal(inspector.api.getSnapshot().rewindDiscovery.visible, false);
+  inspector.api.reportRewindRecovery({ level: 1 });
+  assert.equal(preview.has('rewind:recovered'), false, 'Disabled presentation cannot earn learning');
+  enabled = true; inspector.api.setUndoHint(true);
+  assert.equal(inspector.api.getSnapshot().rewindDiscovery.entrancePending, true);
+  inspector.api.reportRewindRecovery({ level: 1 });
+  assert.deepEqual(inspector.api.getSnapshot().rewindDiscovery, { visible: true, entrancePending: false });
+  live.dispose(); study.dispose();
+  preview.clear('rewind:recovered');
+  inspector.api.reportRewindRecovery({ level: 1 });
+  assert.equal(preview.has('rewind:recovered'), false, 'Disposed observers cannot persist learning');
+});

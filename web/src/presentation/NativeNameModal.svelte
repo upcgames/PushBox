@@ -4,11 +4,17 @@
   import ContinueButton from '../components/ContinueButton.svelte';
   let { flow, acceptKeyboard = () => true } = $props();
   let state = $state(flow.getSnapshot()), name = $state(''), field, dialog;
-  function submit() { if (!flow.submit(name)) field?.focus(); }
+  function submit() { if (!flow.submit(name)) field?.reject(); }
   onMount(() => {
     const stop = flow.subscribe(next => {
       state = next;
-      if (next.visible) { name = next.name; tick().then(() => { if (acceptKeyboard()) field?.focus(); }); }
+      if (next.visible) {
+        name = next.name;
+        tick().then(() => {
+          if (!acceptKeyboard()) return;
+          if (next.rejected) field?.reject(); else field?.focus();
+        });
+      }
     });
     const keyboard = event => {
       if (!state.visible || !acceptKeyboard()) return;
