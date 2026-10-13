@@ -76,6 +76,10 @@
   100% { transform: rotate(-360deg); }
 }
 @keyframes hourglass-spin { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+.pixel-control.face.reward-arrival:not(.activated) svg { animation: carita-arrival 400ms ease-out; }
+.pixel-control.face.reward-arrival.hinted:not(.activated) svg { animation: carita-arrival 400ms ease-out, pixel-curiosity 6s steps(2) 400ms infinite; }
+@keyframes carita-arrival { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-6px); } 65% { transform: translateY(2px); } }
 @media (prefers-reduced-motion: reduce) {
+  .pixel-control.face.reward-arrival svg { animation: none !important; }
   .pixel-control.rewind-hourglass.hinted svg, .pixel-control.rewind-hourglass.activated svg { animation: none !important; }
 }

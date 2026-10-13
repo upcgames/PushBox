@@ -2,14 +2,14 @@
   import { onMount } from 'svelte';
   import PixelIcon from '../components/PixelIcon.svelte';
   import { createRewindEntranceDriver, rewindEntranceGeometry } from './rewindEntrance.js';
-  let { root, surface, store, enabled = () => true } = $props();
+  let { root, surface, store, enabled = () => true, kind = 'rewind' } = $props();
   let pose = $state(null), box = $state(null), inset = $state(0);
   onMount(() => {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const driver = createRewindEntranceDriver(store, {
-      enabled, reducedMotion: () => motion.matches,
+      kind, enabled, reducedMotion: () => motion.matches,
       measure(source) {
-        const slot = root.querySelector('[data-action-slot="rewind"]');
+        const slot = root.querySelector(`[data-action-slot="${kind}"]`);
         const frame = root.querySelector('.console-frame');
         if (!slot || !frame || !surface.canvas.isConnected) return null;
         const canvas = surface.canvas.getBoundingClientRect(), destination = slot.getBoundingClientRect();
@@ -33,7 +33,7 @@
 {#if pose}
   <div class="hourglass-flight" aria-hidden="true" style:left={`${pose.x}px`} style:top={`${pose.y}px`}
     style:width={`${pose.size}px`} style:height={`${pose.size}px`}
-    style:transform={`translate(-50%, -50%) rotate(${pose.rotation}deg)`}><PixelIcon name="hourglass" /></div>
+    style:transform={`translate(-50%, -50%) rotate(${pose.rotation}deg)`}><PixelIcon name={kind === 'troll' ? 'troll' : 'hourglass'} /></div>
   <div class="caja-glow" aria-hidden="true" style:left={`${box.x - inset}px`} style:top={`${box.y - inset}px`}
     style:width={`${box.width + inset * 2}px`} style:height={`${box.height + inset * 2}px`} style:opacity={pose.glowOpacity}></div>
 {/if}

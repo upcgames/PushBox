@@ -82,7 +82,7 @@ function observeGame(reader) {
     refreshGame('gameEnded');
     if (readGame === reader) {
       readGame = null;
-      runtimeState.publish({ game: null, playerDrawing: null, playerAnimation: null, trollActive: false }, 'gameExited');
+      runtimeState.publish({ game: null, playerDrawing: null, playerAnimation: null, stepsWarning: null, trollActive: false }, 'gameExited');
     }
   };
 }
@@ -152,6 +152,17 @@ function reportBlockedMove(movement) {
 
 // Observe original routine boundaries, including the complete undo restoration.
 // Terminal effects keep ownership until a fresh attempt draws Bobby again.
+function enterStepsWarning(level, remaining) {
+  refreshGame();
+  const warning = { level, remaining, startedAt: performance.now() };
+  runtimeState.publish({ stepsWarning: warning }, 'stepsWarningChanged');
+  return () => {
+    if (GameState.getSnapshot().stepsWarning?.startedAt === warning.startedAt) {
+      runtimeState.publish({ stepsWarning: null }, 'stepsWarningChanged');
+    }
+  };
+}
+
 function enterPlayerAnimation(name) {
   const scope = { name };
   playerAnimations.push(scope);
@@ -178,11 +189,11 @@ function bindPlayerIdentity(counts) { writePlayerIdentity(counts, GameState.getS
 
 function bindSound(reference) { bindSoundReference(store, reference); }
 function handleAudioInput(key) { return handleAudioKey(store, key); }
-return { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked: () => GameState.getSnapshot().winnerActionsBlocked, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
+return { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, enterStepsWarning, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked: () => GameState.getSnapshot().winnerActionsBlocked, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
 }
 
 const defaultBridge = createRuntimeBridge({ api: GameState, ...runtimeState });
-export const { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked, inputConsumer } = defaultBridge;
+export const { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, enterStepsWarning, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked, inputConsumer } = defaultBridge;
 
 export function boardSnapshot(level, player, steps, lives, sound, arrays, portal, nextLevel, undoPosition, undoPolicy = null) {
   const { Cajas, Paredes, Vacios, Huecos, Cantidades } = arrays;

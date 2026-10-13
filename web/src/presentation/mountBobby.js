@@ -1,5 +1,6 @@
 import { BOBBY_PALETTE, drawBobby, sampleBobby } from './bobby.js';
 import { drawBlockedBobby, BLOCKED_DURATION } from './blockedBobby.js';
+import { drawStepsWarningBobby } from './stepsWarning.js';
 import './bobby.css';
 
 // One presentation owner per console/session. Named runtime scopes hand drawing
@@ -38,7 +39,10 @@ export function mountBobby(surface, store, enabled = () => true) {
     }
     const options = { ...pose, cellSize, background: BOBBY_PALETTE[drawing.background],
       foreground: troll ? pose.foreground : BOBBY_PALETTE[drawing.foreground] };
-    if (blocked && time - blocked.startedAt < BLOCKED_DURATION) {
+    if (state.stepsWarning?.level === state.game.level) {
+      drawStepsWarningBobby(ctx, drawing.x * cellSize, drawing.y * cellSize,
+        time - state.stepsWarning.startedAt, options, reducedMotion.matches);
+    } else if (blocked && time - blocked.startedAt < BLOCKED_DURATION) {
       drawBlockedBobby(ctx, drawing.x * cellSize, drawing.y * cellSize, time - blocked.startedAt, blocked.direction, options, !reducedMotion.matches);
     } else drawBobby(ctx, x - Math.round((pose.width - size) / 2), y + size - pose.height, options);
     if (!reducedMotion.matches) frame = requestAnimationFrame(paint);

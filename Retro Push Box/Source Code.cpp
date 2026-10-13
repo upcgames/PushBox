@@ -4009,7 +4009,7 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 	//cuando se mueva una caja.
 
 	int cantmovs = 0;//cantidad de movientos
-	int costoRegreso = 5;//Nuevo intento: se conserva al pausar, no se guarda en el historial.
+	int costoRegreso = 5;//Regresos consecutivos: se conserva al pausar y vuelve a 5 al moverse.
 	int limiteMovimientos = LimiteDeMovimientos(nivel);
 
 	int opcionmenu;//opcion de menu
@@ -4170,6 +4170,9 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 			}//Sonido de cuando el movil no se mueve
 
 		}//termina la Segunda Posibilidad de Movimiento
+
+		//Un movimiento exitoso (caminar o empujar) inicia una nueva serie de regresos.
+		if (cantmovs > movimientosAntes)costoRegreso = 5;
 
 		//Esta segunda parte de Control de Movimiento contiene  todas las restricciones respecto al portal, y también sera acá donde se use el PintarMovil
 

@@ -14,7 +14,8 @@ export function createGameState(inputCommand = sendInput) {
   let nativeTextReader = null;
   let acceptsNativeText = () => false;
   let state = immutable({ version: 0, inputRequest: null, screen: null, game: null,
-    input: null, playerNames: [], playerDrawing: null, playerAnimation: null, undoHint: false, undoHintSource: null, rewindEntranceActive: false, rewindDiscovery: { visible: false, entrancePending: false }, winnerActionsBlocked: false, trollActive: false, trollReward: { unlocked: false, hinted: false }, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
+    input: null, playerNames: [], playerDrawing: null, playerAnimation: null, stepsWarning: null, undoHint: false, undoHintSource: null, rewindEntranceActive: false, rewindDiscovery: { visible: false, entrancePending: false }, winnerActionsBlocked: false, trollActive: false, trollReward: { unlocked: false, hinted: false }, audio: { muted: false }, console: { cols: 80, rows: 63, tileSize: 14, lines: [] } });
+  state = immutable({ ...state, trollEntrance: { source: null, pending: false, active: false } });
   const listeners = new Map(), subscribers = new Set();
   let sequence = 0;
   const notifications = [];
@@ -76,6 +77,9 @@ export function createGameState(inputCommand = sendInput) {
     publish({ trollReward: { unlocked: true, hinted: false } }, 'trollRewardUsed');
   }
   const api = Object.freeze({ getSnapshot: () => state, subscribe, select, on,
+    setTrollEntrance(next) {
+      if (JSON.stringify(state.trollEntrance) !== JSON.stringify(next)) publish({ trollEntrance: next }, 'trollEntranceChanged');
+    },
     setUndoHint(hinted, source = null) {
       const undoHintSource = hinted ? source : null;
       if (state.undoHint !== !!hinted || JSON.stringify(state.undoHintSource ?? null) !== JSON.stringify(undoHintSource)) {

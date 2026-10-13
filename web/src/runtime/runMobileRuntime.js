@@ -14,7 +14,7 @@ export async function runMobileRuntime(runtime, { settings, configure, runAnim, 
   }
   while (true) {
     await startRuntime(runtime, { entry, configure, runAnim });
-    setPlayerNames(await opening.begin());
+    setPlayerNames(await opening.begin({ afterExit: true }));
     configure({ skipIntro: true, startLevel: 0 }); entry = 'main';
   }
 }

@@ -30,6 +30,8 @@ index.html / scene-viewer.html / map-viewer.html  (Vite 8)
 - **Animation driver** — `src/animationDriver.js` (`runAnim` + `CELL_PAINT_COST`) drives `async function*` generators produced from C++ functions that used `Sleep`/`yield`. `GIF(matriz, ya, yb, xa, xb, …)` is the blitting primitive.
 - **Transpile** — `modules_manifest.txt` assigns functions to modules (`#animation`/`#gallery` tags); `scripts/build_pushbox_modules.py` extracts, `scripts/ast_transpiler.py` + `scripts/transpile_modules.py` (via `scripts/dag.py`) emit the two generated trees and validate with `node --check`.
 
+Web audio uses the committed MP3 files in `public/audio/`. Generation validates them and writes the preload manifest; it does not copy or convert audio. Transpilation emits direct `.mp3` sound requests, while the canonical C++ and its WAV files remain in `Retro Push Box/`.
+
 ## Working Directions
 
 - **Prefer not to edit `Source Code.cpp`** — treat it as frozen source of truth. Fixes to logic should go through the transpile layer when possible; only patch the C++ file for canonical data bugs (e.g., matrix dimension fixes) and re-extract.

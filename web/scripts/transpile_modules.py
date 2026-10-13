@@ -4,6 +4,7 @@ import shutil
 import sys
 import subprocess
 from ast_transpiler import CppToJsAST
+from audio_resources import web_audio_source
 from dag import resolve_async_functions, detect_called_functions, check_circular_dependencies
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -127,7 +128,7 @@ def transpile_cpp_file(cpp_path, all_async_funcs, output_dir, generator_funcs=No
     # Apply extracted asset replacements before AST parsing
     for k, v in asset_replacements.items():
         code = code.replace(k, v)
-    js_code = CppToJsAST().parse(code, all_async_funcs=all_async_funcs, generator_funcs=generator_funcs)
+    js_code = CppToJsAST().parse(web_audio_source(code), all_async_funcs=all_async_funcs, generator_funcs=generator_funcs)
 
     # For generated/main, keep it as async (await runAnim) not async function* (yield*) for two-driver model
     if output_dir.endswith('/generated') and current_mod_name == 'main.js' and 'export async function* main' in js_code:

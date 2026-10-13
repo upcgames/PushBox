@@ -490,6 +490,32 @@ test('capped undo leaves one step, then blocks despite retained history without 
   assert.equal(result.lives.v, 5, 'Undo cannot spend the last step');
 });
 
+test('only five stored moves can rewind, charging 5 through 25 consecutively', async () => {
+  const result = await runtime([...walks(7), 'r', 'r', 'r', 'r', 'r', 'r', 'c', 'c', 'c'], undoBoard());
+  for (const [steps, cost, depth] of [[7, 5, 5], [12, 10, 4], [22, 15, 3], [37, 20, 2], [57, 25, 1], [82, 30, 0]]) {
+    assert.ok(result.snapshots.some(({ game }) => game.steps === steps && game.nextUndoCost === cost && game.undoDepth === depth));
+  }
+  assert.equal(result.snapshots.findLast(({ game }) => game.steps === 82).game.undoAvailable, false);
+  assert.equal(result.sounds.filter(sound => sound === 'undo:2').length, 1);
+});
+
+test('successful walking or pushing resets the consecutive rewind price to five', async () => {
+  const walking = await runtime(['a', 'd', 'a', 'r', 'r', 'a', 'r', 'c', 'c', 'c'], undoBoard());
+  assert.ok(walking.snapshots.some(({ game }) => game.steps === 19 && game.nextUndoCost === 5));
+  assert.ok(walking.snapshots.some(({ game }) => game.steps === 24 && game.nextUndoCost === 10));
+  const board = undoBoard(); board.Cajas[1][0] = [34, 34];
+  const pushing = await runtime(['d', 'd', 'r', 'r', 'a', 'r', 'c', 'c', 'c'], board);
+  assert.ok(pushing.snapshots.some(({ game }) => game.steps === 18 && game.nextUndoCost === 5 && game.board.boxes[0].x === 32));
+  assert.ok(pushing.snapshots.some(({ game }) => game.steps === 23 && game.nextUndoCost === 10 && game.board.boxes[0].x === 34));
+});
+
+test('rejected movement does not reset the consecutive rewind price', async () => {
+  const board = undoBoard(); board.Paredes[1] = [[36, 32]]; board.Cantidades[1][1] = 1;
+  const result = await runtime(['a', 'd', 'a', 'r', 'w', 'r', 'c', 'c', 'c'], board);
+  assert.ok(result.snapshots.some(({ game }) => game.steps === 18 && game.nextUndoCost === 15));
+  assert.ok(result.events.some(event => event.type === 'movementBlocked'));
+});
+
 test('warning fires once when walking or undo crosses below twenty, never on pause redraw', async () => {
   const walking = await runtime([...walks(131), 'p', 'c', 'c', 'c'], undoBoard());
   assert.deepEqual(walking.huds.filter(args => args[4]).map(args => args[2]), [131]);

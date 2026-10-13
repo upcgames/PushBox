@@ -161,15 +161,30 @@ obstacle when available. Mobile Bobby uses it for contained tremble; mobile boar
 feedback uses actual wall obstacles for ripple. The existing `pushBlocked` event
 remains available for desktop push-wall feedback. Neither event depends on audio.
 
+`stepsWarning` observes only the original `CuadroDeVidas` warning branch, with
+its level, remaining counter and start time. The branch's finally block clears
+it, including on reset/errors; game exit also clears it. Mobile Bobby and PASOS
+share the approved amber/red warning and panic tremble through this scope,
+independently of mute. Original sound, waits and desktop drawing stay canonical.
+Portal-lab consumes the shared rendering with an isolated replay clock.
+
 `seenProgress.js` persists encountered features in `pushboxSeen`. Carita is earned
 from three canonical `onTarget` cajas during visible level-4 mobile gameplay.
 `trollReward` exposes unlocked/hinted presentation state; first use marks
 `caritaUsed` so the hint does not return on refresh. Seeing level-4 lore does not
-earn the reward. Inspector panels use independent in-memory progress across
+earn the reward. `trollEntrance` holds the canonical newly placed caja source
+for the first unlock only. The shared rewind driver flies the grin to the carita
+slot, then the shared button gives one small landing bounce. Interruption reveals
+the earned button; saved unlocks never replay the entrance. Inspector persistence
+and entrance overlays remain local to each session. Inspector panels use independent in-memory progress across
 session resets; they do not modify production persistence.
 
 Mobile opening stores `warning` seen only when completed warning advances to
-native names. The shared player profile stores Unicode display names separately
+native names. `warningAlarm.js` owns a preloaded, session-local `alert.mp3` loop
+alongside the original typewriter channel while the warning is visible. Both
+follow shared mute; alarm playback never overwrites canonical audio state and
+stops at name entry, visibility changes, reset and disposal. The shared player
+profile stores Unicode display names separately
 from seen flags. `playerNames` feeds an explicit adapter hook at original
 ControlDeNiveles, after original main initializes Cantidades; supported accented
 characters map to original signed CP850 glyph identifiers. Empty identity leaves

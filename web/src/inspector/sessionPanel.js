@@ -15,6 +15,7 @@ import { setupSessionControls } from '../shell/controllerMount.js';
 import { mountMobileInstructions } from '../presentation/mountMobileInstructions.js';
 import { mountGameplayHud } from '../presentation/mountGameplayHud.js';
 import { setupMobileBoardView } from '../presentation/mobileBoardView.js';
+import { mountSoundButton } from '../presentation/mountSoundButton.js';
 
 export function mountSessionPanel(root, runtimeFactory, routeInput, changed, settingsChanged = () => {}, requestStart,
   { progress = createSeenProgress({ storage: null }) } = {}) {
@@ -28,7 +29,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
         </div>
         <button class="start-btn" disabled>Loading fonts…</button>
       </div>
-      <button class="mute-btn" aria-label="Unmute this preview">🔇</button>
+      <div class="mute-btn"></div>
       <div class="canvas-wrap"><canvas width="1120" height="882"></canvas></div>
     </div>
     <div class="controller-area"></div>`;
@@ -47,7 +48,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
   const changeSkipLore = () => settingsChanged({ skipLore: skipLore.checked });
   startPoint.addEventListener('change', changeStartPoint);
   skipLore.addEventListener('change', changeSkipLore);
-  let session, stopState, stopAudio, stopControls, stopHints, stopHud, instructions, loreView, boardView, bobby, exitCue, trollReward, undoHint, rewindDiscovery, rewindEntrance, opening, ready, running = false, disposed = false;
+  let session, stopState, stopAudio, stopControls, stopHints, stopHud, instructions, loreView, boardView, bobby, exitCue, trollReward, undoHint, rewindDiscovery, rewindEntrance, trollEntrance, opening, ready, running = false, disposed = false;
   let framing = 'walls';
   function teardown() {
     instructions?.dispose();
@@ -59,6 +60,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     undoHint?.dispose();
     rewindDiscovery?.dispose();
     rewindEntrance?.dispose();
+    trollEntrance?.dispose();
     opening?.dispose();
     stopHud?.(); stopState?.(); stopAudio?.(); stopControls?.(); stopHints?.(); session?.dispose();
   }
@@ -76,9 +78,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     exitCue = mountExitCue(session.console, session.state);
     bobby = mountBobby(session.console, session.state);
     stopState = session.state.subscribe(state => { changed(state); });
-    stopAudio = session.state.select(state => state.audio.muted, muted => {
-      mute.textContent = muted ? '🔇' : '🔊'; mute.setAttribute('aria-label', muted ? 'Unmute this preview' : 'Mute this preview');
-    });
+    stopAudio = mountSoundButton(mute, session.state, session.audio);
     const services = { store: session.state, sendInput: routeInput, audio: session.audio };
     stopHud = mountGameplayHud(root, session.state, services);
     instructions = mountMobileInstructions(root, session.state, routeInput);
@@ -86,6 +86,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     stopControls = setupSessionControls(root.querySelector('.controller-area'), services);
     stopHints = setupBoardFeedback(canvas, session.state, { mobile: () => true });
     rewindEntrance = mountRewindEntrance(root, session.console, session.state);
+    trollEntrance = mountRewindEntrance(root, session.console, session.state, undefined, 'troll');
     boardView = setupMobileBoardView(root, session.state, undefined, { surface: session.console });
     boardView.setFraming(framing);
     ready = session.loadAssets(percent => { if (session === current && !disposed) opening.setLoading(percent); }).then(() => {
@@ -107,8 +108,6 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
   }
   const clickStart = () => requestStart ? requestStart() : start();
   startButton.addEventListener('click', clickStart);
-  const toggleMute = () => session.audio.setWebMuted(!session.state.getSnapshot().audio.muted);
-  mute.addEventListener('click', toggleMute);
   initialize();
   return {
     start, reset: initialize,
@@ -124,7 +123,6 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     getSession: () => session,
     dispose() {
       disposed = true; teardown(); startButton.removeEventListener('click', clickStart);
-      mute.removeEventListener('click', toggleMute);
       startPoint.removeEventListener('change', changeStartPoint);
       skipLore.removeEventListener('change', changeSkipLore);
     },

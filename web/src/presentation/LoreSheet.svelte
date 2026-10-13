@@ -6,7 +6,7 @@
   let { level, ready = true, rewardSeen = false, onContinue } = $props();
   let canvas;
   const captions = [null, 'Haz que cada movimiento cuente', 'Te reto a pisar la casilla blanca',
-    '¿Y si esa caja sirve para algo más?', 'Coloca tres cajas y gana la carita',
+    '¿Y si esa caja sirve para algo más?', 'Presiona la carita si necesitas ayuda',
     'Hay paredes que esconden un secreto'];
   onMount(() => {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');

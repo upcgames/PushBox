@@ -10,7 +10,6 @@ web/dist/
 web/pushbox_modules/
 web/src/generated/
 web/src/generated_anim/
-web/public/audio/
 web/public/pushbox_modules/
 
 # Old root artifacts (Cleaned)

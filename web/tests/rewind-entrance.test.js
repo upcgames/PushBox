@@ -4,6 +4,7 @@ import { sampleRewindEntrance, createRewindEntranceDriver, rewindEntranceGeometr
 import { createGameState } from '../src/state/gameState.js';
 import { createSeenProgress } from '../src/state/seenProgress.js';
 import { mountRewindDiscovery } from '../src/presentation/rewindDiscovery.js';
+import { mountTrollReward } from '../src/presentation/trollReward.js';
 
 const geometry = { x: 82, y: 108, top: 38, right: 324, endX: 298, endY: 333 };
 test('canonical coordinates map through canvas zoom and Inspector scaling into the actual slot', () => {
@@ -102,4 +103,64 @@ test('reduced motion reveals immediately; previously learned recovery never sche
     learned.reveal(); assert.equal(learned.frames.size, 0);
     assert.equal(learned.store.api.getSnapshot().rewindDiscovery.visible, true);
   } finally { reduced.dispose(); learned.dispose(); }
+});
+
+test('carita uses the third placed caja and the shared entrance, then stays unlocked across interruption and reload', () => {
+  const store = createGameState(() => assert.fail('Entrance cannot send input'));
+  const progress = createSeenProgress({ storage: null });
+  const reward = mountTrollReward(store.api, { progress });
+  const frames = new Map(), sources = [], poses = []; let id = 0;
+  const driver = createRewindEntranceDriver(store.api, {
+    kind: 'troll', hidden: () => false,
+    measure: source => { sources.push(source); return geometry; },
+    render: pose => poses.push(pose), clear() {},
+    requestFrame: fn => { frames.set(++id, fn); return id; }, cancelFrame: token => frames.delete(token),
+  });
+  const boxes = [0, 1, 2].map(index => ({ index, x: 10 + index * 2, y: 8, onTarget: index < 2 }));
+  const game = { level: 4, nextLevel: 4, board: { boxes } };
+  store.publish({ screen: { id: 'gameplay' }, inputRequest: { kind: 'key', consumer: 'ControlDeMovimiento' }, game });
+  store.publish({ playerAnimation: 'Regresar', game: { ...game, board: { boxes: boxes.map(box => ({ ...box, onTarget: true })) } } });
+  assert.equal(store.api.getSnapshot().trollReward.unlocked, false);
+  store.publish({ playerAnimation: null });
+  assert.equal(store.api.getSnapshot().trollEntrance.active, true);
+  const tick = time => {
+    const [token, callback] = frames.entries().next().value;
+    frames.delete(token); callback(time);
+  };
+  tick(0); tick(1500);
+  assert.deepEqual(sources.at(-1), { level: 4, x: 14, y: 8 });
+  assert.deepEqual(poses.at(-1), sampleRewindEntrance(1500, geometry));
+  tick(2550);
+  assert.equal(store.api.getSnapshot().trollEntrance.active, false);
+  assert.equal(store.api.getSnapshot().trollReward.unlocked, true);
+  assert.equal(frames.size, 0);
+  store.publish({ screen: { id: 'InterfazPausa' } });
+  store.publish({ screen: { id: 'gameplay' } });
+  assert.equal(frames.size, 0);
+  driver.dispose(); reward.dispose();
+  const reloaded = createGameState();
+  const again = mountTrollReward(reloaded.api, { progress });
+  assert.equal(reloaded.api.getSnapshot().trollReward.unlocked, true);
+  assert.equal(reloaded.api.getSnapshot().trollEntrance.pending, false);
+  again.dispose();
+});
+
+test('carita entrance interruption or reduced motion reveals the earned button without another flight', () => {
+  for (const mode of ['pause', 'error', 'reduced']) {
+    const store = createGameState(), frames = new Map(); let id = 0;
+    const driver = createRewindEntranceDriver(store.api, {
+      kind: 'troll', hidden: () => false, reducedMotion: () => mode === 'reduced',
+      measure: () => geometry, render() {}, clear() {},
+      requestFrame: fn => { frames.set(++id, fn); return id; }, cancelFrame: token => frames.delete(token),
+    });
+    store.publish({ screen: { id: 'gameplay' }, game: { level: 4, nextLevel: 4 },
+      trollReward: { unlocked: true, hinted: true }, trollEntrance: { source: { level: 4, x: 14, y: 8 }, pending: true, active: false } });
+    const [token, callback] = frames.entries().next().value; frames.delete(token); callback(0);
+    if (mode === 'pause') store.publish({ screen: { id: 'InterfazPausa' } });
+    if (mode === 'error') store.event('runtimeError', {});
+    assert.equal(frames.size, 0);
+    assert.equal(store.api.getSnapshot().trollEntrance.active, false);
+    assert.equal(store.api.getSnapshot().trollReward.unlocked, true);
+    driver.dispose();
+  }
 });

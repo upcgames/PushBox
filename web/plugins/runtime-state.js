@@ -73,6 +73,16 @@ export function runtimeStatePlugin() {
         if (name === 'CuadroDeVidas') {
           insert(fn.body.start + 1, "\nconst _webHud = Console.enterDrawScope('canonical-hud'); try {\n");
           insert(fn.body.end - 1, '\n} finally { _webHud(); }\n');
+          bridgeUsed = true;
+          let warningFound = false;
+          walk(fn.body, node => {
+            if (node.type !== 'IfStatement' || node.test.name !== 'aviso') return;
+            if (node.consequent.type !== 'BlockStatement') throw new Error('Runtime adapter: steps warning branch changed');
+            insert(node.consequent.start + 1, '\nconst _webWarning = enterStepsWarning(nivel, restantes); try {\n');
+            insert(node.consequent.end - 1, '\n} finally { _webWarning(); }\n');
+            warningFound = true;
+          });
+          if (!warningFound) throw new Error('Runtime adapter: steps warning branch missing');
         }
         if (name === 'InterfazCongratulations') {
           // Observe the original prompt section; no copied name-entry logic.
@@ -252,7 +262,7 @@ try {`);
       for (const edit of edits.sort((a, b) => b.start - a.start || b.end - a.end)) {
         source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
       }
-      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, reportBlockedPush, reportBlockedMove, bindSound, reportPlayerDraw, enterPlayerAnimation, bindPlayerIdentity } from '../state/runtimeBridge.js';\n" : '';
+      const imports = bridgeUsed ? "import { observeGame, boardSnapshot, enterScreen, observeAwait, enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, reportBlockedPush, reportBlockedMove, bindSound, reportPlayerDraw, enterPlayerAnimation, enterStepsWarning, bindPlayerIdentity } from '../state/runtimeBridge.js';\n" : '';
       const undoImport = movementFound ? "import { RegresosDisponibles } from './world_logic.js';\n" : '';
       return { code: imports + undoImport + source, map: null };
     },

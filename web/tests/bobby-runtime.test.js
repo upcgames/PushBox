@@ -8,6 +8,7 @@ import { createGameState } from '../src/state/gameState.js';
 import { createRuntimeBridge } from '../src/state/runtimeBridge.js';
 import { drawBlockedBobby, BLOCKED_DURATION } from '../src/presentation/blockedBobby.js';
 import { drawBobby, sampleBobby } from '../src/presentation/bobby.js';
+import { drawStepsWarningBobby } from '../src/presentation/stepsWarning.js';
 import { VirtualConsole } from '../src/shims/consoleSurface.js';
 
 const require = createRequire(import.meta.resolve('eslint'));
@@ -117,7 +118,7 @@ test('shared mobile layer yields to canonical phases, pause and disposal', () =>
   const surface = { tileSize: 14, canvas: { width: 1120, height: 882, parentElement: { append() {} } },
     setPlayerHidden: value => hidden.push(value) };
   let sequence = 0;
-  const sandbox = vm.createContext({ drawBobby, sampleBobby, drawBlockedBobby, BLOCKED_DURATION,
+  const sandbox = vm.createContext({ drawBobby, sampleBobby, drawBlockedBobby, BLOCKED_DURATION, drawStepsWarningBobby,
     BOBBY_PALETTE: ['#000000', '#ffffff'], performance: { now: () => 500 },
     document: { hidden: false, createElement: () => canvas,
       addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name) },
@@ -147,6 +148,12 @@ test('shared mobile layer yields to canonical phases, pause and disposal', () =>
   assert.equal(images.at(-1).width, 26, 'A still contracts during its 70 ms settle');
   tick(660);
   assert.equal(images.at(-1).height, sampleBobby(660).height, 'A resumes the shared idle after 160 ms');
+  const leaveWarning = bridge.enterStepsWarning(1, 19);
+  const warningStart = store.api.getSnapshot().stepsWarning.startedAt;
+  tick(warningStart + 35);
+  assert.deepEqual(images.at(-1), { x: 38 * 14 + 4, y: 32 * 14 - 3, width: 28, height: 28 }, 'Warning uses approved fixed-size panic jolts at the current position');
+  leaveWarning();
+  assert.equal(store.api.getSnapshot().stepsWarning, null);
   for (const name of ['Regresar', 'Teletransporte', 'PintarMuerte']) {
     const leave = bridge.enterPlayerAnimation(name);
     assert.equal(hidden.at(-1), false);

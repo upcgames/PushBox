@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import PixelIcon from './PixelIcon.svelte';
   onDestroy(clearHold);
-  let { verticalOnly = false, facelift = false, onDir, initialDelay = 320, repeatDelay = 320 } = $props();
+  let { horizontalDisabled = false, facelift = false, onDir, initialDelay = 320, repeatDelay = 320 } = $props();
   let activeDir = $state(null);
   let shellEl;
   let holdTimeout = null;
@@ -40,10 +40,7 @@
     else if (angle >= 45 && angle < 135) dir = 's';
     else if (angle >= -135 && angle < -45) dir = 'w';
     else dir = 'a';
-    if (verticalOnly) {
-      if (dir === 'w' || dir === 's') return dir;
-      return dy < 0 ? 'w' : 's';
-    }
+    if (horizontalDisabled && (dir === 'a' || dir === 'd')) return null;
     return dir;
   }
   function handlePointerDown(e) {
@@ -88,20 +85,14 @@
   onpointerup={handlePointerUp}
   onpointercancel={handlePointerUp}
   role="application"
-  aria-label={verticalOnly ? 'Menu navigation' : 'Dpad'}
+  aria-label={horizontalDisabled ? 'Menu navigation' : 'Dpad'}
 >
-  <div class="dpad-grid" class:vertical-only={verticalOnly}>
-    {#if !verticalOnly}
+  <div class="dpad-grid">
       <button class="dpad-btn up" class:active={activeDir==='w'} tabindex="-1" aria-label="Up">{#if facelift}<PixelIcon name="direction" />{:else}▲{/if}</button>
-      <button class="dpad-btn left" class:active={activeDir==='a'} tabindex="-1" aria-label="Left">{#if facelift}<PixelIcon name="direction" />{:else}◀{/if}</button>
+      <button class="dpad-btn left" class:active={activeDir==='a'} disabled={horizontalDisabled} tabindex="-1" aria-label="Left">{#if facelift}<PixelIcon name="direction" />{:else}◀{/if}</button>
       <div class="dpad-center"></div>
-      <button class="dpad-btn right" class:active={activeDir==='d'} tabindex="-1" aria-label="Right">{#if facelift}<PixelIcon name="direction" />{:else}▶{/if}</button>
+      <button class="dpad-btn right" class:active={activeDir==='d'} disabled={horizontalDisabled} tabindex="-1" aria-label="Right">{#if facelift}<PixelIcon name="direction" />{:else}▶{/if}</button>
       <button class="dpad-btn down" class:active={activeDir==='s'} tabindex="-1" aria-label="Down">{#if facelift}<PixelIcon name="direction" />{:else}▼{/if}</button>
-    {:else}
-      <button class="dpad-btn up" class:active={activeDir==='w'} tabindex="-1" aria-label="Up">{#if facelift}<PixelIcon name="direction" />{:else}▲{/if}</button>
-      <div class="dpad-center vertical"></div>
-      <button class="dpad-btn down" class:active={activeDir==='s'} tabindex="-1" aria-label="Down">{#if facelift}<PixelIcon name="direction" />{:else}▼{/if}</button>
-    {/if}
   </div>
 </div>
 
@@ -127,10 +118,6 @@
   }
   .dpad-grid .up { grid-column: 2; grid-row: 1; }
   .dpad-grid .down { grid-column: 2; grid-row: 3; }
-  .dpad-grid.vertical-only { grid-template-columns: 62px; }
-  .dpad-grid.vertical-only .up,
-  .dpad-grid.vertical-only .down,
-  .dpad-grid.vertical-only .dpad-center { grid-column: 1; }
   :global(.dpad-grid) .left { grid-column: 1; grid-row: 2; }
   :global(.dpad-grid) .right { grid-column: 3; grid-row: 2; }
   .dpad-center {
@@ -138,13 +125,6 @@
     width: 62px; height: 62px;
     background: var(--card-bg);
     border: none;
-  }
-  .dpad-center.vertical {
-    border-left: 1px solid var(--accent);
-    border-right: 1px solid var(--accent);
-    border-top: none;
-    border-bottom: none;
-    box-sizing: border-box;
   }
   .dpad-btn {
     width: 62px; height: 62px;
@@ -164,10 +144,10 @@
   .dpad-btn.left { border-radius: 12px 0 0 12px; border-right: none; }
   .dpad-btn.right { border-radius: 0 12px 12px 0; border-left: none; }
   .dpad-btn.active { background: var(--accent); color: #0a0f1e; filter: brightness(1.15); }
+  .dpad-btn:disabled { opacity: .45; cursor: default; }
   .facelift { padding: 0; margin: 0; }
   .facelift .dpad-btn { background: #334155; color: #fff0ba; border: 0; border-radius: 0; box-shadow: inset 3px 3px #64748b, inset -3px -3px #182333, 0 4px #000; }
   .facelift .dpad-center { background: #334155; }
-  .facelift .dpad-center.vertical { border: 0; }
   .facelift .dpad-btn.active { background: #64748b; box-shadow: inset 3px 3px #182333, inset -3px -3px #64748b; }
   .facelift :global(svg) { width: 28px; height: 28px; fill: currentColor; shape-rendering: crispEdges; }
   .facelift .left :global(svg) { transform: rotate(-90deg); }

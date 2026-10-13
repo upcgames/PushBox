@@ -15,15 +15,20 @@ import { drawBobby, sampleBobby } from '../presentation/bobby.js';
 import { mountOpeningSimulation } from './openingSimulation.js';
 import { mountControlStudies } from './controlStudies.js';
 import RewindEntrancePreview from './RewindEntrancePreview.svelte';
+import StepsWarningPreview from './StepsWarningPreview.svelte';
 
 import { INSPECTOR_DEVICES, deviceViewportMarkup, sizeDevicePreview } from '../inspector/deviceViewport.js';
 
 
 const stopSharedPreviews = mountSharedPreviews(document.querySelector('#agreed-panel'));
 const stopControlStudies = mountControlStudies(document.querySelector('#control-studies'));
+const stepsWarning = mount(StepsWarningPreview, { target: document.querySelector('#steps-warning-preview') });
+if (import.meta.hot) import.meta.hot.dispose(() => unmount(stepsWarning));
 if (import.meta.hot) import.meta.hot.dispose(() => { stopSharedPreviews(); stopControlStudies(); });
 const rewindEntrances = [...document.querySelectorAll('[data-rewind-entrance]')].map(host =>
   mount(RewindEntrancePreview, { target: host }));
+const trollEntrance = mount(RewindEntrancePreview, { target: document.querySelector('[data-troll-entrance]'), props: { kind: 'troll' } });
+if (import.meta.hot) import.meta.hot.dispose(() => unmount(trollEntrance));
 if (import.meta.hot) import.meta.hot.dispose(() => rewindEntrances.forEach(instance => unmount(instance)));
 
 const lorePreviews = [];

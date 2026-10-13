@@ -11,7 +11,7 @@ export function mountControlStudies(root) {
     <article><h2>Pause / Main-menu navigation</h2><div class="control-study">
       <div class="runtime-menu-controls"></div>
       <p class="control-readout" aria-live="polite">Tap a control</p>
-    </div><p>Up/down and Select, matching the existing pause and main-menu input. This previews controls, not a replacement pause scene.</p></article>
+    </div><p>Full shared D-pad with Left and Right disabled, plus Select, matching pause and main-menu input. This previews controls, not a replacement pause scene.</p></article>
     <article><h2>Continue</h2><div class="control-study simple-controls">${continueButton({ action: 'Continue' })}<p class="control-readout" aria-live="polite">Tap a control</p></div><p>For confirmations and scenes that still use a separate control area. Full-screen instructions keep their in-screen Continue.</p></article>
     <article><h2>Winner actions</h2><div class="control-study simple-controls"><div class="runtime-winner-controls"></div><p class="control-readout" aria-live="polite">Tap a control</p></div><p>Actions around the original ending: native name entry or Exit. No winner-screen redesign.</p></article>
   </section>`;

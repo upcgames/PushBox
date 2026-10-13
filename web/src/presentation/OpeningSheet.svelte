@@ -4,21 +4,29 @@
   import DestinationModal from './DestinationModal.svelte';
   import PixelButton from '../components/PixelButton.svelte';
   import ContinueButton from '../components/ContinueButton.svelte';
+  import SoundButton from '../components/SoundButton.svelte';
+  import CurtainScene from './CurtainScene.svelte';
   import { drawTitle } from './titleArt.js';
   import linkData from '../../pushbox_modules/maps_json/LinkSprite.json';
   import warningData from '../../pushbox_modules/maps_json/Warning.json';
   import { BOBBY_PALETTE } from './bobby.js';
   import './mobileOpening.css';
-  let { flow, enabled = () => true, acceptKeyboard = enabled, onMute = () => {} } = $props();
+  let { flow, store = null, enabled = () => true, acceptKeyboard = enabled, onMute = () => {} } = $props();
   let state = $state(flow.getSnapshot()), title, link, heading, alien, input;
   let name = $state('');
+  let curtainPhase = $state('open');
   const parts = [];
   let offset = 0;
   for (const text of state.message.split(/(\s+)/u)) { parts.push({ text, offset }); offset += text.length; }
   const ready = $derived(state.phase === 'loading' ? state.ready : state.phase === 'complete' ? false : state.phase !== 'typing' || state.seen);
   function continueOpening() {
+    if (curtainPhase !== 'open') return;
     if (state.phase === 'name') { if (!flow.submit(name)) input?.reject(); }
     else flow.continue();
+  }
+  function opened() {
+    curtainPhase = 'open';
+    flow.pause(document.hidden);
   }
   function warningArt() {
     if (!heading || !alien) return;
@@ -39,9 +47,16 @@
   });
   onMount(() => {
     let frame = null;
+    let previousPhase = null;
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const stop = flow.subscribe(next => {
       state = next;
+      if (next.phase === 'typing' && previousPhase !== 'typing') {
+        curtainPhase = 'entering';
+        flow.pause(true);
+      } else if (next.phase === 'blackout') curtainPhase = 'closed';
+      else if (['loading', 'hidden', 'complete'].includes(next.phase)) curtainPhase = 'open';
+      previousPhase = next.phase;
       if (next.phase !== 'loading') { cancelAnimationFrame(frame); frame = null; }
       else if (frame === null && !document.hidden) frame = requestAnimationFrame(tick);
     });
@@ -64,6 +79,7 @@
       if (state.destinationOpen) return;
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       event.stopImmediatePropagation();
+      if (curtainPhase !== 'open') { event.preventDefault(); return; }
       if (event.target?.closest?.('button') && (event.key === 'Enter' || event.key === ' ')) return;
       if (event.target?.closest?.('input')) {
         if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); continueOpening(); }
@@ -73,7 +89,7 @@
       else if (event.key.toLowerCase() === 'f') onMute();
     }
     const visibility = () => {
-      flow.pause(document.hidden);
+      flow.pause(document.hidden || curtainPhase === 'entering');
       if (!document.hidden && state.phase === 'loading' && frame === null) frame = requestAnimationFrame(tick);
     };
     window.addEventListener('keydown', keyboard, true);
@@ -82,7 +98,11 @@
   });
 </script>
 
+<CurtainScene phase={curtainPhase} onEntered={opened}>
 <div class="opening-sheet">
+  {#if store && (state.phase !== 'loading' || state.ready)}
+    <div class="opening-sound"><SoundButton {store} onToggle={onMute} /></div>
+  {/if}
   {#if state.phase === 'loading'}
     <div class="opening-loading">
       <canvas bind:this={title} class="opening-title" width="256" height="112" aria-label="PushBox"></canvas>
@@ -116,3 +136,4 @@
     <DestinationModal destinations={state.destinations} onChoose={flow.chooseDestination} onClose={flow.closeDestinations} {acceptKeyboard} />
   {/if}
 </div>
+</CurtainScene>

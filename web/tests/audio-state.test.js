@@ -21,9 +21,12 @@ test('all canonical sound requests match the generated manifest and asset casing
   const sounds = readFileSync(new URL('../src/generated/sounds.js', import.meta.url), 'utf8');
   const source = readdirSync(new URL('../../Retro Push Box/', import.meta.url));
   const served = readdirSync(new URL('../public/audio/', import.meta.url));
-  for (const match of sounds.matchAll(/TEXT\("([^"]+\.wav)"\)/g)) {
+  assert.doesNotMatch(sounds, /\.wav/);
+  assert.ok(!served.some(file => file.endsWith('.wav')));
+  assert.equal(served.filter(file => file.endsWith('.mp3')).length, AUDIO_FILES.length);
+  for (const match of sounds.matchAll(/TEXT\("([^"]+\.mp3)"\)/g)) {
     assert.ok(AUDIO_FILES.includes(match[1]), match[1]);
-    assert.ok(source.includes(match[1]), match[1]);
+    assert.ok(source.includes(match[1].replace(/\.mp3$/, '.wav')), match[1]);
     assert.ok(served.includes(match[1]), match[1]);
   }
   assert.equal(CONGRATULATIONS_MUSIC, sounds.match(/function MusicaCongratulations\(\)[\s\S]*?TEXT\("([^"]+)"\)/)[1]);
@@ -31,8 +34,8 @@ test('all canonical sound requests match the generated manifest and asset casing
 
 test('endurecimiento replaces the final placement bell on the canonical single channel', () => {
   const store = createGameState(), { audio, tracks } = channel(store);
-  audio.play('Coin02.wav', null, 1);
-  audio.play('Endurecimiento.wav', null, 1);
+  audio.play('Coin02.mp3', null, 1);
+  audio.play('Endurecimiento.mp3', null, 1);
   assert.equal(tracks[0].paused, true);
   assert.equal(audio.getCurrentAudio(), tracks[1]);
   assert.equal(tracks[1].paused, false);
@@ -49,19 +52,19 @@ test('UI mute, canonical sound references and every playback type use the same s
   store.publish({ game: { sound: true } });
   const history = [];
   const stop = store.api.select(state => state.audio.muted, muted => history.push(muted));
-  audio.play('PuedeRe.wav', null, 1);
+  audio.play('PuedeRe.mp3', null, 1);
   audio.setWebMuted(true);
   assert.equal(tracks[0].volume, 0);
   assert.equal(sound.v, false);
   assert.equal(store.api.getSnapshot().game.sound, false);
-  audio.play('TypeWriter1.wav', null, 8);
+  audio.play('TypeWriter1.mp3', null, 8);
   assert.equal(tracks[1].loop, true);
   assert.equal(tracks[1].volume, 0);
   assert.equal(tracks[0].paused, true);
   audio.setWebMuted(false);
   assert.equal(sound.v, true);
   assert.equal(tracks[1].volume, 1);
-  audio.play('movf.wav', null, 1);
+  audio.play('movf.mp3', null, 1);
   assert.equal(tracks[2].volume, 1, 'Unmute cannot leave movement disabled');
   sound.v = 0;
   assert.equal(audio.isWebMuted(), true);
@@ -84,7 +87,7 @@ test('sessions isolate audio, troll choice avoids repeats, and muted playback ne
   one.ended = true;
   const two = first.audio.playTrollSound();
   assert.notEqual(one.src, two.src);
-  second.audio.play('movf.wav', null, 1);
+  second.audio.play('movf.mp3', null, 1);
   first.audio.setWebMuted(false); first.audio.setWebMuted(true);
   assert.equal(second.tracks[0].volume, 1);
   assert.equal(b.api.getSnapshot().audio.muted, false);

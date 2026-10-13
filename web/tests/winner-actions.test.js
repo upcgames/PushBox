@@ -31,7 +31,7 @@ function fixture({ muted = false, createAudio } = {}) {
 test('Winner actions wait for animation and music; early keyboard/UI commands are discarded', async () => {
   const view = fixture();
   try {
-    view.audio.play('YouWinMetal.wav'); view.platform.sendInput('e');
+    view.audio.play('YouWinMetal.mp3'); view.platform.sendInput('e');
     assert.equal(view.platform.shims._kbhit(), 0);
     view.ready(); assert.equal(view.blocked(), true);
     assert.equal(selectControlMode(view.store.api.getSnapshot()), 'none', 'Actions stay hidden while music plays');
@@ -49,7 +49,7 @@ test('Winner actions wait for animation and music; early keyboard/UI commands ar
 test('mute/unmute while animating or waiting recomputes readiness; F remains immediate', () => {
   const view = fixture({ muted: true });
   try {
-    view.audio.play('YouWinMetal.wav'); assert.equal(view.blocked(), true);
+    view.audio.play('YouWinMetal.mp3'); assert.equal(view.blocked(), true);
     view.ready(); assert.equal(view.blocked(), false);
     view.platform.sendInput('f'); assert.equal(view.blocked(), true);
     assert.equal(view.platform.shims._kbhit(), 0);
@@ -64,13 +64,13 @@ test('mute/unmute while animating or waiting recomputes readiness; F remains imm
 test('errors and interruptions release the wait; old events cannot unlock a replay or another session', () => {
   const view = fixture(), other = fixture();
   try {
-    view.ready(); other.ready(); view.audio.play('YouWinMetal.wav'); other.audio.play('YouWinMetal.wav');
+    view.ready(); other.ready(); view.audio.play('YouWinMetal.mp3'); other.audio.play('YouWinMetal.mp3');
     const old = view.tracks[0]; old.dispatchEvent(new Event('error')); assert.equal(view.blocked(), false);
-    view.audio.play('YouWinMetal.wav'); old.dispatchEvent(new Event('ended')); old.dispatchEvent(new Event('error'));
+    view.audio.play('YouWinMetal.mp3'); old.dispatchEvent(new Event('ended')); old.dispatchEvent(new Event('error'));
     assert.equal(view.blocked(), true); assert.equal(other.blocked(), true);
     view.tracks[1].pause(); assert.equal(view.blocked(), false);
-    view.audio.play('YouWinMetal.wav'); view.audio.stop(); assert.equal(view.blocked(), false);
-    view.audio.play('YouWinMetal.wav'); view.audio.play('TypeWriter1.wav'); assert.equal(view.blocked(), false);
+    view.audio.play('YouWinMetal.mp3'); view.audio.stop(); assert.equal(view.blocked(), false);
+    view.audio.play('YouWinMetal.mp3'); view.audio.play('TypeWriter1.mp3'); assert.equal(view.blocked(), false);
   } finally { view.dispose(); other.dispose(); }
 });
 
@@ -81,10 +81,10 @@ test('autoplay rejection releases the wait; a stale rejection cannot settle a ne
   }) });
   const warn = console.warn; console.warn = () => {};
   try {
-    view.ready(); view.audio.play('YouWinMetal.wav'); reject(new Error('blocked'));
+    view.ready(); view.audio.play('YouWinMetal.mp3'); reject(new Error('blocked'));
     await Promise.resolve(); assert.equal(view.blocked(), false);
-    view.audio.play('YouWinMetal.wav'); const rejectOld = reject;
-    view.audio.play('YouWinMetal.wav'); rejectOld(new Error('late rejection'));
+    view.audio.play('YouWinMetal.mp3'); const rejectOld = reject;
+    view.audio.play('YouWinMetal.mp3'); rejectOld(new Error('late rejection'));
     await Promise.resolve(); assert.equal(view.blocked(), true);
     reject(new Error('current rejection')); await Promise.resolve(); assert.equal(view.blocked(), false);
   } finally { console.warn = warn; view.dispose(); }
@@ -93,13 +93,13 @@ test('autoplay rejection releases the wait; a stale rejection cannot settle a ne
 test('desktop, native name entry, runtime errors and disposal do not retain the gate', () => {
   const view = fixture();
   try {
-    view.audio.play('YouWinMetal.wav'); view.ready(); view.enable(false); assert.equal(view.blocked(), false);
+    view.audio.play('YouWinMetal.mp3'); view.ready(); view.enable(false); assert.equal(view.blocked(), false);
     view.enable(true); assert.equal(view.blocked(), true);
     const leaveNames = view.bridge.enterInput({ consumer: 'InterfazCongratulations', kind: 'text', native: true });
     assert.equal(view.blocked(), false); leaveNames(); assert.equal(view.blocked(), true);
     view.store.event('runtimeError', {}); assert.equal(view.blocked(), false);
     view.store.publish({ screen: { id: 'launcher' }, inputRequest: null }); assert.equal(view.blocked(), false);
     view.store.publish({ screen: { id: 'InterfazCongratulations' }, inputRequest: null }); assert.equal(view.blocked(), true);
-    view.gate.dispose(); view.audio.play('YouWinMetal.wav'); assert.equal(view.blocked(), false);
+    view.gate.dispose(); view.audio.play('YouWinMetal.mp3'); assert.equal(view.blocked(), false);
   } finally { view.dispose(); }
 });

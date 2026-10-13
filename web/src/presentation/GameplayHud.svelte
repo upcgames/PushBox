@@ -1,6 +1,6 @@
 <script>
   import PixelButton from '../components/PixelButton.svelte';
-  let { lives, remaining, muted = false, paused = false, canResume = false, jolt = 0, onMute, onPause } = $props();
+  let { lives, remaining, muted = false, paused = false, canResume = false, jolt = 0, warning = null, onMute, onPause } = $props();
 </script>
 
   <div class="game-hud" class:critical={remaining !== null && remaining < 20}>
@@ -9,8 +9,8 @@
         <span class:lost={index >= lives} aria-hidden="true">♥</span>
       {/each}
     </span>
-    {#key jolt}
-      <span class="steps" class:jolt={jolt > 0} aria-label={remaining === null ? 'Movimientos' : `${remaining} movimientos restantes`}>
+    {#key `${jolt}:${warning?.startedAt ?? ''}`}
+      <span class="steps" class:jolt={jolt > 0 && !warning} class:warning={!!warning} aria-label={remaining === null ? 'Movimientos' : `${remaining} movimientos restantes`}>
         <small>PASOS</small><strong>{remaining === null ? '—' : String(remaining).padStart(3, '0')}</strong>
       </span>
     {/key}
@@ -32,6 +32,8 @@
   .critical { border-color: #991b1b; }
   .critical .steps { color: #ef4444; }
   .jolt { animation: hud-jolt 420ms steps(1); }
+  .critical .steps.warning { transform-origin: center; animation: steps-warning 600ms steps(1) infinite; }
+  @keyframes steps-warning { 0%, 100% { color: #eab308; transform: scale(1.12); } 50% { color: #ef4444; transform: none; } }
   @keyframes hud-jolt { 0%, 40% { transform: translate(-3px, 2px); } 20%, 60% { transform: translate(3px, -2px); } 80% { transform: translate(-1px, 0); } 100% { transform: none; } }
-  @media (prefers-reduced-motion: reduce) { .jolt { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .jolt { animation: none; } .critical .steps.warning { animation: none; color: #eab308; transform: none; } }
 </style>

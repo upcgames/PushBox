@@ -29,9 +29,9 @@ test: scripts/test_transpiler.py scripts/dag.py scripts/ast_transpiler.py
 # Always validate resources: additions, removals and case-only renames must not
 # be missed by a timestamp stamp. This also produces the preload manifest.
 audio:
-	$(PYTHON) scripts/copy_resources.py
+	$(PYTHON) scripts/audio_resources.py
 
-$(JS_STAMP): $(MODULES_STAMP) scripts/transpile_modules.py scripts/ast_transpiler.py scripts/dag.py
+$(JS_STAMP): $(MODULES_STAMP) scripts/transpile_modules.py scripts/ast_transpiler.py scripts/dag.py scripts/audio_resources.py
 	$(PYTHON) scripts/transpile_modules.py
 	touch $(JS_STAMP)
 	touch $(ANIM_STAMP)

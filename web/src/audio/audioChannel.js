@@ -1,6 +1,6 @@
 import { setAudioMuted } from './audioState.js';
 
-const TROLL_FILES = ['Sabe.wav', 'Terroristas.wav', 'Despierta.wav', 'Rbr.wav'];
+const TROLL_FILES = ['Sabe.mp3', 'Terroristas.mp3', 'Despierta.mp3', 'Rbr.mp3'];
 
 // One channel per game/session; all channels use the same implementation.
 export function createAudioChannel(store, { baseUrl = '/', initialMuted = store.api.getSnapshot().audio.muted,

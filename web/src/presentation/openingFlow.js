@@ -9,6 +9,8 @@ export function createOpeningFlow({ progress, profile, audio, onEnter = () => {}
   const listeners = new Set();
   let timer = null, resolveName = null, rejectName = null, disposed = false, playing = false, paused = false;
   let selectedDestination = null;
+  const firstLineEnd = message.includes('\n') ? message.indexOf('\n') : message.length;
+  const characterDelay = position => position < firstLineEnd ? 75 : 60;
   function update(patch) { state = { ...state, ...patch }; for (const listener of listeners) listener(state); }
   function stopAudio() { if (playing) audio.stop(); playing = false; }
   function stopTyping() { cancel(timer); timer = null; stopAudio(); }
@@ -19,20 +21,29 @@ export function createOpeningFlow({ progress, profile, audio, onEnter = () => {}
   function type() {
     timer = null;
     if (disposed || paused || state.phase !== 'typing') return;
-    if (!playing) { audio.play('TypeWriter1.wav', null, 9); playing = true; }
+    if (!playing) { audio.play('TypeWriter1.mp3', null, 9); playing = true; }
     const position = state.position + 1;
     update({ position });
     if (position >= message.length) { stopTyping(); update({ phase: 'warning' }); return; }
     const beat = message.slice(position - 3, position) === '...';
     if (beat) stopAudio();
-    timer = schedule(type, beat ? 1000 : 45);
+    timer = schedule(type, beat ? 1000 : characterDelay(position));
   }
-  function begin() {
+  function revealWarning() {
+    timer = null;
+    if (disposed || paused || state.phase !== 'blackout') return;
+    update({ phase: 'typing' });
+    timer = schedule(type, 750);
+  }
+  function begin({ afterExit = false } = {}) {
     if (disposed) return Promise.reject(new DOMException('Opening stopped', 'AbortError'));
     stopTyping();
-    update({ phase: 'typing', position: 0, seen: progress.has('warning'), name: profile.getNames().join(' ') });
+    // End the outgoing scene's canonical music before the companion alarm
+    // starts. The curtain and typing delay must not leave that track running.
+    audio.stop();
+    update({ phase: afterExit ? 'blackout' : 'typing', position: 0, seen: progress.has('warning'), name: profile.getNames().join(' ') });
     const promise = new Promise((resolve, reject) => { resolveName = resolve; rejectName = reject; });
-    type(); return promise;
+    timer = schedule(afterExit ? revealWarning : type, afterExit ? 2000 : 750); return promise;
   }
   return {
     getSnapshot: () => state,
@@ -73,7 +84,11 @@ export function createOpeningFlow({ progress, profile, audio, onEnter = () => {}
     pause(hidden) {
       paused = hidden;
       if (hidden) stopTyping();
-      else if (state.phase === 'typing') timer = schedule(type, 45);
+      else if (state.phase === 'typing') {
+        cancel(timer);
+        timer = schedule(type, state.position === 0 ? 750 : characterDelay(state.position));
+      }
+      else if (state.phase === 'blackout') { cancel(timer); timer = schedule(revealWarning, 2000); }
     },
     dispose() {
       disposed = true; stopTyping();

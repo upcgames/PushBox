@@ -21,6 +21,9 @@ function fixture(progress = createSeenProgress({ storage: null })) {
 test('first warning cannot skip and becomes seen only when advancing to native name entry', async () => {
   const one = fixture();
   const done = one.flow.begin();
+  assert.equal(one.delays[0], 750);
+  assert.equal(one.flow.getSnapshot().position, 0);
+  assert.deepEqual(one.audio, ['stop'], 'Outgoing music stops; no typing sound before the initial delay');
   one.flow.continue();
   assert.equal(one.flow.getSnapshot().phase, 'typing');
   assert.equal(one.progress.has('warning'), false);
@@ -87,7 +90,8 @@ test('native names feed every supported accent to the original BuscarLetra rende
 test('mobile opening composes before original main and returns to warning on Exit', async () => {
   const calls = [], config = { skipIntro: false, startLevel: 0 }, original = { main: async () => calls.push('main') };
   let visits = 0;
-  const opening = { enabled: () => true, getNames: () => [], begin: async () => {
+  const opening = { enabled: () => true, getNames: () => [], begin: async options => {
+    assert.deepEqual(options, visits === 0 ? undefined : { afterExit: true });
     calls.push('warning');
     if (++visits === 3) throw new DOMException('reset', 'AbortError');
     return ['Ana'];

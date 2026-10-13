@@ -68,3 +68,23 @@ test('scene artwork may overwrite HUD cells; hiding does not mask a fixed consol
   view.surface.SetCursorPosition(0, 10); view.surface.Write('status'); scope();
   assert.ok(view.painted.every(cell => cell.char === ' '), 'Missing terrain uses black fallback');
 });
+
+test('steps warning follows the original warning branch, including mute, reset and errors', async () => {
+  const view = fixture(true, true), other = fixture(true, true);
+  const during = [];
+  view.store.publish({ audio: { muted: true } });
+  view.sandbox.Sleep = async () => during.push(view.store.api.getSnapshot().stepsWarning);
+  await view.sandbox.CuadroDeVidas(1, 5, 131, 0, true);
+  assert.equal(during.length, 25);
+  assert.ok(during.every(warning => warning.level === 1 && warning.remaining === 19));
+  assert.equal(new Set(during.map(warning => warning.startedAt)).size, 1);
+  assert.equal(view.store.api.getSnapshot().stepsWarning, null);
+  assert.equal(other.store.api.getSnapshot().stepsWarning, null);
+  during.length = 0;
+  await view.sandbox.CuadroDeVidas(1, 5, 132, 0, false);
+  assert.equal(during.length, 0, 'Ordinary low-step redraw does not trigger the warning');
+  view.sandbox.Sleep = async () => { throw new Error('reset'); };
+  await assert.rejects(view.sandbox.CuadroDeVidas(1, 5, 131, 0, true), /reset/);
+  assert.equal(view.store.api.getSnapshot().stepsWarning, null);
+  assert.equal(view.surface.drawScope, null);
+});

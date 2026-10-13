@@ -34,41 +34,52 @@ export function sampleRewindEntrance(elapsed, { x, y, top, right, endX, endY, sc
 
 // Presentation lifecycle only: never sends input, pauses the original routine,
 // writes to its canvas, or infers gameplay from pixels.
-export function createRewindEntranceDriver(store, { enabled = () => true, measure, render, clear,
+export function createRewindEntranceDriver(store, { kind = 'rewind', enabled = () => true, measure, render, clear,
   reducedMotion = () => false, hidden = () => document.hidden,
   requestFrame = requestAnimationFrame, cancelFrame = cancelAnimationFrame }) {
   let frame = null, started = null, source = null, disposed = false, failed = false;
+  const troll = kind === 'troll';
+  const request = state => troll ? { entrancePending: state.trollEntrance.pending, source: state.trollEntrance.source }
+    : { entrancePending: state.rewindDiscovery.entrancePending, source: state.undoHintSource };
+  const needed = state => troll ? state.trollReward.unlocked && state.trollEntrance.source?.level === state.game?.level : state.undoHint;
+  function setActive(active, landed = false) {
+    if (troll) store.setTrollEntrance({ ...store.getSnapshot().trollEntrance, active,
+      ...(!active ? { source: null, pending: false, landedAt: landed ? performance.now() : null } : {}) });
+    else store.setRewindEntranceActive(active);
+  }
   const eligible = state => !failed && enabled() && !hidden() && state.screen?.id === 'gameplay' &&
     !!state.game && state.game.level === state.game.nextLevel && !state.playerAnimation;
-  function finish() {
+  function finish(landed = false) {
     if (frame !== null) cancelFrame(frame);
-    frame = null; started = null; source = null; clear(); store.setRewindEntranceActive(false);
+    frame = null; started = null; source = null; clear(); setActive(false, landed);
   }
   function tick(time) {
     frame = null;
     const state = store.getSnapshot();
-    if (disposed || !eligible(state) || !state.undoHint) { finish(); return; }
+    if (disposed || !eligible(state) || !needed(state)) { finish(); return; }
     const geometry = measure(source);
     if (!geometry) { finish(); return; }
     if (started === null) {
       started = time;
-      store.acknowledgeRewindEntrance();
+      if (troll) store.setTrollEntrance({ ...store.getSnapshot().trollEntrance, pending: false });
+      else store.acknowledgeRewindEntrance();
     }
     const pose = sampleRewindEntrance(time - started, geometry);
-    if (pose.complete || reducedMotion()) { finish(); return; }
+    if (pose.complete || reducedMotion()) { finish(pose.complete && !reducedMotion()); return; }
     render(pose, geometry, time - started);
     frame = requestFrame(tick);
   }
   function refresh() {
     const state = store.getSnapshot();
     if (state.screen?.id !== 'gameplay') failed = false;
-    if (!eligible(state) || !state.undoHint) { if (frame !== null || source) finish(); return; }
-    if (source && state.undoHintSource && ['level', 'x', 'y'].some(key => source[key] !== state.undoHintSource[key])) {
+    if (!eligible(state) || !needed(state)) { if (frame !== null || source) finish(); return; }
+    const next = request(state);
+    if (source && next.source && ['level', 'x', 'y'].some(key => source[key] !== next.source[key])) {
       finish(); return;
     }
-    if (source || !state.rewindDiscovery.entrancePending || !state.undoHintSource) return;
-    source = { ...state.undoHintSource };
-    store.setRewindEntranceActive(true);
+    if (source || !next.entrancePending || !next.source) return;
+    source = { ...next.source };
+    setActive(true);
     frame = requestFrame(tick); // Let the shared control slot mount first.
   }
   const stop = store.subscribe(refresh);

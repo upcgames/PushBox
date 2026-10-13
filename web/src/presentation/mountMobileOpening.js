@@ -7,6 +7,7 @@ import { createSeenProgress } from '../state/seenProgress.js';
 import { createPlayerProfile } from './playerIdentity.js';
 import { mountSeenDestinations } from './seenDestinations.js';
 import { mountWinnerActions } from './winnerActions.js';
+import { mountWarningAlarm } from './warningAlarm.js';
 
 export function mountMobileOpening(root, store, audio, { enabled = () => true,
   surface, progress = createSeenProgress(), profile = createPlayerProfile(), onEnter = () => {} } = {}) {
@@ -26,10 +27,12 @@ export function mountMobileOpening(root, store, audio, { enabled = () => true,
     if (enabled() && request?.consumer === 'InterfazCongratulations' && request.kind === 'key' && String(key).toLowerCase() === 'k') winnerNames.begin();
   });
   const flow = createOpeningFlow({ progress, profile, audio, onEnter });
+  const alarm = mountWarningAlarm(flow, store, { baseUrl: import.meta.env.BASE_URL, enabled });
   const stopVisits = mountSeenDestinations(store, progress, enabled);
-  const instance = mount(OpeningSheet, { target: host, props: { flow, enabled, acceptKeyboard,
+  const instance = mount(OpeningSheet, { target: host, props: { flow, store, enabled, acceptKeyboard,
     onMute: () => audio.setWebMuted(!store.getSnapshot().audio.muted) } });
   function refresh() {
+    alarm.refresh();
     winnerActions.refresh();
     surface?.setDrawScopeHidden('winner-prompts', enabled());
     const visible = enabled() && !['hidden', 'complete'].includes(flow.getSnapshot().phase);
@@ -41,6 +44,6 @@ export function mountMobileOpening(root, store, audio, { enabled = () => true,
   pointer.addEventListener('change', refresh);
   return {
     enabled, refresh, getNames: profile.getNames, begin: flow.begin, hideLoading: flow.hideLoading, setLoading: flow.setLoading, takeDestination: flow.takeDestination,
-    dispose() { pointer.removeEventListener('change', refresh); winnerActions.dispose(); stopVisits(); stopReader(); stopInput(); stopError(); winnerNames.dispose(); stopModal(); unmount(modal); modalHost.remove(); delete root.dataset.mobileNameModal; surface?.setDrawScopeHidden('winner-prompts', false); stop(); flow.dispose(); unmount(instance); host.remove(); delete root.dataset.mobileOpening; },
+    dispose() { pointer.removeEventListener('change', refresh); alarm.dispose(); winnerActions.dispose(); stopVisits(); stopReader(); stopInput(); stopError(); winnerNames.dispose(); stopModal(); unmount(modal); modalHost.remove(); delete root.dataset.mobileNameModal; surface?.setDrawScopeHidden('winner-prompts', false); stop(); flow.dispose(); unmount(instance); host.remove(); delete root.dataset.mobileOpening; },
   };
 }

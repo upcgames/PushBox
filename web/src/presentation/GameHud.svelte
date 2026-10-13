@@ -7,6 +7,7 @@
   let hud = $state(gameplayHudSnapshot(store.getSnapshot()));
   let muted = $state(store.getSnapshot().audio.muted);
   let jolt = $state(0);
+  let warning = $state(null);
   let canResume = $state(false);
   onMount(() => store.subscribe(state => {
     const next = gameplayHudSnapshot(state, hud);
@@ -17,12 +18,14 @@
       && next.remaining !== null && hud.remaining !== null
       && next.remaining < hud.remaining && next.remaining < 20) jolt++;
     hud = next;
+    warning = next && !next.paused && state.stepsWarning?.level === next.level ? state.stepsWarning : null;
+    if (warning) jolt = 0;
     muted = state.audio.muted;
     canResume = state.inputRequest?.consumer === 'InterfazPausa' && state.inputRequest.kind === 'key';
   }));
 </script>
 
 {#if hud}
-  <GameplayHud lives={hud.lives} remaining={hud.remaining} paused={hud.paused} {canResume} {muted} {jolt}
+  <GameplayHud lives={hud.lives} remaining={warning?.remaining ?? hud.remaining} paused={hud.paused} {canResume} {muted} {jolt} {warning}
     onMute={() => audio.setWebMuted(!store.getSnapshot().audio.muted)} onPause={() => sendInput(hud.paused ? 'Resume' : 'p')} />
 {/if}

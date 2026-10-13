@@ -76,6 +76,7 @@ export function setupMobileShell({ progress } = {}) {
   mobileMQ.addEventListener('change', loreView.refresh);
   mobileMQ.addEventListener('change', instructions.refresh);
   const rewindEntrance = mountRewindEntrance(document.body, gameConsole, GameState, isMobile);
+  const trollEntrance = mountRewindEntrance(document.body, gameConsole, GameState, isMobile, 'troll');
   const boardView = setupMobileBoardView(document.body, GameState, isMobile, { surface: gameConsole });
   mobileMQ.addEventListener('change', boardView.refresh);
   if (import.meta.hot) import.meta.hot.dispose(() => {
@@ -84,6 +85,7 @@ export function setupMobileShell({ progress } = {}) {
     mobileMQ.removeEventListener('change', rewindDiscovery.refresh);
     rewindDiscovery.dispose();
     rewindEntrance.dispose();
+    trollEntrance.dispose();
     mobileMQ.removeEventListener('change', trollReward.refresh);
     trollReward.dispose();
     mobileMQ.removeEventListener('change', exitCue.refresh);

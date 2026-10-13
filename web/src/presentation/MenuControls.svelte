@@ -5,7 +5,7 @@
 </script>
 
 <div class="mobile-menu-controls">
-  <Dpad facelift verticalOnly onDir={onInput} />
+  <Dpad facelift horizontalDisabled onDir={onInput} />
   <button type="button" class="pixel-confirmation menu-select" onclick={() => onInput?.('e')}>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 12 4-4 4 4 7-7 4 4-11 11-8-8Z" /></svg>
     <span>Seleccionar</span>
@@ -17,10 +17,10 @@
     width: 100%;
     min-height: 222px;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     justify-items: center;
-    gap: 16px;
+    gap: clamp(8px, 4%, 16px);
     padding: 12px clamp(8px, 4%, 20px);
     box-sizing: border-box;
     background: #080914;
