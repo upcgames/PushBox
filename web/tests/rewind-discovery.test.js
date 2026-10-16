@@ -4,8 +4,10 @@ import { createGameState } from '../src/state/gameState.js';
 import { createSeenProgress } from '../src/state/seenProgress.js';
 import { mountRewindDiscovery } from '../src/presentation/rewindDiscovery.js';
 
-test('entrance acknowledgement lasts for the page visit, including remounts and new playthroughs', () => {
-  const progress = createSeenProgress({ storage: null });
+test('unlock persists independently of recovery and keeps later contextual hints', () => {
+  const saved = new Map();
+  const storage = { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) };
+  const progress = createSeenProgress({ storage });
   const store = createGameState();
   let discovery = mountRewindDiscovery(store.api, { progress });
   store.api.acknowledgeRewindEntrance();
@@ -13,9 +15,9 @@ test('entrance acknowledgement lasts for the page visit, including remounts and 
   assert.equal(store.api.getSnapshot().rewindDiscovery.entrancePending, true, 'Acknowledgement before a reveal is ignored');
   store.api.acknowledgeRewindEntrance();
   assert.equal(store.api.getSnapshot().rewindDiscovery.entrancePending, false);
-  assert.deepEqual(progress.getSnapshot(), {}, 'An entrance is never persisted');
+  assert.deepEqual(progress.getSnapshot(), { 'rewind:unlocked': true });
   store.api.setUndoHint(false);
-  assert.equal(store.api.getSnapshot().rewindDiscovery.visible, false);
+  assert.equal(store.api.getSnapshot().rewindDiscovery.visible, true);
   store.publish({ screen: { id: 'launcher' }, game: null });
   store.api.setUndoHint(true);
   assert.equal(store.api.getSnapshot().rewindDiscovery.entrancePending, false);
@@ -26,15 +28,21 @@ test('entrance acknowledgement lasts for the page visit, including remounts and 
   assert.equal(restarted.api.getSnapshot().rewindDiscovery.entrancePending, false, 'Inspector reset keeps the same page visit');
   discovery.dispose();
   const refreshed = createGameState();
-  discovery = mountRewindDiscovery(refreshed.api, { progress: createSeenProgress({ storage: null }) });
+  discovery = mountRewindDiscovery(refreshed.api, { progress: createSeenProgress({ storage }) });
   refreshed.api.setUndoHint(true);
-  assert.equal(refreshed.api.getSnapshot().rewindDiscovery.entrancePending, true, 'A new page visit can play the entrance again');
+  assert.equal(refreshed.api.getSnapshot().rewindDiscovery.entrancePending, false, 'Reload before successful use does not replay the entrance');
+  assert.equal(refreshed.api.getSnapshot().undoHint, true, 'Later mistakes still hint');
+  refreshed.api.reportRewindRecovery({ level: 1 });
+  assert.equal(createSeenProgress({ storage }).has('rewind:recovered'), true);
+  refreshed.api.setUndoHint(false); refreshed.api.setUndoHint(true);
+  assert.equal(refreshed.api.getSnapshot().undoHint, true, 'Successful use does not suppress later mistake hints');
+  assert.equal(refreshed.api.getSnapshot().rewindDiscovery.entrancePending, false);
   discovery.dispose();
 });
 
-test('saved recovery shows rewind without an entrance and stays isolated between progression owners', () => {
+test('saved unlock shows rewind without an entrance and stays isolated between progression owners', () => {
   const production = createSeenProgress({ storage: null }), preview = createSeenProgress({ storage: null });
-  production.mark('rewind:recovered');
+  production.mark('rewind:unlocked');
   const game = createGameState(), inspector = createGameState();
   let enabled = false;
   const live = mountRewindDiscovery(game.api, { progress: production });

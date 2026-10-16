@@ -45,7 +45,7 @@
 </section>
 
 <style>
-  .lore-sheet { width: 100%; height: 100%; min-height: 0; box-sizing: border-box; padding: 26px 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #080914; color: #e9e7ef; font-family: 'Px437', monospace; text-align: center; overflow-y: auto; }
+  .lore-sheet { width: 100%; height: 100%; min-height: 0; box-sizing: border-box; padding: 26px 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; color: #e9e7ef; font-family: 'Px437', monospace; text-align: center; overflow-y: auto; }
   .kicker { color: #eab308; font-size: 11px; letter-spacing: 2px; margin: 0 0 20px; }
   .lore-art { width: 280px; max-width: 100%; position: relative; flex: none; }
   .lore-sheet canvas { position: static; inset: auto; display: block; width: 100%; height: auto; image-rendering: pixelated; margin: 0; }

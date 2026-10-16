@@ -16,7 +16,7 @@ export function rect(ctx, color, x, y, width, height) {
 }
 
 export function opening(ctx, x, y) {
-  rect(ctx, '#080914', x, y, 28, 28);
+  rect(ctx, '#000', x, y, 28, 28);
   rect(ctx, '#334155', x + 2, y + 2, 24, 2);
   rect(ctx, '#334155', x + 2, y + 4, 2, 22);
 }
@@ -78,7 +78,7 @@ export function target(ctx, x, y) {
 }
 
 export function lesson(ctx, t, kind, variant = false) {
-  rect(ctx, '#080914', 0, 0, ctx.canvas.width, ctx.canvas.height);
+  rect(ctx, '#000', 0, 0, ctx.canvas.width, ctx.canvas.height);
   rect(ctx, palette[6], 14, 42, 196, 28);
   const cycle = t % 5000, offset = travel(cycle), arrived = cycle >= 1940;
   if (kind === 'push') {

@@ -95,6 +95,26 @@ test('sessions isolate audio, troll choice avoids repeats, and muted playback ne
   assert.equal(first.audio.getCurrentAudio(), null);
 });
 
+test('mobile and desktop carita sounds survive movement and share mute and cleanup', () => {
+  for (const mobile of [true, false]) {
+    const store = createGameState(), { audio } = channel(store);
+    try {
+      const music = audio.play('LoreMusic.mp3', null, 8);
+      const face = mobile ? audio.playTrollSound() : audio.play('Sabe.mp3', null, 1);
+      assert.equal(music.paused, false, 'Carita does not interrupt canonical playback');
+      const move = audio.play('movf.mp3', null, 1);
+      assert.equal(face.paused, false, 'Movement does not interrupt carita');
+      assert.equal(audio.getCurrentAudio(), move);
+      audio.setWebMuted(true);
+      assert.equal(face.volume, 0); assert.equal(move.volume, 0);
+      audio.setWebMuted(false);
+      assert.equal(face.volume, 1); assert.equal(move.volume, 1);
+      audio.stop();
+      assert.equal(face.paused, true); assert.equal(move.paused, true);
+    } finally { audio.dispose(); }
+  }
+});
+
 test('F applies immediately without entering gameplay input queue; text F stays literal', async () => {
   const store = createGameState(), bridge = createRuntimeBridge(store), abort = new AbortController();
   const { audio } = channel(store);

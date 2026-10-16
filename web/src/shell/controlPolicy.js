@@ -5,6 +5,7 @@ const KEY_CONTROLS = {
   MenuPrincipal: 'paused',
   InterfazPausa: 'paused',
   InterfazCongratulations: 'congrats',
+  InterfazGameOver: 'gameover',
   main: 'continue',
 };
 

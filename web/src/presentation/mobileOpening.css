@@ -1,9 +1,9 @@
-.mobile-opening-host { position: fixed; inset: 0; z-index: 80; background: #080914; }
+.mobile-opening-host { position: fixed; inset: 0; z-index: 80; background: #000; }
 .mobile-session > .mobile-opening-host { position: absolute; }
 [data-mobile-opening="on"] > .controller-area, [data-mobile-opening="on"] > #controllerArea,
 [data-mobile-opening="on"] > header { display: none !important; }
 [data-mobile-opening="on"] > .console-frame { visibility: hidden; }
-.opening-sheet { position: relative; width: 100%; height: 100%; box-sizing: border-box; background: #080914; color: #fff0ba; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; font-family: Px437, monospace; overflow-y: auto; }
+.opening-sheet { position: relative; width: 100%; height: 100%; box-sizing: border-box; background: #000; color: #fff0ba; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; font-family: Px437, monospace; overflow-y: auto; }
 .opening-sound { position: absolute; top: 8px; right: 8px; }
 .opening-sheet canvas { position: static; inset: auto; display: block; background: transparent; image-rendering: pixelated; flex-shrink: 0; }
 .opening-sheet h3 { font: normal 17px/1.6 Px437, monospace; margin: 0 0 24px; text-align: center; }

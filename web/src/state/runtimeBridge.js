@@ -189,11 +189,21 @@ function bindPlayerIdentity(counts) { writePlayerIdentity(counts, GameState.getS
 
 function bindSound(reference) { bindSoundReference(store, reference); }
 function handleAudioInput(key) { return handleAudioKey(store, key); }
-return { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, enterStepsWarning, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked: () => GameState.getSnapshot().winnerActionsBlocked, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
+// Entrance flags are owned by the mobile presentation drivers. The original
+// routine keeps running; only web input waits, with pause and audio available.
+const entranceActive = state => state.screen?.id === 'gameplay' &&
+  (state.rewindEntranceActive || state.trollEntrance.active);
+function inputBlocked(key) {
+  const state = GameState.getSnapshot();
+  return state.winnerActionsBlocked || (entranceActive(state) && String(key).toLowerCase() !== 'p');
+}
+const subscribeInputGate = callback => GameState.select(
+  state => !!(state.winnerActionsBlocked || entranceActive(state)), callback);
+return { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, enterStepsWarning, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked, subscribeInputGate, inputConsumer: () => GameState.getSnapshot().inputRequest?.consumer };
 }
 
 const defaultBridge = createRuntimeBridge({ api: GameState, ...runtimeState });
-export const { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, enterStepsWarning, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked, inputConsumer } = defaultBridge;
+export const { enterInput, withInput, readPauseKey, presentPrompt, presentScene, drawImmediately, refreshGame, observeGame, enterScreen, observeAwait, recordInput, reportBlockedPush, reportBlockedMove, reportPlayerDraw, enterPlayerAnimation, enterStepsWarning, bindPlayerIdentity, bindSound, handleAudioInput, inputBlocked, subscribeInputGate, inputConsumer } = defaultBridge;
 
 export function boardSnapshot(level, player, steps, lives, sound, arrays, portal, nextLevel, undoPosition, undoPolicy = null) {
   const { Cajas, Paredes, Vacios, Huecos, Cantidades } = arrays;

@@ -1,8 +1,8 @@
 import { DESTINATIONS } from '../presentation/seenDestinations.js';
-import { REWIND_RECOVERED } from '../presentation/rewindDiscovery.js';
+import { REWIND_UNLOCKED, REWIND_RECOVERED } from '../presentation/rewindDiscovery.js';
 
 const CONDITIONS = { warning: 'Warning completed', carita: 'Carita unlocked', caritaUsed: 'Carita used',
-  [REWIND_RECOVERED]: 'Rewind recovery learned' };
+  [REWIND_UNLOCKED]: 'Rewind unlocked', [REWIND_RECOVERED]: 'Rewind used successfully' };
 const LABELS = { ...Object.fromEntries(DESTINATIONS.map(destination => [destination.flag, destination.label])), ...CONDITIONS };
 
 export function mountSeenConditions(root, sources) {
@@ -31,7 +31,8 @@ export function mountSeenConditions(root, sources) {
         if (active) {
           const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Clear';
           button.setAttribute('aria-label', `Clear ${LABELS[name] || name} · ${source.label}`);
-          button.addEventListener('click', () => source.clear(name === 'carita' ? ['carita', 'caritaUsed'] : name));
+          button.addEventListener('click', () => source.clear(name === 'carita' ? ['carita', 'caritaUsed']
+            : name === REWIND_UNLOCKED ? [REWIND_UNLOCKED, REWIND_RECOVERED] : name));
           cell.append(button);
         }
       }

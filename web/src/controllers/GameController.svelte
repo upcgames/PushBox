@@ -28,8 +28,7 @@
     const request = ++trollRequest;
     stopTroll();
     GameState.setTrollActive(true);
-    await audio.playTrollSound();
-    const current = await audio.getCurrentAudio();
+    const current = await audio.playTrollSound();
     if (disposed || request !== trollRequest) return;
     trolling = !!current && !current.ended;
     const clear = () => {

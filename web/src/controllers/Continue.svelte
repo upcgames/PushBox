@@ -10,7 +10,7 @@
 
 <style>
   .ctrl {
-    background: #080914;
+    background: #000;
     padding: 12px;
     display: flex;
     flex-direction: column;

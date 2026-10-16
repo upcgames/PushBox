@@ -104,8 +104,10 @@ name-entry block.
 
 The toolbar’s **Seen conditions** modal shows saved-game browser flags and each
 preview’s separately saved flags. Clear a flag or use Clear all for that column.
-Clearing Carita unlocked also clears Carita used. Preview clearing resets that
-phone to its launcher; ordinary Reset retains its seen flags. Saved-game clearing
+Clearing Carita unlocked also clears Carita used. Rewind unlocked and Rewind used
+successfully are separate flags. Clearing the rewind unlock also clears successful
+use; later mistake hints remain contextual. Preview clearing resets that phone to
+its launcher; ordinary Reset retains its seen flags. Saved-game clearing
 applies to real browser progress and synchronizes with other open game tabs.
 New recorded flag names appear automatically as persistence grows.
 

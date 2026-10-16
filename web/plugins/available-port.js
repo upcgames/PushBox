@@ -29,7 +29,7 @@ export async function findAvailablePort(start, strictPort = false) {
       if (!await canBind(port, host)) { available = false; break; }
     }
     if (available) return port;
-    if (strictPort) throw new Error(`Port ${port} is already in use`);
+    if (strictPort) throw Object.assign(new Error(`Port ${port} is already in use`), { code: 'EADDRINUSE' });
   }
   throw new Error('No available dev-server port');
 }
@@ -37,16 +37,24 @@ export async function findAvailablePort(start, strictPort = false) {
 export function availablePortPlugin() {
   return {
     name: 'pushbox-available-port',
-    async configureServer(server) {
+    configureServer(server) {
       if (server.config.server.middlewareMode) return;
-      // Vite has already resolved its default and any --port/--strictPort
-      // overrides. This hook runs before listening and only in development.
-      const settings = server.config.server;
-      const port = await findAvailablePort(settings.port, settings.strictPort);
-      if (port !== settings.port) {
-        server.config.logger.info(`Port ${settings.port} is occupied; using ${port} for PushBox.`);
-        settings.port = port;
-      }
+      const httpServer = server.httpServer;
+      const listen = httpServer.listen.bind(httpServer);
+      // During restarts configureServer runs while the old listener is still
+      // open. Probe only at listen time, after Vite has closed that listener.
+      // Report collisions like a native bind error so Vite handles fallback,
+      // strictPort, and retaining the actual port across restarts itself.
+      httpServer.listen = (port, ...args) => {
+        findAvailablePort(port, true).then(
+          () => {
+            try { listen(port, ...args); }
+            catch (error) { httpServer.emit('error', error); }
+          },
+          error => httpServer.emit('error', error),
+        );
+        return httpServer;
+      };
     },
   };
 }

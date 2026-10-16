@@ -15,6 +15,7 @@ export function mountMobileOpening(root, store, audio, { enabled = () => true,
   const acceptKeyboard = () => enabled() && (!root.closest('.preview-card') || root.closest('.preview-card').classList.contains('selected'));
   const winnerNames = createWinnerIdentity({ profile, store, enabled });
   const winnerActions = mountWinnerActions(store, { enabled });
+  const stopGameOver = store.registerPresentationOverride('InterfazGameOver', enabled);
   const modalHost = document.createElement('div'); modalHost.className = 'mobile-name-modal-host'; modalHost.hidden = true; root.append(modalHost);
   const modal = mount(NativeNameModal, { target: modalHost, props: { flow: winnerNames, acceptKeyboard } });
   const stopModal = winnerNames.subscribe(state => {
@@ -44,6 +45,6 @@ export function mountMobileOpening(root, store, audio, { enabled = () => true,
   pointer.addEventListener('change', refresh);
   return {
     enabled, refresh, getNames: profile.getNames, begin: flow.begin, hideLoading: flow.hideLoading, setLoading: flow.setLoading, takeDestination: flow.takeDestination,
-    dispose() { pointer.removeEventListener('change', refresh); alarm.dispose(); winnerActions.dispose(); stopVisits(); stopReader(); stopInput(); stopError(); winnerNames.dispose(); stopModal(); unmount(modal); modalHost.remove(); delete root.dataset.mobileNameModal; surface?.setDrawScopeHidden('winner-prompts', false); stop(); flow.dispose(); unmount(instance); host.remove(); delete root.dataset.mobileOpening; },
+    dispose() { pointer.removeEventListener('change', refresh); alarm.dispose(); winnerActions.dispose(); stopGameOver(); stopVisits(); stopReader(); stopInput(); stopError(); winnerNames.dispose(); stopModal(); unmount(modal); modalHost.remove(); delete root.dataset.mobileNameModal; surface?.setDrawScopeHidden('winner-prompts', false); stop(); flow.dispose(); unmount(instance); host.remove(); delete root.dataset.mobileOpening; },
   };
 }

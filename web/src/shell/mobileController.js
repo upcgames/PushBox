@@ -14,6 +14,7 @@ import GamePaused from '../controllers/GamePaused.svelte';
 import Qwerty from '../controllers/Qwerty.svelte';
 import OneTwo from '../controllers/OneTwo.svelte';
 import Congrats from '../controllers/Congrats.svelte';
+import GameOver from '../controllers/GameOver.svelte';
 import { GameState } from '../state/gameState.js';
 import { selectControlMode } from './controlPolicy.js';
 import { mountMobileInstructions } from '../presentation/mountMobileInstructions.js';
@@ -28,6 +29,7 @@ const COMPONENTS = {
   qwerty: Qwerty,
   '1v2': OneTwo,
   congrats: Congrats,
+  gameover: GameOver,
 };
 
 let currentInstance = null;

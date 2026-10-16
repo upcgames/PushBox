@@ -9,13 +9,15 @@ class WebMarkerTests(unittest.TestCase):
         source = '''void Example() {
 // Ordinary comment
 // @web:begin congratulations-prompts
+// @web:event movement-rejected
 Escribir("New prompt wording", 100, 2);
 // @web:end congratulations-prompts
 }'''
         cleaned = strip_comments(source)
         self.assertNotIn("Ordinary comment", cleaned)
         generated = CppToJsAST().parse(cleaned, all_async_funcs={"Example", "Escribir"})
-        for marker in ["// @web:begin congratulations-prompts", "// @web:end congratulations-prompts"]:
+        for marker in ["// @web:begin congratulations-prompts", "// @web:end congratulations-prompts",
+                       "// @web:event movement-rejected"]:
             self.assertIn(marker, cleaned)
             self.assertIn(marker, generated)
 

@@ -52,10 +52,22 @@
 
   <div id="controllerArea" class="controller-area"></div>
 
-  <div id="rotateOverlay" class="rotate-overlay" aria-hidden="true">
-    <div class="rotate-icon">📱↻</div>
-    <div class="rotate-text">Please rotate to portrait</div>
-    <div class="rotate-sub">This game is designed for portrait mode</div>
+  <div id="rotateOverlay" class="rotate-overlay" lang="es" role="note" aria-labelledby="rotateTitle">
+    <div class="rotate-brand" aria-hidden="true">PUSHBOX</div>
+    <svg class="rotate-icon" viewBox="0 0 96 72" aria-hidden="true" shape-rendering="crispEdges">
+      <g class="rotate-phone">
+        <path fill="#64748b" d="M34 12h28v48H34z" />
+        <path fill="#fff0ba" d="M32 10h28v48H32z" />
+        <path fill="#182333" d="M36 14h20v36H36z" />
+        <path fill="#06b6d4" d="M40 18h12v4H40z" />
+        <path fill="#b77935" d="M42 30h8v8h-8z" />
+        <path fill="#fff0ba" d="M44 32h4v4h-4zM44 52h4v2h-4z" />
+      </g>
+      <path fill="#06b6d4" d="M68 10h12v4H68zM80 14h4v16h-4zM72 26h4v4h-4zM76 30h12v4H76zM80 34h4v4h-4z" />
+      <path fill="#64748b" d="M12 42h4v-4h4v-4h4v4h4v4h-8v16h12v4H16V42z" />
+    </svg>
+    <h2 id="rotateTitle" class="rotate-text">GIRA TU TELÉFONO</h2>
+    <p class="rotate-sub">Colócalo en vertical para jugar.</p>
   </div>
 
   <script type="module" src="/src/game.js"></script>

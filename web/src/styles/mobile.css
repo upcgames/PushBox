@@ -1,3 +1,4 @@
+html[data-shell="mobile"] { --bg: #000; }
 html[data-shell="mobile"] header { display: none; }
 html[data-shell="mobile"] body {
   padding: 0;

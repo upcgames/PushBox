@@ -22,7 +22,7 @@
   </div>
 
 <style>
-  .game-hud { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; padding-top: calc(12px + env(safe-area-inset-top, 0px)); background: #080914; border-bottom: 4px solid #334155; font-family: 'Px437', monospace; }
+  .game-hud { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; padding-top: calc(12px + env(safe-area-inset-top, 0px)); background: #000; border-bottom: 4px solid #334155; font-family: 'Px437', monospace; }
   .lives { display: flex; gap: 2px; color: #ef4444; font-size: 20px; white-space: nowrap; }
   .lost { color: #334155; }
   .steps { display: flex; flex-direction: column; gap: 4px; color: #fff0ba; }

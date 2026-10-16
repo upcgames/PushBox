@@ -43,5 +43,5 @@
 
 <style>
   .name-modal-backdrop { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; box-sizing: border-box; background: #000b; }
-  .name-modal { width: 100%; max-width: 340px; min-width: 0; padding: 24px 20px; box-sizing: border-box; background: #080914; color: #fff0ba; border: 2px solid #64748b; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .name-modal { width: 100%; max-width: 340px; min-width: 0; padding: 24px 20px; box-sizing: border-box; background: #000; color: #fff0ba; border: 2px solid #64748b; display: flex; flex-direction: column; align-items: center; gap: 24px; }
 </style>

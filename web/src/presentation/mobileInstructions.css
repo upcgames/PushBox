@@ -1,4 +1,4 @@
-.mobile-instructions-host { position: fixed; inset: 0; z-index: 30; min-height: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; background: #080914; }
+.mobile-instructions-host { position: fixed; inset: 0; z-index: 30; min-height: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; background: #000; }
 .mobile-session .mobile-instructions-host { position: absolute; }
 [data-mobile-instructions="on"] > .console-frame { visibility: hidden; }
 [data-mobile-instructions="on"] > .controller-area { display: none !important; }

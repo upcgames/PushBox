@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GameState, sendInput } from '../src/state/gameState.js';
+import { GameState, runtimeState, sendInput } from '../src/state/gameState.js';
 import { enterInput } from '../src/state/runtimeBridge.js';
 import { observeConsole } from '../src/state/consoleTranscript.js';
 
@@ -41,10 +41,21 @@ test('real console mirrors visible cells and shared input reaches the canonical 
     assert.equal(window._kbhit(), 0, 'Production input discards blocked confirmations');
     GameState.setWinnerActionsBlocked(false);
     sendInput('e'); assert.equal(await window._getch(), 'e');
+    runtimeState.publish({ screen: { id: 'gameplay' } });
+    sendInput('w');
+    GameState.setRewindEntranceActive(true);
+    assert.equal(window._kbhit(), 0, 'Entrance discards previously buffered moves');
+    const nextMove = window._getch();
+    sendInput('d'); sendInput('r');
+    sendInput('p'); assert.equal(await nextMove, 'p', 'Pause remains available during entrance');
+    GameState.setRewindEntranceActive(false);
+    assert.equal(window._kbhit(), 0, 'Blocked moves do not replay');
+    sendInput('s'); assert.equal(await window._getch(), 's');
     assert.ok(events.some(event => event.type === 'input:received' && event.payload.key === 'd'));
     assert.ok(events.some(event => event.type === 'input:consumed' && event.payload.key === 13));
     assert.throws(() => sendInput(''), TypeError);
   } finally {
+    GameState.setRewindEntranceActive(false);
     GameState.setWinnerActionsBlocked(false);
     stop?.(); leaveInput?.(); off();
     if (windowBefore === undefined) delete globalThis.window; else globalThis.window = windowBefore;

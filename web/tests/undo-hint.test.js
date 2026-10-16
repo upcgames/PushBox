@@ -53,7 +53,7 @@ test('rewind is discovered by a hint and learned only when an actual undo recove
     assert.equal(progress.has('rewind:recovered'), true);
     assert.equal(view.store.api.getSnapshot().undoHint, false);
     assert.equal(view.store.api.getSnapshot().rewindDiscovery.visible, true);
-    assert.deepEqual(progress.getSnapshot(), { 'rewind:recovered': true }, 'Only one milestone is persisted');
+    assert.deepEqual(progress.getSnapshot(), { 'rewind:unlocked': true, 'rewind:recovered': true }, 'Unlock and successful use are separate milestones');
     view.sample(wallStrip(), { game: null, screen: { id: 'launcher' }, inputRequest: null });
     view.sample(wallStrip());
     assert.equal(view.store.api.getSnapshot().rewindDiscovery.visible, true, 'New playthrough retains learning');
@@ -122,6 +122,29 @@ test('reverse routes retain covered huecos, ignore temporary cajas and allow fut
   const view = fixture(); view.sample(wallStrip(2, 4)); view.sample(wallStrip(2, 3, 1));
   assert.equal(view.store.api.getSnapshot().undoHint, false, 'Recoverable push does not hint');
   view.hint.dispose();
+});
+
+test('a caja blocked by another movable caja does not hint before the lower caja frees it', () => {
+  const view = fixture();
+  const before = board({ player: { x: 2, y: 0 }, board: {
+    walls: [{ x: 1, y: 2 }, { x: 3, y: 2 }], gaps: [],
+    targets: [{ x: 2, y: 1 }, { x: 4, y: 3 }],
+    boxes: [{ index: 0, x: 2, y: 1, onTarget: true }, { index: 1, x: 2, y: 3, onTarget: false }],
+  } });
+  const after = { ...before, player: { x: 2, y: 1 }, steps: 1, undoDepth: 1, undoAvailable: true,
+    board: { ...before.board, boxes: [{ index: 0, x: 2, y: 2, onTarget: false }, before.board.boxes[1]] } };
+  try {
+    assert.equal(boxHasLegalPush(after, after.board.boxes[0]), false, 'Upper caja cannot be pushed yet');
+    assert.equal(boxHasLegalPush(after, after.board.boxes[1]), true, 'Lower caja can move aside');
+    assert.ok(recoverableBoxPositions(after).has('2,2'));
+    view.sample(before); view.sample(after);
+    assert.equal(view.store.api.getSnapshot().undoHint, false);
+    const freed = { ...after, player: { x: 2, y: 3 }, steps: 2, undoDepth: 2,
+      board: { ...after.board, boxes: [after.board.boxes[0], { ...after.board.boxes[1], x: 3 }] } };
+    assert.equal(boxHasLegalPush(freed, freed.board.boxes[0]), true);
+    view.sample(freed);
+    assert.equal(view.store.api.getSnapshot().undoHint, false);
+  } finally { view.hint.dispose(); }
 });
 
 test('both intended bridges are useful endpoints even without a route to a hueco', () => {

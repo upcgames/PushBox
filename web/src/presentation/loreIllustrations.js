@@ -7,7 +7,7 @@ const floorColors = [6, 7, 5, 8, 2];
 
 // The accepted UI illustrations, shared with the lab. This is not a game engine.
 export function rewardScene(ctx, t, style = 'heart') {
-  rect(ctx, '#080914', 0, 0, 224, 112);
+  rect(ctx, '#000', 0, 0, 224, 112);
   rect(ctx, palette[7], 28, 42, 168, 28);
   rect(ctx, '#ffffff', 112, 42, 28, 28);
   drawLava(ctx, 112, 42, 28, t / 1000, 0, 'dark');
@@ -41,7 +41,7 @@ export function lore(ctx, t, level) {
   // can receive a frame timestamp earlier than its performance.now() start.
   // Elapsed animation time starts at zero, never at a negative path index.
   t = Math.max(0, t);
-  rect(ctx, '#080914', 0, 0, 224, 112);
+  rect(ctx, '#000', 0, 0, 224, 112);
   rect(ctx, palette[floorColors[level - 1]], 28, 42, 168, 28);
   const pulse = (Math.sin(t / 500) + 1) / 2;
   if (level === 1) {
@@ -68,7 +68,7 @@ export function lore(ctx, t, level) {
       ctx.fillText('?', 145, 45 - rise);
     }
   } else if (level === 4) {
-    rect(ctx, '#080914', 28, 42, 168, 28);
+    rect(ctx, '#000', 28, 42, 168, 28);
     const y = 34 - Math.round(pulse * 2);
     for (const side of [-1, 1]) {
       const x = 112 + side * (38 + Math.round(pulse * 4));

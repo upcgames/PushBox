@@ -23,7 +23,7 @@
     gap: clamp(8px, 4%, 16px);
     padding: 12px clamp(8px, 4%, 20px);
     box-sizing: border-box;
-    background: #080914;
+    background: #000;
   }
   .menu-select { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 100%; min-width: 0; padding: 16px; font-size: 10px; box-sizing: border-box; }
   .menu-select span { max-width: 100%; overflow-wrap: anywhere; }

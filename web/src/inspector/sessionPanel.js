@@ -64,8 +64,8 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     opening?.dispose();
     stopHud?.(); stopState?.(); stopAudio?.(); stopControls?.(); stopHints?.(); session?.dispose();
   }
-  function initialize() {
-    teardown(); running = false; launcher.hidden = false;
+  function initialize(beforeCreate = () => {}) {
+    teardown(); beforeCreate(); running = false; launcher.hidden = false;
     startButton.disabled = true; startButton.textContent = 'Loading fonts…';
     session = createGameSession(canvas, runtimeFactory, { baseUrl: import.meta.env.BASE_URL });
     const current = session;
@@ -118,7 +118,7 @@ export function mountSessionPanel(root, runtimeFactory, routeInput, changed, set
     },
     sendInput(key) { if (running) session.sendInput(key); },
     seenProgress: previewProgress,
-    clearSeen(names) { previewProgress.clear(names); initialize(); },
+    clearSeen(names) { initialize(() => previewProgress.clear(names)); },
     getSnapshot: () => session.state.getSnapshot(),
     getSession: () => session,
     dispose() {

@@ -98,7 +98,7 @@
   });
 </script>
 
-<CurtainScene phase={curtainPhase} onEntered={opened}>
+<CurtainScene phase={curtainPhase} revealFromTop onEntered={opened}>
 <div class="opening-sheet">
   {#if store && (state.phase !== 'loading' || state.ready)}
     <div class="opening-sound"><SoundButton {store} onToggle={onMute} /></div>

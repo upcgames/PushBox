@@ -32,11 +32,11 @@ export function drawTitle(canvas, variant) {
     word(ctx, 'BOX', 77, 60, 6, '#eab308');
   } else {
     ctx.fillStyle = '#334155'; ctx.fillRect(14, 22, 228, 66);
-    ctx.fillStyle = '#080914'; ctx.fillRect(18, 26, 220, 58);
+    ctx.fillStyle = '#000'; ctx.fillRect(18, 26, 220, 58);
     word(ctx, 'PUSHBOX', 24, 38, 5, '#fff0ba');
     // The O is a caja, retaining the letter's place and size.
     const x = 24 + 5 * 6 * 5;
-    ctx.fillStyle = '#080914'; ctx.fillRect(x, 38, 25, 35);
+    ctx.fillStyle = '#000'; ctx.fillRect(x, 38, 25, 35);
     ctx.fillStyle = '#eab308'; ctx.fillRect(x, 43, 25, 25);
     ctx.fillStyle = '#854d0e'; ctx.fillRect(x + 4, 47, 17, 17);
     ctx.fillStyle = '#fff0ba';

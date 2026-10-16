@@ -53,7 +53,7 @@
 </section>
 
 <style>
-  .instruction-sheet { width: 100%; height: 100%; min-height: 0; box-sizing: border-box; padding: 16px 20px; display: flex; flex-direction: column; background: #080914; color: #e9e7ef; font-family: 'Px437', monospace; overflow-y: auto; }
+  .instruction-sheet { width: 100%; height: 100%; min-height: 0; box-sizing: border-box; padding: 16px 20px; display: flex; flex-direction: column; background: #000; color: #e9e7ef; font-family: 'Px437', monospace; overflow-y: auto; }
   h3 { margin: 4px 0 12px; font-size: 18px; font-weight: normal; line-height: 1.6; text-align: center; flex: none; }
   .lesson { position: relative; flex: 1 0 auto; min-height: 120px; border-top: 2px solid #334155; padding: 8px 0; display: flex; align-items: center; justify-content: center; }
   .number { position: absolute; top: 8px; left: 0; font-size: 12px; color: #94a3b8; }

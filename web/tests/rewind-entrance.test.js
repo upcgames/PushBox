@@ -39,12 +39,13 @@ test('accepted boomerang preserves stationary reveal, curved flight, glow tail, 
 function fixture({ reduced = false, learned = false } = {}) {
   const store = createGameState(() => assert.fail('Entrance must never send game input'));
   const progress = createSeenProgress({ storage: null });
-  if (learned) progress.mark('rewind:recovered');
+  if (learned) progress.mark('rewind:unlocked');
   const discovery = mountRewindDiscovery(store.api, { progress });
-  const frames = new Map(), rendered = []; let id = 0, clears = 0;
+  const frames = new Map(), rendered = []; let id = 0, clears = 0, starts = 0;
   const driver = createRewindEntranceDriver(store.api, {
     measure: source => { assert.deepEqual(source, { level: 1, x: 40, y: 32 }); return geometry; },
     hidden: () => false, reducedMotion: () => reduced,
+    onStart: () => starts++,
     render: pose => rendered.push(pose), clear: () => clears++,
     requestFrame: fn => { frames.set(++id, fn); return id; }, cancelFrame: token => frames.delete(token),
   });
@@ -56,7 +57,7 @@ function fixture({ reduced = false, learned = false } = {}) {
     const [token, callback] = frames.entries().next().value;
     frames.delete(token); callback(time);
   }
-  return { store, progress, reveal, tick, frames, rendered, clears: () => clears,
+  return { store, progress, reveal, tick, frames, rendered, clears: () => clears, starts: () => starts,
     dispose() { driver.dispose(); discovery.dispose(); } };
 }
 
@@ -65,13 +66,15 @@ test('runtime hides only the button during flight and acknowledges actual playba
   try {
     view.reveal(); assert.equal(view.store.api.getSnapshot().rewindEntranceActive, true);
     view.tick(0); assert.equal(view.store.api.getSnapshot().rewindDiscovery.entrancePending, false);
-    assert.deepEqual(view.progress.getSnapshot(), {}, 'Entrance playback is not persisted');
+    assert.equal(view.starts(), 1, 'Sound starts with the first visible animation frame');
+    assert.deepEqual(view.progress.getSnapshot(), { 'rewind:unlocked': true });
     view.tick(900); view.tick(2550);
     assert.equal(view.store.api.getSnapshot().rewindEntranceActive, false);
     assert.equal(view.store.api.getSnapshot().rewindDiscovery.visible, true);
     assert.equal(view.frames.size, 0);
     view.store.api.setUndoHint(false); view.reveal();
     assert.equal(view.frames.size, 0, 'A later hint does not replay the entrance');
+    assert.equal(view.starts(), 1, 'Later hints do not replay the sound');
   } finally { view.dispose(); }
 });
 

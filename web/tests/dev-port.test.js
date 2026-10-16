@@ -54,6 +54,46 @@ test('free ports are retained and strictPort rejects occupied ports', async t =>
   assert.equal(await findAvailablePort(0), 0);
 });
 
+for (const fallback of [false, true]) {
+  test(`repeated Vite restarts retain the ${fallback ? 'fallback' : 'initial'} port`, async t => {
+    const occupied = await occupy('127.0.0.1');
+    t.after(() => occupied.listening ? close(occupied) : undefined);
+    const port = occupied.address().port;
+    if (!fallback) await close(occupied);
+    const cacheDir = await mkdtemp(join(tmpdir(), 'pushbox-restart-test-'));
+    const vite = await createViteServer({ cacheDir, server: { port, open: false, watch: null }, logLevel: 'silent' });
+    t.after(async () => { await vite.close(); await rm(cacheDir, { recursive: true, force: true }); });
+    await vite.listen();
+    const initialPort = vite.httpServer.address().port;
+    if (fallback) {
+      assert.ok(initialPort > port);
+      // The requested port becoming free must not change the running URL.
+      await close(occupied);
+    } else {
+      assert.equal(initialPort, port);
+    }
+    for (let restart = 0; restart < 3; restart++) {
+      await vite.restart();
+      assert.equal(vite.httpServer.address().port, initialPort);
+      const response = await fetch(`http://127.0.0.1:${initialPort}/index.html`);
+      assert.equal(response.status, 200);
+      await response.text();
+    }
+  });
+}
+
 test('port probing is not applied to middleware servers', async () => {
   await availablePortPlugin().configureServer({ config: { server: { middlewareMode: true } } });
+});
+
+test('Vite strictPort rejects an occupied loopback port with a wildcard listener', async t => {
+  const occupied = await occupy('127.0.0.1');
+  t.after(() => close(occupied));
+  const cacheDir = await mkdtemp(join(tmpdir(), 'pushbox-strict-port-test-'));
+  const vite = await createViteServer({ cacheDir, server: {
+    port: occupied.address().port, strictPort: true, open: false, watch: null,
+  }, logLevel: 'silent' });
+  t.after(async () => { await vite.close(); await rm(cacheDir, { recursive: true, force: true }); });
+  await assert.rejects(vite.listen(), /already in use/);
+  assert.equal(vite.httpServer.listening, false);
 });

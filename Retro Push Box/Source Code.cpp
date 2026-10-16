@@ -2726,8 +2726,10 @@ void InterfazGameOver(int **matriz)
 	GameOver(46, 1, 1, 219, 1);
 	MusicaGameOver();
 	GameOver(46, 1, 8, 219, 1);
+	// @web:begin game-over-exit
 	GameOver(46, 1, 9, 219, 1);
 	desvanecimiento(9);
+	// @web:end game-over-exit
 }
 void InterfazInstructions()
 {
@@ -4110,6 +4112,7 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 			// al movil hay que verificar si este choca con una pared. Si se puede mover se le modifica las coordenadas.
 			else//se llega a esta parte del codigo si el movil choco con una pared(solo para sonido)
 			{
+				// @web:event movement-rejected
 				if (sonido)SonidoMovilNoSeMueve(); continue;
 			}//sonido cuando el movil no se mueve
 
@@ -4155,7 +4158,10 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 								mod(Cajas[nivel][caja], mov); movi(x, y, mov); cantmovs++;
 								if (CajayHueco(nivel, caja, Cajas, Huecos, Cantidades))SonidoCajaHueco(); else if (sonido)SonidoMovilSeMueve(2);
 							}
-							else { SonidoMovilNoSeMueve(); continue; }
+							else {
+								// @web:event locked-push-rejected
+								SonidoMovilNoSeMueve(); continue;
+							}
 						}
 						//Si es que el portal ya está activo, solo se pueden mover las cajas celestes, las negras(que tienen numero del 10 al 16) no se moverán
 					}//fin caso excepcional nivel 5
@@ -4166,6 +4172,7 @@ void ControlDeMovimiento(int &nivel, int &vidas, int x, int y, int ***Cajas, int
 
 			else if (!CajaLugarPermitido(nivel, mov, Cajas, caja, Paredes, Cantidades))//Se pone el else para poner un sonido de bloqueo
 			{
+				// @web:event push-rejected
 				if (sonido)SonidoMovilNoSeMueve(); continue;
 			}//Sonido de cuando el movil no se mueve
 

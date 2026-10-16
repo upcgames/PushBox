@@ -52,6 +52,24 @@ test('winner prompt markers survive copy edits and reject invalid boundaries', (
   }
 });
 
+test('rejection event annotations survive condition changes and reject missing or duplicate markers', () => {
+  const original = read('game_logic');
+  const changed = original.replace('if (caja <10)', 'if (10 > caja)')
+    .replace('if (MovilDentroDeMapa(', 'if (!!MovilDentroDeMapa(');
+  assert.notEqual(changed, original);
+  const output = runtimeStatePlugin().transform.call(context, changed, '/src/generated/game_logic.js');
+  context.parse(output.code);
+  assert.equal([...output.code.matchAll(/reportBlockedPush\(mov, caja\);/g)].length, 2);
+  assert.equal([...output.code.matchAll(/reportBlockedMove\(mov\);/g)].length, 1);
+  for (const name of ['movement-rejected', 'push-rejected', 'locked-push-rejected']) {
+    const marker = `// @web:event ${name}`;
+    for (const invalid of [original.replace(marker, ''), original.replace(marker, `${marker}\n${marker}`)]) {
+      assert.throws(() => runtimeStatePlugin().transform.call(context, invalid,
+        '/src/generated/game_logic.js'), new RegExp(`@web event ${name}`));
+    }
+  }
+});
+
 function runtime(keys, arrays, { x = 36, y = 34, pauseOption = 1, startLevel = 1 } = {}) {
   setAudioMuted({ api: GameState, ...runtimeState }, false);
   const snapshots = [], events = [], sounds = [], huds = [];
@@ -154,6 +172,48 @@ function evaluateModule(name, overrides) {
   vm.runInContext(executable(output.code), sandbox);
   return sandbox;
 }
+
+test('Game Over exit annotation survives drawing changes and rejects missing boundaries', () => {
+  const original = read('interfaces');
+  const changed = original.replace('yield* GameOver(46, 1, 9, 219, 1);', 'yield* GameOver(40, 2, 2, 219, 0);');
+  assert.notEqual(changed, original);
+  const output = runtimeStatePlugin().transform.call(context, changed, '/src/generated/interfaces.js');
+  context.parse(output.code);
+  assert.match(output.code, /presentScene\('InterfazGameOver'/);
+  for (const marker of ['// @web:begin game-over-exit', '// @web:end game-over-exit']) {
+    assert.throws(() => runtimeStatePlugin().transform.call(context,
+      original.replace(marker, ''), '/src/generated/interfaces.js'), /@web section game-over-exit/);
+  }
+});
+
+test('mobile Game Over waits for Salir before erasing; desktop retains automatic exit', async () => {
+  for (const mobile of [true, false]) {
+    const stopOverride = GameState.registerPresentationOverride('InterfazGameOver', () => mobile);
+    const drawings = []; let release, notify, flushed = 0;
+    const waiting = new Promise(resolve => { notify = resolve; });
+    const sandbox = evaluateModule('interfaces', {
+      FlushConsoleInputBuffer() { flushed++; },
+      _getch: () => { notify(); return new Promise(resolve => { release = resolve; }); },
+    });
+    sandbox.GameOver = async function* (x, y, color) { drawings.push(color); yield 0; };
+    sandbox.desvanecimiento = async function* () { yield 0; };
+    sandbox.jokerGif = async function* () { yield 0; };
+    const done = (async () => { for await (const delay of sandbox.InterfazGameOver([])) { void delay; } })();
+    try {
+      if (mobile) {
+        await waiting;
+        assert.deepEqual(drawings, [1, 8], 'The final visible artwork remains until Salir');
+        assert.equal(selectControlMode(GameState.getSnapshot()), 'gameover');
+        assert.equal(flushed, 1, 'Earlier keypresses cannot dismiss the scene');
+        release('e');
+      }
+      await done;
+      assert.deepEqual(drawings, [1, 8, 9]);
+      assert.equal(GameState.getSnapshot().inputRequest, null);
+      if (!mobile) assert.equal(flushed, 0);
+    } finally { stopOverride(); }
+  }
+});
 
 test('real intro shows warning, choice and text controls only while requested', async () => {
   const modes = [];

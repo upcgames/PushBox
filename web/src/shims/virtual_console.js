@@ -1,5 +1,5 @@
 import { ConsoleColor } from './consoleColor.js';
-import { handleAudioInput, inputBlocked, inputConsumer, recordInput } from '../state/runtimeBridge.js';
+import { handleAudioInput, inputBlocked, subscribeInputGate, inputConsumer, recordInput } from '../state/runtimeBridge.js';
 
 export class Random {
   Next(min, max) {
@@ -16,6 +16,11 @@ export class CONSOLE_SCREEN_BUFFER_INFO {
 let lastFrameTime = typeof performance !== 'undefined' ? performance.now() : 0;
 const keyQueue = [];
 const keyWaiters = [];
+subscribeInputGate(() => {
+  for (let index = keyQueue.length - 1; index >= 0; index--) {
+    if (inputBlocked(keyQueue[index])) keyQueue.splice(index, 1);
+  }
+});
 
 if (typeof window !== 'undefined') {
   window.addEventListener('keydown', (e) => {
@@ -32,7 +37,7 @@ if (typeof window !== 'undefined') {
       return;
     }
 
-    if (inputBlocked()) return;
+    if (inputBlocked(keyVal)) return;
     if (keyWaiters.length > 0) {
       const resolve = keyWaiters.shift();
       resolve(keyVal);
@@ -107,11 +112,13 @@ if (typeof window !== 'undefined') {
   window._getch = async () => {
     recordInput(null, 'waiting');
     let key;
-    if (keyQueue.length > 0) {
-      key = keyQueue.shift();
-    } else {
-      key = await new Promise(resolve => keyWaiters.push(resolve));
-    }
+    do {
+      if (keyQueue.length > 0) {
+        key = keyQueue.shift();
+      } else {
+        key = await new Promise(resolve => keyWaiters.push(resolve));
+      }
+    } while (inputBlocked(key));
     recordInput(key, 'consumed');
     return key;
   };

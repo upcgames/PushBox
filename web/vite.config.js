@@ -21,7 +21,7 @@ export default defineConfig({
   ],
   server: {
     // Keep LAN access; availablePortPlugin checks loopback and wildcard
-    // occupancy before Vite binds. Vite supplies the default starting port.
+    // occupancy at listen time. Vite manages the default and restart ports.
     host: true,
   },
   build: {

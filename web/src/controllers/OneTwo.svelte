@@ -15,7 +15,7 @@
 
 <style>
   .ctrl {
-    background: rgba(22, 30, 46, 0.9);
+    background: #000;
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 12px;

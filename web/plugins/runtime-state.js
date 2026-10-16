@@ -34,6 +34,27 @@ function markedSection(source, ast, fn, name) {
   return { start, end: finish };
 }
 
+// Point events represent facts that cannot be inferred from state snapshots.
+function markedEvent(source, ast, fn, name) {
+  const literals = [];
+  walk(ast, node => { if (node.type === 'Literal' || node.type === 'TemplateLiteral') literals.push(node); });
+  const markers = [...source.matchAll(/^[ \t]*\/\/ @web:event ([a-z][a-z0-9-]*)[ \t]*$/gm)]
+    .filter(match => match[1] === name && !literals.some(node => match.index >= node.start && match.index < node.end));
+  const [marker] = markers;
+  if (markers.length !== 1 || marker.index <= fn.body.start || marker.index >= fn.body.end) {
+    throw new Error(`Runtime adapter: invalid or missing @web event ${name}`);
+  }
+  const position = marker.index + marker[0].length;
+  let block;
+  walk(fn.body, node => {
+    if (node.type === 'BlockStatement' && node.start < position && node.end > position) block = node;
+  });
+  if (!block || block.body.some(node => node.start < position && node.end > position)) {
+    throw new Error(`Runtime adapter: @web event ${name} must be at a statement boundary`);
+  }
+  return position;
+}
+
 // Extract actual single-character choices from scanf's validation loop, rather
 // than treating every one-character text input as a UI-specific numeric choice.
 function textChoices(call, ancestors) {
@@ -64,12 +85,25 @@ export function runtimeStatePlugin() {
       const ast = this.parse(source), edits = [];
       const insert = (position, text) => edits.push({ start: position, end: position, text });
       const playerHooks = new Set();
-      let movementFound = false, blockedPushFound = false, blockedWalkFound = false, bridgeUsed = false, scopeId = 0;
+      let movementFound = false, bridgeUsed = false, scopeId = 0;
 
       for (const entry of ast.body) {
         const fn = entry.type === 'ExportNamedDeclaration' && entry.declaration;
         if (fn?.type !== 'FunctionDeclaration') continue;
         const name = fn.id.name;
+        if (name === 'InterfazGameOver') {
+          // The canonical annotation marks the exit boundary independently
+          // of drawing calls or colors. Only mobile waits before this section.
+          const section = markedSection(source, ast, fn, 'game-over-exit');
+          insert(section.start, `\nawait presentScene('InterfazGameOver', () => undefined, () => {
+            FlushConsoleInputBuffer();
+            return withInput({ kind: 'key', consumer: 'InterfazGameOver' }, async () => {
+              let key;
+              do { key = await _getch(); } while (String(key).toLowerCase() !== 'e');
+            });
+          });\n`);
+          bridgeUsed = true;
+        }
         if (name === 'CuadroDeVidas') {
           insert(fn.body.start + 1, "\nconst _webHud = Console.enterDrawScope('canonical-hud'); try {\n");
           insert(fn.body.end - 1, '\n} finally { _webHud(); }\n');
@@ -157,42 +191,16 @@ export function runtimeStatePlugin() {
         }
         if (name === 'ControlDeMovimiento') {
           movementFound = true; bridgeUsed = true;
-          const initialization = fn.body.body.find(node => node.type === 'VariableDeclaration' &&
-            node.declarations.some(declaration => declaration.id.name === 'posicion'));
-          if (!initialization) throw new Error('Runtime adapter: movement initialization changed');
-          insert(initialization.end, `
-const _webLevel = nivel.v;
-const _webStop = observeGame(() => boardSnapshot(_webLevel, { x, y }, cantmovs, vidas.v, sonido.v,
-  { Cajas, Paredes, Vacios, Huecos, Cantidades },
-  { x: xportal, y: yportal, active: PortalVisible(_webLevel, Cajas, Huecos, Cantidades) }, nivel.v, posicion,
-  { remaining: limiteMovimientos - cantmovs, nextCost: costoRegreso,
-    charge: posicion > 1 ? CostoDeRegreso(limiteMovimientos - cantmovs, costoRegreso) : 0,
-    affordableDepth: RegresosDisponibles(limiteMovimientos - cantmovs, costoRegreso, posicion) }));
-const _webLeave = enterScreen('gameplay');
-try {`);
-          insert(fn.body.end - 1, '\n} finally { _webStop(); _webLeave(); }\n');
+          for (const [sectionName, report] of [
+            ['movement-rejected', 'reportBlockedMove(mov);'],
+            ['push-rejected', 'reportBlockedPush(mov, caja);'],
+            ['locked-push-rejected', 'reportBlockedPush(mov, caja);'],
+          ]) {
+            const position = markedEvent(source, ast, fn, sectionName);
+            insert(position, `\n${report}\n`);
+          }
           walk(fn.body, node => {
             if (/Function/.test(node.type || '')) return false;
-            if (node.type === 'IfStatement' && node.test.type === 'UnaryExpression' &&
-                node.test.operator === '!' && node.test.argument.type === 'CallExpression' &&
-                node.test.argument.callee.name === 'CajaLugarPermitido') {
-              if (node.consequent.type !== 'BlockStatement') {
-                throw new Error('Runtime adapter: rejected-push branch changed');
-              }
-              insert(node.consequent.start + 1, '\nreportBlockedPush(mov, caja);\n');
-              blockedPushFound = true;
-            }
-            if (node.type === 'IfStatement' && node.test.type === 'CallExpression' &&
-                node.test.callee.name === 'MovilDentroDeMapa') {
-              if (node.alternate?.type !== 'BlockStatement') throw new Error('Runtime adapter: rejected-walk branch changed');
-              insert(node.alternate.start + 1, '\nreportBlockedMove(mov);\n');
-              blockedWalkFound = true;
-            }
-            if (node.type === 'IfStatement' && node.test.type === 'BinaryExpression' &&
-                node.test.operator === '<' && node.test.left.name === 'caja' && node.test.right.value === 10) {
-              if (node.alternate?.type !== 'BlockStatement') throw new Error('Runtime adapter: hardened-caja rejection changed');
-              insert(node.alternate.start + 1, '\nreportBlockedPush(mov, caja);\n');
-            }
             if (node.type === 'AwaitExpression') {
               insert(node.argument.start, 'observeAwait('); insert(node.argument.end, ')');
             }
@@ -237,20 +245,33 @@ try {`);
             insert(call.end, callee === 'scanf' ? `, ${source.slice(call.arguments[1].start, call.arguments[1].end)})` : ')');
           }
         });
+        // Reuse the gameplay input-loop boundary instead of a local variable's
+        // declaration. State snapshots still come from the original locals.
+        const gameplayLoop = name === 'ControlDeMovimiento'
+          ? [...inputLoops].find(node => fn.body.body.includes(node)) : null;
+        if (name === 'ControlDeMovimiento' && !gameplayLoop) throw new Error('Runtime adapter: gameplay input loop missing');
         for (const loop of inputLoops) {
           bridgeUsed = true;
           const token = `_webInput${scopeId++}`;
-          insert(loop.start, `{ const ${token} = enterInput({ kind: 'key', consumer: '${name}' }); try {\n`);
-          insert(loop.end, `\n} finally { ${token}(); } }`);
+          const observation = loop === gameplayLoop ? `{
+const _webLevel = nivel.v;
+const _webStop = observeGame(() => boardSnapshot(_webLevel, { x, y }, cantmovs, vidas.v, sonido.v,
+  { Cajas, Paredes, Vacios, Huecos, Cantidades },
+  { x: xportal, y: yportal, active: PortalVisible(_webLevel, Cajas, Huecos, Cantidades) }, nivel.v, posicion,
+  { remaining: limiteMovimientos - cantmovs, nextCost: costoRegreso,
+    charge: posicion > 1 ? CostoDeRegreso(limiteMovimientos - cantmovs, costoRegreso) : 0,
+    affordableDepth: RegresosDisponibles(limiteMovimientos - cantmovs, costoRegreso, posicion) }));
+const _webLeave = enterScreen('gameplay');
+try {
+` : '';
+          const finishObservation = loop === gameplayLoop ? '\n} finally { _webStop(); _webLeave(); } }\n' : '';
+          insert(loop.start, `${observation}{ const ${token} = enterInput({ kind: 'key', consumer: '${name}' }); try {\n`);
+          insert(loop.end, `\n} finally { ${token}(); } }${finishObservation}`);
         }
       }
       if (path.endsWith('/game_logic.js') && !movementFound) {
         throw new Error('Runtime adapter: ControlDeMovimiento is missing');
       }
-      if (movementFound && !blockedPushFound) {
-        throw new Error('Runtime adapter: rejected-push branch is missing');
-      }
-      if (movementFound && !blockedWalkFound) throw new Error('Runtime adapter: rejected-walk branch is missing');
       const requiredPlayerHooks = path.endsWith('/world_objects.js')
         ? ['PintarMovil', 'PintarMuerte', 'Teletransporte', 'TeclasOcultas', 'Endurecimiento']
         : path.endsWith('/world_logic.js') ? ['Regresar'] : [];

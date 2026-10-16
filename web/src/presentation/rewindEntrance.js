@@ -32,9 +32,10 @@ export function sampleRewindEntrance(elapsed, { x, y, top, right, endX, endY, sc
   };
 }
 
-// Presentation lifecycle only: never sends input, pauses the original routine,
-// writes to its canvas, or infers gameplay from pixels.
+// Presentation lifecycle only: active flags gate mobile input in the web
+// adapter. Never pauses or edits the original routine or its canvas.
 export function createRewindEntranceDriver(store, { kind = 'rewind', enabled = () => true, measure, render, clear,
+  onStart = () => {},
   reducedMotion = () => false, hidden = () => document.hidden,
   requestFrame = requestAnimationFrame, cancelFrame = cancelAnimationFrame }) {
   let frame = null, started = null, source = null, disposed = false, failed = false;
@@ -63,6 +64,7 @@ export function createRewindEntranceDriver(store, { kind = 'rewind', enabled = (
       started = time;
       if (troll) store.setTrollEntrance({ ...store.getSnapshot().trollEntrance, pending: false });
       else store.acknowledgeRewindEntrance();
+      onStart();
     }
     const pose = sampleRewindEntrance(time - started, geometry);
     if (pose.complete || reducedMotion()) { finish(pose.complete && !reducedMotion()); return; }

@@ -3,6 +3,11 @@ export function createSessionShims(surface, bridge, { config, audio, signal,
   requestFrame = requestAnimationFrame, cancelFrame = cancelAnimationFrame,
   now = () => performance.now() }) {
   const queue = [], waiters = [], scheduled = new Set();
+  const stopInputGate = bridge.subscribeInputGate(() => {
+    for (let index = queue.length - 1; index >= 0; index--) {
+      if (bridge.inputBlocked(queue[index])) queue.splice(index, 1);
+    }
+  });
   let lastFrameTime = now();
   const cancelled = () => new DOMException('Session stopped', 'AbortError');
   const check = () => { if (signal.aborted) throw cancelled(); };
@@ -26,13 +31,17 @@ export function createSessionShims(surface, bridge, { config, audio, signal,
       else bridge.recordInput(value, 'consumed');
       return;
     }
-    if (bridge.inputBlocked()) return;
+    if (bridge.inputBlocked(value)) return;
     if (waiters.length) waiters.shift().resolve(value);
     else queue.push(value);
   }
   async function getch() {
     check(); bridge.recordInput(null, 'waiting');
-    const key = queue.length ? queue.shift() : await new Promise((resolve, reject) => waiters.push({ resolve, reject }));
+    let key;
+    do {
+      key = queue.length ? queue.shift() : await new Promise((resolve, reject) => waiters.push({ resolve, reject }));
+      check();
+    } while (bridge.inputBlocked(key));
     check(); bridge.recordInput(key, 'consumed'); return key;
   }
   async function sleep(ms) {
@@ -46,6 +55,7 @@ export function createSessionShims(surface, bridge, { config, audio, signal,
     lastFrameTime = now();
   }
   const abort = () => {
+    stopInputGate();
     queue.length = 0;
     waiters.splice(0).forEach(waiter => waiter.reject(cancelled()));
     for (const task of scheduled) { task.cancel(); task.reject(cancelled()); }

@@ -145,8 +145,11 @@ export function mountUndoHint(store, { enabled = () => true } = {}) {
     if (!trapped.size && !sacrifices.size && !pushed && !bridge) { previous = game; refresh(); return; }
     const adjustment = undo ? game.undoDepth - previous.undoDepth : Math.max(0, game.steps - previous.steps);
     const reachable = reachablePlayerPositions(game), recoverable = recoverableBoxPositions(game), nextTrapped = new Map();
-    const isTrapped = box => !boxHasLegalPush(game, box, reachable) ||
-      (recoverable !== null && !recoverable.has(key(box)));
+    // No immediate push can mean another caja temporarily blocks access.
+    // With target metadata, hint only when even the optimistic route (ignoring
+    // other cajas) is impossible. This favors missed hints over false deadlocks.
+    const isTrapped = box => recoverable !== null
+      ? !recoverable.has(key(box)) : !boxHasLegalPush(game, box, reachable);
     let recovered = false;
     for (const [position, previousDistance] of trapped) {
       const distance = previousDistance + adjustment;
