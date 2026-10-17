@@ -6,12 +6,12 @@ import GamePaused from '../controllers/GamePaused.svelte';
 import Qwerty from '../controllers/Qwerty.svelte';
 import OneTwo from '../controllers/OneTwo.svelte';
 import Congrats from '../controllers/Congrats.svelte';
-import GameOver from '../controllers/GameOver.svelte';
+import Exit from '../controllers/Exit.svelte';
 import { SESSION_CONTEXT } from '../controllers/services.js';
 import { selectControlMode } from './controlPolicy.js';
 
 const COMPONENTS = { none: NoneCtrl, dpad: GameController, continue: Continue,
-  paused: GamePaused, qwerty: Qwerty, '1v2': OneTwo, congrats: Congrats, gameover: GameOver };
+  paused: GamePaused, qwerty: Qwerty, '1v2': OneTwo, congrats: Congrats, gameover: Exit, credits: Exit };
 
 export function setupSessionControls(container, services, changed = () => {}) {
   let instance;

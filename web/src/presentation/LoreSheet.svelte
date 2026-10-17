@@ -40,7 +40,7 @@
       <div class="lore-grin"><PixelButton icon="troll" label="¿Premio?" variant="face" hinted /></div>
     {/if}
   </div>
-  <h3>{level === 4 && rewardSeen ? 'Presiona la carita y celebra' : captions[level]}</h3>
+  <h3>{captions[level]}</h3>
   <div class="lore-continue"><ContinueButton disabled={!ready} onclick={onContinue} /></div>
 </section>
 

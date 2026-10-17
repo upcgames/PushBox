@@ -98,6 +98,7 @@
 
 <style>
   .dpad-shell {
+    flex: none;
     padding: 20px;
     margin: -10px;
     touch-action: none;
@@ -127,6 +128,7 @@
     border: none;
   }
   .dpad-btn {
+    position: relative;
     width: 62px; height: 62px;
     background: var(--card-bg);
     border: 1px solid var(--accent);
@@ -139,6 +141,15 @@
     -webkit-user-select: none;
     transition: background 0.08s, filter 0.08s;
   }
+  /* Invisible per-button targets also receive touches beyond the visible cross.
+     Events bubble to the existing direction/hold handler; artwork stays put. */
+  .dpad-btn::after {
+    content: '';
+    position: absolute;
+    inset: -12px;
+  }
+  /* Adjacent actions reserve their own hit area on narrow mobile layouts. */
+  .dpad-btn.right::after { right: calc(-1 * var(--dpad-right-buffer, 12px)); }
   .dpad-btn.up { border-radius: 12px 12px 0 0; border-bottom: none; }
   .dpad-btn.down { border-radius: 0 0 12px 12px; border-top: none; }
   .dpad-btn.left { border-radius: 12px 0 0 12px; border-right: none; }

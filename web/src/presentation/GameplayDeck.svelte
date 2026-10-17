@@ -22,5 +22,5 @@
   .secondary-actions { display: grid; grid-template-rows: repeat(2, 76px); justify-items: center; gap: 20px; flex: none; }
   .action-slot { width: 76px; height: 76px; display: grid; place-items: center; }
   .slot-placeholder { width: 100%; height: 100%; background: #101320; box-shadow: inset 2px 2px #20283b, inset -2px -2px #060811; }
-  @media (max-width: 370px) { .gameplay-deck { padding-inline: 16px; gap: 8px; } }
+  @media (max-width: 370px) { .gameplay-deck { padding-inline: 16px; gap: 8px; --dpad-right-buffer: 8px; } }
 </style>

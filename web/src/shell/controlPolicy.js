@@ -13,7 +13,8 @@ export function selectControlMode({ inputRequest, winnerActionsBlocked }) {
   if (!inputRequest) return 'none';
   if (inputRequest.native) return 'none';
   if (winnerActionsBlocked && inputRequest.consumer === 'InterfazCongratulations' && inputRequest.kind === 'key') return 'none';
-  if (inputRequest.kind === 'confirmation') return 'continue';
+  // The level controller's confirmation follows the completed credits scene.
+  if (inputRequest.kind === 'confirmation') return inputRequest.consumer === 'ControlDeNiveles' ? 'credits' : 'continue';
   if (inputRequest.kind === 'text') {
     return inputRequest.choices?.join(',') === '1,2' ? '1v2' : 'qwerty';
   }

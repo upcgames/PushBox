@@ -14,6 +14,7 @@
 
 <style>
   .mobile-menu-controls {
+    --dpad-right-buffer: 8px;
     width: 100%;
     min-height: 222px;
     display: grid;

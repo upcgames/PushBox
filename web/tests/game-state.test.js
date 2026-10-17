@@ -130,6 +130,8 @@ test('control policy covers existing layouts without adding UI modes to the stor
   const mode = request => selectControlMode({ inputRequest: request });
   assert.equal(mode(null), 'none');
   assert.equal(mode({ kind: 'confirmation' }), 'continue');
+  assert.equal(mode({ kind: 'confirmation', consumer: 'ControlDeNiveles' }), 'credits');
+  assert.equal(mode({ kind: 'confirmation', consumer: 'MenuPrincipal' }), 'continue');
   assert.equal(mode({ kind: 'key', consumer: 'ControlDeMovimiento' }), 'dpad');
   assert.equal(mode({ kind: 'key', consumer: 'MenuPrincipal' }), 'paused');
   assert.equal(mode({ kind: 'key', consumer: 'InterfazCongratulations' }), 'congrats');
